@@ -51,12 +51,11 @@ const OrderForm = () => {
     urgency: urgency,
     accessories: accessories,
     orderManager: orderManager,
-    activities: [],
   });
   useEffect(() => {
     setFormValues({
       orderName: orderName,
-      startDate: selectedDate,
+      startDate: selectedDate.toDate(),
       materialShelf: materialShelf,
       urgency: urgency,
       accessories: accessories,
@@ -89,6 +88,7 @@ const OrderForm = () => {
   // };
 
   const { personale } = usePersonale();
+
   return (
     <Box sx={{ p: 3 }}>
       <Typography
@@ -244,7 +244,7 @@ const OrderForm = () => {
             </Menu>
           </Box>
         </Box>
-        <AddTable />
+        <AddTable genericOrderData={formValues} />
       </Paper>
     </Box>
   );

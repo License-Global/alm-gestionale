@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Table,
   TableBody,
@@ -16,8 +16,10 @@ import {
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { TwitterPicker } from "react-color"; // Color picker
 import dayjs from "dayjs";
+import { createOrder } from "../../services/activitiesService";
 
 const AddTable = ({ genericOrderData }) => {
+  const [newOrder, setNewOrder] = useState({});
   const [rows, setRows] = useState([]);
   const [newRow, setNewRow] = useState({
     name: "",
@@ -44,22 +46,43 @@ const AddTable = ({ genericOrderData }) => {
   };
 
   // Funzione per confermare e stampare le righe in console (in formato ISO)
-  const handleConfirm = () => {
-    const formattedRows = rows.map((row) => ({
-      ...row,
-      startDate: row.startDate ? dayjs(row.startDate).toISOString() : null, // Converte in formato ISO
-      endDate: row.endDate ? dayjs(row.endDate).toISOString() : null, // Converte in formato ISO
-    }));
-    console.log("Ordine delle attività (formato ISO):", formattedRows);
-    console.log(genericOrderData);
+  const formatRows = (rowsToFormat) => {
+    if (rowsToFormat) {
+      const formattedRows = rowsToFormat.map((row) => ({
+        ...row,
+        startDate: row.startDate ? dayjs(row.startDate).toDate() : null, // Converte in formato ISO
+        endDate: row.endDate ? dayjs(row.endDate).toDate() : null, // Converte in formato ISO
+      }));
+      return formattedRows;
+    }
+  };
+
+  const handleConfirm = async () => {
+    const createdOrder = await createOrder(newOrder);
+    if (createdOrder) {
+      console.log("Ordine creato con successo:", createdOrder);
+    }
   };
 
   const handleChange = (field, value) => {
     setNewRow({ ...newRow, [field]: value });
   };
 
+  useEffect(() => {
+    setNewOrder({
+      orderName: genericOrderData.orderName,
+      order_start_date: genericOrderData.startDate,
+      materialShelf: genericOrderData.materialShelf,
+      accessori: genericOrderData.accessories,
+      internal_id: genericOrderData.internal_id,
+      urgency: genericOrderData.urgency,
+      orderManager: genericOrderData.orderManager,
+      activities: formatRows(rows),
+    });
+  }, [genericOrderData, rows]);
   return (
     <TableContainer component={Paper}>
+      <p onClick={() => console.log(newOrder)}>asd</p>
       <Table>
         <TableHead>
           <TableRow>
@@ -72,7 +95,7 @@ const AddTable = ({ genericOrderData }) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {rows.map((row, index) => (
+          {rows?.map((row, index) => (
             <TableRow key={index}>
               <TableCell>{row.name}</TableCell>
               <TableCell>{row.inCalendar ? "Sì" : "No"}</TableCell>
@@ -132,7 +155,7 @@ const AddTable = ({ genericOrderData }) => {
                 displayEmpty
                 fullWidth
               >
-                <MenuItem value="">
+                <MenuItem disabled value="">
                   <em>Seleziona responsabile</em>
                 </MenuItem>
                 <MenuItem value="Mario">Mario</MenuItem>
@@ -177,7 +200,7 @@ const AddTable = ({ genericOrderData }) => {
         color="secondary"
         style={{ marginTop: "20px" }}
       >
-        Conferma e stampa ordine attività
+        Conferma
       </Button>
     </TableContainer>
   );

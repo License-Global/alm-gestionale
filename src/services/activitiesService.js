@@ -154,5 +154,5 @@ export const createOrder = async (newOrder) => {
     return null;
   }
 
-  return data[0];
+  console.log(data);
 };
