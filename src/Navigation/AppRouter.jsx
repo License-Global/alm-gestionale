@@ -1,17 +1,16 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import Home from "../pages/Home";
+import AddOrder from "../pages/AddOrder";
+import Login from "../pages/Login";
 import NotFound from "../pages/NotFound";
-import MainTable from "../components/Tables/MainTable";
-
-function AppRouter() {
-  return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/asd" element={<MainTable />} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
-  );
-}
+const AppRouter = () => (
+  <Routes>
+    <Route exact path="/" element={<Home />} />
+    <Route path="/aggiungi" element={<AddOrder />} />
+    <Route path="/login" element={<Login />} />
+    <Route path="/*" element={<NotFound />} />
+  </Routes>
+);
 
 export default AppRouter;

@@ -1,0 +1,131 @@
+Ecco tutti gli esempi di payload per le operazioni CRUD sulle attività, basate sulla struttura fornita.
+
+---------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------
+
+1. Payload per ottenere tutte le attività (getActivities):
+Non richiede un payload da parte dell'utente. L'unico parametro passato è l'orderId per identificare l'ordine.
+
+
+---------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------
+
+
+2. Payload per aggiungere una nuova attività (addActivity):
+Quando aggiungi una nuova attività, il payload sarà simile a questo:
+
+
+{
+  "activityName": "imballaggio",
+  "start_date": "2024-11-08T14:52:43.264979",
+  "expire_date": "2024-11-08T14:52:43.264979",
+  "status": "Standby",
+  "completed": "2025-12-08T14:52:43.264979",
+  "IsScheduled": true,
+  "calendar_color": "#ff0000",
+  "activityManager": "Pino",
+  "note": [
+    {
+      "content": "nota dell'admin",
+      "created_at": "16/07/1994",
+      "sender": "Admin",
+      "_id": 123456
+    }
+  ]
+}
+
+
+---------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------
+
+
+3. Payload per aggiornare un'attività esistente (updateActivity):
+Per aggiornare un'attività, il payload dipenderà dalle modifiche che vuoi effettuare sull'attività. Ecco un esempio di payload per aggiornare un'attività:
+
+
+{
+  "activityName": "imballaggio aggiornato",
+  "start_date": "2024-11-10T14:52:43.264979",
+  "expire_date": "2024-11-15T14:52:43.264979",
+  "status": "In corso",
+  "completed": "2025-12-08T14:52:43.264979",
+  "IsScheduled": false,
+  "calendar_color": "#00ff00",
+  "activityManager": "Luigi",
+  "note": [
+    {
+      "content": "nuova nota aggiornata",
+      "created_at": "17/07/1994",
+      "sender": "Admin",
+      "_id": 654321
+    }
+  ]
+}
+
+---------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------
+
+
+4. Payload per eliminare un'attività (deleteActivity):
+Non richiede un payload specifico, solo l'activityIndex per indicare quale attività eliminare dall'array delle attività di un ordine.
+
+
+---------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------
+
+Payload per patchActivity:
+Ecco come sarebbe un esempio di payload per il metodo PATCH:
+
+{
+  "status": "Completato",
+  "calendar_color": "#00ff00"
+}
+Solo i campi status e calendar_color verranno aggiornati, mentre tutti gli altri campi dell'attività rimarranno invariati.
+
+---------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------
+
+Esempio di payload per la creazione di un nuovo ordine:
+Quando crei un nuovo ordine, il payload potrebbe essere simile a questo. Puoi personalizzare i campi come necessario:
+
+
+{
+  "created_at": "2024-10-08T14:52:43.264979",
+  "order_start_date": "2024-10-10T08:30:00.000000",
+  "isConfirmed": false,
+  "orderName": "Ordine Bianchi Stefano",
+  "materialShelf": "Scaffale B23 in alto",
+  "accessori": "Scatola rossa vicino all'entrata",
+  "internal_id": "ORD987654",
+  "urgency": "media",
+  "orderManager": "1234-uuid-personnel",  // collegamento all'id del personale
+  "activities": [
+    {
+      "activityName": "cambio ruote",
+      "expire": "2024-11-08T14:52:43.264979",
+      "status": "In corso",
+      "completed": null,
+      "IsScheduled": true,
+      "calendar_color": "#ff9900",
+      "activityManager": "uuid-activity-manager",
+      "note": []
+    },
+    {
+      "activityName": "verifica motore",
+      "expire": "2024-11-15T14:52:43.264979",
+      "status": "Standby",
+      "completed": null,
+      "IsScheduled": false,
+      "calendar_color": "#ff0000",
+      "activityManager": "uuid-activity-manager",
+      "note": [
+        {
+          "content": "verificare guarnizione",
+          "created_at": "2024-10-08T10:00:00.000000",
+          "sender": "Admin",
+          "_id": 789012
+        }
+      ]
+    }
+  ]
+}

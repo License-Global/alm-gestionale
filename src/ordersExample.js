@@ -10,8 +10,39 @@ export const orders = [
       {
         activityName: "cambio ruote",
         expire: "2024-10-08T14:52:43.264979",
-        status: "Standby",
-        note: [],
+        status: "In corso",
+        note: [
+          {
+            content: "nota mia",
+            date: "16/07/1994",
+            sender: "Admin",
+            id: 786244,
+          },
+          {
+            content: "nota operatore 2",
+            date: "16/07/1994",
+            sender: "Operator",
+            id: 78678,
+          },
+          {
+            content: "nota Admin 3",
+            date: "16/07/1994",
+            sender: "Admin",
+            id: 4194,
+          },
+          {
+            content: "nota operatore 3",
+            date: "16/07/1994",
+            sender: "Operator",
+            id: 4154,
+          },
+          {
+            content: "nota Admin 3",
+            date: "16/07/1994",
+            sender: "Admin",
+            id: 4159,
+          },
+        ],
         completed: "LOGOCOMPLETO",
         activityManager: "Piero",
       },

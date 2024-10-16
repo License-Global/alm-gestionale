@@ -9,9 +9,6 @@ import {
   Box,
   Table,
   TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
   TableRow,
   Paper,
   Select,
@@ -24,7 +21,6 @@ import {
   Modal,
 } from "@mui/material";
 
-import { styled } from "@mui/system";
 import {
   Assignment,
   Inventory2,
@@ -36,133 +32,16 @@ import {
 
 import { orders } from "../../ordersExample";
 
-const StyledTableContainer = styled(TableContainer)`
-  margin-top: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
-  overflow: hidden;
-  @media (max-width: 600px) {
-    overflow-x: auto; /* Scroll orizzontale per schermi piccoli */
-  }
-`;
+import {
+  StyledTableContainer,
+  StyledTableCell,
+  StyledTableHead,
+  StyledModal,
+  titleStyle,
+  OrderInfoCard,
+  OrderInfoItem,
+} from "./Styles";
 
-const StyledTableHead = styled(TableHead)`
-  background-color: ${theme.palette.primary.light};
-`;
-
-const StyledTableCell = styled(TableCell)`
-  padding: 16px;
-`;
-
-const OrderInfoCard = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
-  marginBottom: theme.spacing(3),
-  backgroundColor: theme.palette.background.default,
-  borderRadius: "12px",
-  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
-}));
-
-const OrderInfoItem = styled(Box)(({ theme }) => ({
-  border: "2px",
-  marginBottom: theme.spacing(2),
-  "& .MuiSvgIcon-root": {
-    marginRight: theme.spacing(1),
-    color: theme.palette.primary.main,
-  },
-}));
-
-const StyledModal = {
-  position: "absolute",
-  top: "50%",
-  left: "50%",
-  transform: "translate(-50%, -50%)",
-  width: 500,
-  bgcolor: "background.paper",
-  borderRadius: "16px",
-  boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.2)",
-  padding: "24px",
-  textAlign: "center",
-  border: "2px solid #4CAF50", // Bordo verde personalizzato
-  transition: "all 0.3s ease",
-  "&:hover": {
-    borderColor: "#388E3C", // Cambia colore al bordo quando si passa sopra la modale
-    boxShadow: "0px 6px 25px rgba(0, 0, 0, 0.3)", // Ombra più pronunciata al passaggio del mouse
-  },
-};
-
-const titleStyle = {
-  fontFamily: "Georgia, serif", // Font serif per un aspetto elegante e classico
-  fontWeight: 600, // Peso medio per un look raffinato
-  fontSize: "1.8rem", // Dimensione non troppo grande per mantenere sobrietà
-  textAlign: "center",
-  textTransform: "capitalize", // Solo la prima lettera maiuscola
-  letterSpacing: "1px", // Leggera spaziatura tra le lettere
-  textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)", // Sottile ombra per profondità senza eccessi
-  paddingBottom: "8px",
-  cursor: "default",
-};
-
-// Dati di esempio per le attività (reintegrate)
-// const activities = [
-//   {
-//     id: 1,
-//     name: "Attività 1",
-//     date: "2023-05-01",
-//     status: "In corso",
-//     priority: "Alta",
-//     assignee: "Mario Rossi",
-//     progress: 75,
-//     favorite: true,
-//   },
-//   {
-//     id: 2,
-//     name: "Attività 2",
-//     date: "2023-05-02",
-//     status: "Completata",
-//     priority: "Media",
-//     assignee: "Luigi Verdi",
-//     progress: 100,
-//     favorite: false,
-//   },
-//   {
-//     id: 3,
-//     name: "Attività 3",
-//     date: "2023-05-03",
-//     status: "In attesa",
-//     priority: "Bassa",
-//     assignee: "Anna Bianchi",
-//     progress: 30,
-//     favorite: true,
-//   },
-//   {
-//     id: 4,
-//     name: "Attività 4",
-//     date: "2023-05-04",
-//     status: "In corso",
-//     priority: "Alta",
-//     assignee: "Giovanni Neri",
-//     progress: 50,
-//     favorite: false,
-//   },
-//   {
-//     id: 5,
-//     name: "Attività 5",
-//     date: "2023-05-05",
-//     status: "Non iniziata",
-//     priority: "Media",
-//     assignee: "Francesca Gialli",
-//     progress: 0,
-//     favorite: false,
-//   },
-// ];
-
-const messages = [
-  { id: 1, text: "Ciao, come stai?", sender: "other" },
-  { id: 2, text: "Tutto bene, grazie! E tu?", sender: "me" },
-  { id: 3, text: "Anche io tutto bene!", sender: "other" },
-];
-
-// Dati di esempio per le informazioni dell'ordine
 const orderInfo = {
   name: "Ordine #12345",
   shelf: "A-123",
@@ -176,6 +55,8 @@ const MainTable = () => {
   const [open, setOpen] = React.useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const authorizedUser = "Operator";
 
   const handleOpenModal = (item) => {
     setSelectedItem(item);
@@ -227,7 +108,7 @@ const MainTable = () => {
               }}
             >
               {/* Griglia per i dettagli dell'ordine */}
-              <Grid item xs={12} sm={6} md={2}>
+              <Grid item xs={12} sm={6} md={1.5}>
                 <OrderInfoItem
                   sx={{
                     display: "flex",
@@ -243,7 +124,7 @@ const MainTable = () => {
                 </OrderInfoItem>
               </Grid>
               {/* Altri campi dell'ordine */}
-              <Grid item xs={12} sm={6} md={2}>
+              <Grid item xs={12} sm={6} md={1.5}>
                 <OrderInfoItem>
                   <Inventory2 fontSize="large" />
                   <Typography variant="body1">
@@ -251,7 +132,7 @@ const MainTable = () => {
                   </Typography>
                 </OrderInfoItem>
               </Grid>
-              <Grid item xs={12} sm={6} md={2}>
+              <Grid item xs={12} sm={6} md={1.5}>
                 <OrderInfoItem>
                   <PriorityHigh fontSize="large" />
                   <Typography variant="body1">
@@ -259,7 +140,7 @@ const MainTable = () => {
                   </Typography>
                 </OrderInfoItem>
               </Grid>
-              <Grid item xs={12} sm={6} md={2}>
+              <Grid item xs={12} sm={6} md={1.5}>
                 <OrderInfoItem>
                   <Person fontSize="large" />
                   <Typography variant="body1">
@@ -267,7 +148,7 @@ const MainTable = () => {
                   </Typography>
                 </OrderInfoItem>
               </Grid>
-              <Grid item xs={12} sm={6} md={2}>
+              <Grid item xs={12} sm={6} md={1.5}>
                 <OrderInfoItem>
                   <DateRange fontSize="large" />
                   <Typography variant="body1">
@@ -275,7 +156,15 @@ const MainTable = () => {
                   </Typography>
                 </OrderInfoItem>
               </Grid>
-              <Grid item xs={12} sm={6} md={2}>
+              <Grid item xs={12} sm={6} md={1.5}>
+                <OrderInfoItem>
+                  <DateRange fontSize="large" />
+                  <Typography variant="body1">
+                    <b>Data inizio:</b> <br /> {orderInfo.startDate}
+                  </Typography>
+                </OrderInfoItem>
+              </Grid>
+              <Grid item xs={12} sm={6} md={1.5}>
                 <OrderInfoItem>
                   <DateRange fontSize="large" />
                   <Typography variant="body1">
@@ -379,7 +268,6 @@ const MainTable = () => {
       <Divider sx={{ my: "15px", borderBottomWidth: 5 }} />
 
       {/* Modal */}
-
       {selectedItem && (
         <Modal
           open={open}
@@ -408,28 +296,52 @@ const MainTable = () => {
               {/* Area Messaggi */}
               <Box sx={{ flexGrow: 1, overflowY: "auto", mb: 1 }}>
                 <List dense>
-                  {messages.map((message) => (
+                  {selectedItem.note.map((message) => (
                     <ListItem
                       key={message.id}
                       sx={{
                         justifyContent:
-                          message.sender === "me" ? "flex-end" : "flex-start",
+                          message.sender === authorizedUser
+                            ? "flex-end"
+                            : "flex-start",
                         display: "flex",
+                        flexDirection: "column", // Per mettere la label sopra il messaggio
+                        alignItems:
+                          message.sender === authorizedUser
+                            ? "flex-end"
+                            : "flex-start",
                       }}
                     >
+                      {/* Label del mittente */}
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: "#888",
+                          mb: 0.5, // Spazio sotto la label
+                        }}
+                      >
+                        {message.sender === authorizedUser
+                          ? "Tu"
+                          : message.sender}
+                      </Typography>
+
                       <Paper
                         sx={{
                           p: 1,
                           maxWidth: "75%",
                           bgcolor:
-                            message.sender === "me" ? "#e0f7fa" : "#f1f1f1",
+                            message.sender === authorizedUser
+                              ? "#e0f7fa"
+                              : "#f1f1f1",
                           borderRadius:
-                            message.sender === "me"
+                            message.sender === authorizedUser
                               ? "16px 16px 0 16px"
                               : "16px 16px 16px 0",
                         }}
                       >
-                        <Typography variant="body2">{message.text}</Typography>
+                        <Typography variant="body2">
+                          {message.content}
+                        </Typography>
                       </Paper>
                     </ListItem>
                   ))}
@@ -444,21 +356,21 @@ const MainTable = () => {
                   variant="outlined"
                   size="small"
                 />
-                <Button variant="contained" size="small" sx={{ ml: 1 }}>
+                <Button variant="contained" size="small" sx={{ ml: 1, mb: 4 }}>
                   Invia
                 </Button>
               </Box>
-              <Box sx={{ m: 2 }}>
-                <Button
-                  onClick={handleCloseModal}
-                  color="secondary"
-                  variant="contained"
-                  size="medium"
-                  sx={{ ml: 1 }}
-                >
-                  Esci
-                </Button>
-              </Box>
+            </Box>
+            <Box sx={{ m: 2 }}>
+              <Button
+                onClick={handleCloseModal}
+                color="secondary"
+                variant="contained"
+                size="medium"
+                sx={{ ml: 1 }}
+              >
+                Esci
+              </Button>
             </Box>
           </Box>
         </Modal>
