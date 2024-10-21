@@ -153,6 +153,49 @@ export const createOrder = async (newOrder) => {
     console.error("Errore nella creazione dell'ordine:", error);
     return null;
   }
-
   console.log(data);
+};
+
+export const createSchema = async (schemaName, activities) => {
+  try {
+    // Effettua la chiamata POST per inserire i dati
+    const { data, error } = await supabase
+      .from("activitiesSchemes") // Sostituisci con il nome della tua tabella
+      .insert([
+        { schemaName, activities }, // Oggetto da inserire
+      ]);
+
+    // Controllo degli errori
+    if (error) {
+      console.error("Errore durante l'inserimento:", error);
+      return { success: false, error };
+    }
+
+    // Restituisce i dati inseriti se l'operazione ha successo
+    return { success: true, data };
+  } catch (error) {
+    console.error("Errore imprevisto:", error);
+    return { success: false, error };
+  }
+};
+
+// Funzione per ottenere tutti gli schemi
+export const fetchActivitiesSchemes = async () => {
+  try {
+    let { data: activitiesSchemes, error } = await supabase
+      .from("activitiesSchemes")
+      .select("*");
+
+    if (error) {
+      throw error;
+    }
+
+    return activitiesSchemes;
+  } catch (error) {
+    console.error(
+      "Errore nel recupero degli schemi di attività:",
+      error.message
+    );
+    throw error; // Puoi rilanciare l'errore o gestirlo diversamente
+  }
 };

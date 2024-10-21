@@ -6,19 +6,21 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   TextField,
   Button,
   Switch,
   Select,
   MenuItem,
+  Snackbar,
+  Alert,
 } from "@mui/material";
+import { motion } from "framer-motion";
+import { RemoveCircle } from "@mui/icons-material";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { TwitterPicker } from "react-color"; // Color picker
 import dayjs from "dayjs";
-import { createOrder } from "../../services/activitiesService";
 
-const AddTable = ({ genericOrderData }) => {
+const AddTable = ({ genericOrderData, personale, newOrderHandler }) => {
   const [newOrder, setNewOrder] = useState({});
   const [rows, setRows] = useState([]);
   const [newRow, setNewRow] = useState({
@@ -29,7 +31,11 @@ const AddTable = ({ genericOrderData }) => {
     startDate: null,
     endDate: null,
   });
-
+  const [activitiesNames, setActivitiesNames] = useState([]);
+  const [open, setOpen] = useState(false);
+  const handleClose = () => {
+    setOpen(false);
+  };
   // Funzione per aggiungere una nuova riga
   const handleAddRow = () => {
     if (newRow.name.trim() !== "") {
@@ -57,13 +63,6 @@ const AddTable = ({ genericOrderData }) => {
     }
   };
 
-  const handleConfirm = async () => {
-    const createdOrder = await createOrder(newOrder);
-    if (createdOrder) {
-      console.log("Ordine creato con successo:", createdOrder);
-    }
-  };
-
   const handleChange = (field, value) => {
     setNewRow({ ...newRow, [field]: value });
   };
@@ -71,18 +70,27 @@ const AddTable = ({ genericOrderData }) => {
   useEffect(() => {
     setNewOrder({
       orderName: genericOrderData.orderName,
-      order_start_date: genericOrderData.startDate,
+      startDate: genericOrderData.startDate,
       materialShelf: genericOrderData.materialShelf,
-      accessori: genericOrderData.accessories,
+      accessories: genericOrderData.accessories,
       internal_id: genericOrderData.internal_id,
       urgency: genericOrderData.urgency,
       orderManager: genericOrderData.orderManager,
       activities: formatRows(rows),
     });
   }, [genericOrderData, rows]);
+
+  useEffect(() => {
+    newOrderHandler(newOrder, activitiesNames);
+  }, [newOrder, activitiesNames]);
+
+  useEffect(() => {
+    const activitiesNames = rows.map((row) => row.name);
+    setActivitiesNames(activitiesNames);
+  }, [rows.length]);
+
   return (
-    <TableContainer component={Paper}>
-      <p onClick={() => console.log(newOrder)}>asd</p>
+    <TableContainer>
       <Table>
         <TableHead>
           <TableRow>
@@ -92,6 +100,7 @@ const AddTable = ({ genericOrderData }) => {
             <TableCell>Responsabile</TableCell>
             <TableCell>Data inizio</TableCell>
             <TableCell>Data scadenza</TableCell>
+            <TableCell></TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -121,9 +130,27 @@ const AddTable = ({ genericOrderData }) => {
                   ? dayjs(row.endDate).format("DD/MM/YYYY HH:mm")
                   : ""}
               </TableCell>
+              <TableCell align="center">
+                <motion.div
+                  whileHover={{
+                    scale: 1.2,
+                  }}
+                  transition={{
+                    duration: 0.2, // Transizione rapida e fluida
+                    ease: "easeInOut", // Facilità sia all'entrata che all'uscita
+                  }}
+                >
+                  <RemoveCircle
+                    sx={{ cursor: "pointer", width: "32px", height: "32px" }}
+                    color="error"
+                    onClick={() => setRows(rows.filter((_, i) => i !== index))}
+                  />
+                </motion.div>
+              </TableCell>
             </TableRow>
           ))}
           {/* Riga per aggiungere nuovi dati */}
+          {}
           <TableRow>
             <TableCell>
               <TextField
@@ -141,11 +168,22 @@ const AddTable = ({ genericOrderData }) => {
               />
             </TableCell>
             <TableCell>
-              {newRow.inCalendar && (
+              {newRow.inCalendar && newRow.inCalendar ? (
                 <TwitterPicker
                   color={newRow.color}
                   onChangeComplete={(color) => handleChange("color", color.hex)}
                 />
+              ) : (
+                <>
+                  <div style={{ visibility: "hidden" }}>
+                    <TwitterPicker
+                      color={newRow.color}
+                      onChangeComplete={(color) =>
+                        handleChange("color", color.hex)
+                      }
+                    />
+                  </div>
+                </>
               )}
             </TableCell>
             <TableCell>
@@ -158,15 +196,21 @@ const AddTable = ({ genericOrderData }) => {
                 <MenuItem disabled value="">
                   <em>Seleziona responsabile</em>
                 </MenuItem>
-                <MenuItem value="Mario">Mario</MenuItem>
-                <MenuItem value="Giulia">Giulia</MenuItem>
-                <MenuItem value="Anna">Anna</MenuItem>
+                {personale.map((personale) => (
+                  <MenuItem
+                    key={personale.workerName}
+                    value={personale.workerName}
+                  >
+                    {personale.workerName}
+                  </MenuItem>
+                ))}
               </Select>
             </TableCell>
             <TableCell>
               <DateTimePicker
                 label="Data inizio"
                 value={newRow.startDate}
+                defaultValue={dayjs().add(5, "minute")}
                 onChange={(date) => handleChange("startDate", date)}
                 minDateTime={dayjs()} // Impedisce di selezionare una data passata
                 renderInput={(params) => <TextField {...params} fullWidth />}
@@ -176,8 +220,9 @@ const AddTable = ({ genericOrderData }) => {
               <DateTimePicker
                 label="Data scadenza"
                 value={newRow.endDate}
+                defaultValue={dayjs().add(15, "minute")}
                 onChange={(date) => handleChange("endDate", date)}
-                minDateTime={newRow.startDate || dayjs()} // Impedisce di selezionare una scadenza prima della data di inizio
+                minDateTime={newRow.startDate || dayjs()}
                 renderInput={(params) => <TextField {...params} fullWidth />}
               />
             </TableCell>
@@ -194,14 +239,22 @@ const AddTable = ({ genericOrderData }) => {
         </TableBody>
       </Table>
       {/* Tasto di conferma per stampare l'ordine delle attività */}
-      <Button
-        onClick={handleConfirm}
-        variant="contained"
-        color="secondary"
-        style={{ marginTop: "20px" }}
+
+      <Snackbar
+        open={open}
+        autoHideDuration={3000}
+        onClose={handleClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        Conferma
-      </Button>
+        <Alert
+          onClose={handleClose}
+          severity="error"
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          Tutti i campi sono obbligatori
+        </Alert>
+      </Snackbar>
     </TableContainer>
   );
 };
