@@ -10,11 +10,35 @@ export const fetchPersonale = async () => {
   return data;
 };
 
-export const createOrder = async (orderData) => {
-  const { data, error } = await supabase.from("Orders").insert([orderData]);
-  if (error) {
-    console.error("Error creating order:", error);
-    throw error;
+export async function insertPersonale(record) {
+  try {
+    const { data, error } = await supabase
+      .from("Personale")
+      .insert([record])
+      .select();
+
+    if (error) {
+      console.error("Errore nell'inserimento:", error.message);
+      return { data: null, error };
+    }
+
+    return { data, error: null };
+  } catch (err) {
+    console.error("Errore imprevisto:", err.message);
+    return { data: null, error: err };
   }
-  return data;
-};
+}
+
+export async function deletePersonale(id) {
+  const { data, error } = await supabase
+    .from("Personale")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error("Errore nella rimozione del personale:", error.message);
+    return { error };
+  }
+
+  return { data };
+}

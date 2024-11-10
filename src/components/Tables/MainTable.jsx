@@ -1,5 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import theme from "../../theme";
+import {
+  subscribeToOrderUpdates,
+  unsubscribeFromOrderUpdates,
+} from "../../services/supabaseRealtimeService";
 import {
   Typography,
   TextField,
@@ -30,7 +34,7 @@ import {
   Email,
 } from "@mui/icons-material";
 
-import { orders } from "../../ordersExample";
+import Timer from "../misc/Timer";
 
 import {
   StyledTableContainer,
@@ -42,242 +46,423 @@ import {
   OrderInfoItem,
 } from "./Styles";
 
-const orderInfo = {
-  name: "Ordine #12345",
-  shelf: "A-123",
-  priority: "Alta",
-  manager: "Giuseppe Bianchi",
-  accessori: "Giuseppe Bianchi",
-  startDate: "2023-05-01",
-};
+import {
+  differenceInMinutes,
+  differenceInHours,
+  differenceInDays,
+} from "date-fns";
+import dayjs from "dayjs";
 
-const MainTable = () => {
-  const [open, setOpen] = React.useState(false);
+import { updateActivityStatusInOrder } from "../../services/activitiesService";
+import { addNote } from "../../services/notesServices";
+
+const MainTable = ({ orders, setOrders }) => {
+  const [open, setOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+  const messagesContainerRef = useRef(null);
 
-  const authorizedUser = "Operator";
+  const [newMessage, setNewMessage] = useState("");
 
-  const handleOpenModal = (item) => {
-    setSelectedItem(item);
+  const authorizedUser = "Admin";
+
+  const scrollToBottom = () => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop =
+        messagesContainerRef.current.scrollHeight;
+    }
+  };
+
+  const handleOpenModal = (item, orderId) => {
+    setSelectedItem({ ...item, orderId });
     setOpen(true);
   };
 
   const handleCloseModal = () => {
     setOpen(false);
     setSelectedItem(null);
+    setNewMessage("");
   };
   const getStatusColor = (status) => {
     switch (status) {
-      case "Completata":
+      case undefined:
+        return "error";
+      case "Completato":
         return "success";
-      case "In corso":
+      case "in corso":
         return "primary";
       case "In attesa":
         return "warning";
-      case "Non iniziata":
+      case "Standby":
         return "error";
       default:
         return "default";
     }
   };
 
+  const handleOrderPriorityHighlight = (priority) => {
+    if (priority === "Urgente") {
+      return "#f44336";
+    } else if (priority === "Alta") {
+      return "#ff9800";
+    } else if (priority === "Media") {
+      return "#ffc107";
+    } else if (priority === "Bassa") {
+      return "#8bc34a";
+    }
+  };
+  function getDifferenceInDaysHoursAndMinutesString(date1, date2) {
+    // Calcola la differenza totale in minuti
+    const totalMinutesDifference = Math.abs(differenceInMinutes(date2, date1));
+
+    // Calcola la differenza in giorni interi
+    const daysDifference = Math.abs(differenceInDays(date2, date1));
+
+    // Calcola la differenza in ore intere rimanenti dopo aver sottratto i giorni
+    const remainingHours =
+      Math.abs(differenceInHours(date2, date1)) - daysDifference * 24;
+
+    // Calcola i minuti rimanenti dopo aver sottratto i giorni e le ore
+    const remainingMinutes =
+      totalMinutesDifference - daysDifference * 24 * 60 - remainingHours * 60;
+
+    // Costruisci la stringa del risultato
+    let result = "";
+    if (daysDifference > 0) {
+      result += `${daysDifference}G `;
+    }
+    if (remainingHours > 0) {
+      result += `${remainingHours}H `;
+    }
+    result += `${remainingMinutes}min `;
+
+    return result.trim();
+  }
+
+  const handleTargetLabel = (expire, completed) => {
+    if (completed) {
+      if (Math.abs(differenceInMinutes(expire, completed)) < 5) {
+        return <Chip color="info" label={`In orario`} />;
+      } else if (expire > completed) {
+        return (
+          <Chip
+            color="success"
+            label={`Anticipo di
+            ${getDifferenceInDaysHoursAndMinutesString(expire, completed)}`}
+          />
+        );
+      } else if (expire < completed) {
+        return (
+          <Chip
+            color="error"
+            label={`Ritardo di
+            ${getDifferenceInDaysHoursAndMinutesString(expire, completed)}`}
+          />
+        );
+      }
+      // else if (expire < completed) {
+      //     return (<button className=' w-full cursor-default btn rounded-xl btn-error'>Ritardo di {Math.abs(differenceInMinutes(expire, completed)) >= 60 ? Math.abs(differenceInHours(expire, completed)) + " H" : Math.abs(differenceInMinutes(expire, completed)) + " m"}</button>)
+      // }
+    } else {
+      return <Timer targetDate={expire} />;
+    }
+  };
+
+  const sendMessage = async (
+    orderId,
+    activityName,
+    noteContent,
+    sender = "Admin"
+  ) => {
+    try {
+      await addNote(orderId, activityName, noteContent, sender);
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
+  };
+
+  useEffect(() => {
+    const channels = orders.map((order) => {
+      return subscribeToOrderUpdates(order.id, (newOrderData) => {
+        setOrders((prevOrders) =>
+          prevOrders.map((o) => (o.id === newOrderData.id ? newOrderData : o))
+        );
+      });
+    });
+
+    // Cleanup alla chiusura del componente
+    return () => {
+      channels.forEach((channel) => unsubscribeFromOrderUpdates(channel));
+    };
+  }, [orders]);
+
+  // Gestione Realtime per `selectedItem.note`
+  useEffect(() => {
+    if (!selectedItem) return;
+
+    // Sottoscrizione solo per l’ordine attivo nella modale
+    const channel = subscribeToOrderUpdates(
+      selectedItem.orderId,
+      (newOrderData) => {
+        const updatedActivity = newOrderData.activities.find(
+          (activity) => activity.name === selectedItem.name
+        );
+        if (updatedActivity) {
+          setSelectedItem((prev) => ({ ...prev, note: updatedActivity.note }));
+        }
+      }
+    );
+
+    // Cleanup alla chiusura della modale
+    return () => {
+      unsubscribeFromOrderUpdates(channel);
+    };
+  }, [selectedItem]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [selectedItem?.note]);
+
+  useEffect(() => {
+    if (open) {
+      scrollToBottom(); // Scorri in fondo all'apertura della modale
+    }
+  }, [open]);
+
   return (
     <>
-      <Paper
-        sx={{
-          backgroundColor: theme.palette.grey[100],
-          padding: 4,
-          m: 3,
-          boxShadow: 4,
-        }}
-      >
-        <Box
-          sx={{
-            mx: "16px",
-          }}
-        >
-          <OrderInfoCard>
-            <Grid
-              container
-              spacing={2}
+      {orders &&
+        orders.map((order) => (
+          <div key={order.id}>
+            <Paper
               sx={{
-                textAlign: "center",
-                justifyContent: "center",
-                alignItems: "center",
+                backgroundColor: theme.palette.grey[100],
+                padding: 4,
+                m: 3,
+                boxShadow: 4,
+                border: "2px solid ",
+                borderRadius: "16px",
+                borderColor: handleOrderPriorityHighlight(order.urgency),
               }}
             >
-              {/* Griglia per i dettagli dell'ordine */}
-              <Grid item xs={12} sm={6} md={1.5}>
-                <OrderInfoItem
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  <Assignment fontSize="large" />
-                  <Typography variant="subtitle1">
-                    <b>Ordine:</b> <br /> {orderInfo.name}
-                  </Typography>
-                </OrderInfoItem>
-              </Grid>
-              {/* Altri campi dell'ordine */}
-              <Grid item xs={12} sm={6} md={1.5}>
-                <OrderInfoItem>
-                  <Inventory2 fontSize="large" />
-                  <Typography variant="body1">
-                    <b>Scaffale: </b> <br /> {orderInfo.shelf}
-                  </Typography>
-                </OrderInfoItem>
-              </Grid>
-              <Grid item xs={12} sm={6} md={1.5}>
-                <OrderInfoItem>
-                  <PriorityHigh fontSize="large" />
-                  <Typography variant="body1">
-                    <b>Priorità:</b> <br /> {orderInfo.priority}
-                  </Typography>
-                </OrderInfoItem>
-              </Grid>
-              <Grid item xs={12} sm={6} md={1.5}>
-                <OrderInfoItem>
-                  <Person fontSize="large" />
-                  <Typography variant="body1">
-                    <b>Manager:</b> <br /> {orderInfo.manager}
-                  </Typography>
-                </OrderInfoItem>
-              </Grid>
-              <Grid item xs={12} sm={6} md={1.5}>
-                <OrderInfoItem>
-                  <DateRange fontSize="large" />
-                  <Typography variant="body1">
-                    <b>Accessori:</b> <br /> {orderInfo.accessori}
-                  </Typography>
-                </OrderInfoItem>
-              </Grid>
-              <Grid item xs={12} sm={6} md={1.5}>
-                <OrderInfoItem>
-                  <DateRange fontSize="large" />
-                  <Typography variant="body1">
-                    <b>Data inizio:</b> <br /> {orderInfo.startDate}
-                  </Typography>
-                </OrderInfoItem>
-              </Grid>
-              <Grid item xs={12} sm={6} md={1.5}>
-                <OrderInfoItem>
-                  <DateRange fontSize="large" />
-                  <Typography variant="body1">
-                    <b>Data inizio:</b> <br /> {orderInfo.startDate}
-                  </Typography>
-                </OrderInfoItem>
-              </Grid>
-            </Grid>
-          </OrderInfoCard>
-
-          <StyledTableContainer component={Paper}>
-            <Table sx={{ minWidth: 650 }} aria-label="tabella attività">
-              {/* Header tabella dell'ordine */}
-              <StyledTableHead>
-                <TableRow>
-                  <StyledTableCell>Nome Attività</StyledTableCell>
-                  {!isSmallScreen && (
-                    <StyledTableCell align="right">Data</StyledTableCell>
-                  )}
-                  <StyledTableCell align="right">Stato</StyledTableCell>
-                  {!isSmallScreen && (
-                    <StyledTableCell align="right">Completato</StyledTableCell>
-                  )}
-                  <StyledTableCell align="right">Assegnato a</StyledTableCell>
-                  <StyledTableCell align="right">Azione</StyledTableCell>
-                  <StyledTableCell align="right">Note</StyledTableCell>
-                </TableRow>
-              </StyledTableHead>
-
-              {/* Body tabella dell'ordine */}
-
-              <TableBody>
-                {orders[0].activity.map((activity, index) => (
-                  <TableRow key={index}>
-                    <StyledTableCell component="th" scope="row">
-                      <Typography variant="subtitle1" fontWeight="medium">
-                        {activity.activityName}
-                      </Typography>
-                    </StyledTableCell>
-                    {!isSmallScreen && (
-                      <StyledTableCell align="right">
-                        {new Date(activity.expire).toLocaleDateString()}
-                      </StyledTableCell>
-                    )}
-                    <StyledTableCell align="right">
-                      <Chip
-                        label={activity.status}
-                        color={getStatusColor(activity.status)}
-                        size="small"
-                      />
-                    </StyledTableCell>
-                    {!isSmallScreen && (
-                      <StyledTableCell align="right">
-                        <Typography variant="body2" fontWeight="medium">
-                          {activity.completed}
+              <Box
+                sx={{
+                  mx: "16px",
+                }}
+              >
+                <OrderInfoCard>
+                  <Grid
+                    container
+                    spacing={2}
+                    sx={{
+                      textAlign: "center",
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                  >
+                    {/* Griglia per i dettagli dell'ordine */}
+                    <Grid item xs={12} sm={6} md={1.5}>
+                      <OrderInfoItem
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          justifyContent: "center",
+                          alignItems: "center",
+                        }}
+                      >
+                        <Assignment fontSize="large" />
+                        <Typography variant="subtitle1">
+                          <b>Ordine:</b> <br /> {order.orderName}
                         </Typography>
-                      </StyledTableCell>
-                    )}
-                    <StyledTableCell align="right">
-                      {activity.activityManager}
-                    </StyledTableCell>
-                    {/* {!isSmallScreen && (
-                      <StyledTableCell align="right">
-                        <Box sx={{ minWidth: 35 }}>
-                          <Typography variant="body2" color="text.secondary">
-                            {`${activity.completed}`}
-                          </Typography>
-                        </Box>
-                      </StyledTableCell>
-                    )} */}
-                    <StyledTableCell align="right">
-                      <Select
-                        defaultValue=""
-                        displayEmpty
-                        size="small"
-                        sx={{ minWidth: 120 }}
-                      >
-                        <MenuItem value="" disabled>
-                          Azioni
-                        </MenuItem>
-                        <MenuItem value="edit">Modifica</MenuItem>
-                        <MenuItem value="delete">Elimina</MenuItem>
-                        <MenuItem value="archive">Archivia</MenuItem>
-                      </Select>
-                    </StyledTableCell>
-                    <StyledTableCell align="right">
-                      <IconButton
-                        onClick={() => handleOpenModal(activity)}
-                        size="small"
-                      >
-                        <Email />
-                      </IconButton>
-                    </StyledTableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </StyledTableContainer>
-        </Box>
-      </Paper>
-      <Divider sx={{ my: "15px", borderBottomWidth: 5 }} />
+                      </OrderInfoItem>
+                    </Grid>
+                    {/* Altri campi dell'ordine */}
+                    <Grid item xs={12} sm={6} md={1.5}>
+                      <OrderInfoItem>
+                        <Inventory2 fontSize="large" />
+                        <Typography variant="body1">
+                          <b>Scaffale: </b> <br /> {order.materialShelf}
+                        </Typography>
+                      </OrderInfoItem>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={1.5}>
+                      <OrderInfoItem>
+                        <PriorityHigh fontSize="large" />
+                        <Typography variant="body1">
+                          <b>Priorità:</b> <br /> {order.urgency}
+                        </Typography>
+                      </OrderInfoItem>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={1.5}>
+                      <OrderInfoItem>
+                        <Person fontSize="large" />
+                        <Typography variant="body1">
+                          <b>Responsabile:</b> <br /> {order.orderManager}
+                        </Typography>
+                      </OrderInfoItem>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={1.5}>
+                      <OrderInfoItem>
+                        <DateRange fontSize="large" />
+                        <Typography variant="body1">
+                          <b>Accessori:</b> <br /> {order.accessories}
+                        </Typography>
+                      </OrderInfoItem>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={1.5}>
+                      <OrderInfoItem>
+                        <DateRange fontSize="large" />
+                        <Typography variant="body1">
+                          <b>Data inizio:</b> <br />{" "}
+                          {new Date(order.startDate).toLocaleDateString(
+                            "it-IT"
+                          )}
+                        </Typography>
+                      </OrderInfoItem>
+                    </Grid>
+                  </Grid>
+                </OrderInfoCard>
 
-      {/* Modal */}
+                <StyledTableContainer component={Paper}>
+                  <Table sx={{ minWidth: 650 }} aria-label="tabella attività">
+                    {/* Header tabella dell'ordine */}
+                    <StyledTableHead>
+                      <TableRow>
+                        <StyledTableCell>Attività</StyledTableCell>
+                        {!isSmallScreen && (
+                          <StyledTableCell align="right">
+                            Scadenza
+                          </StyledTableCell>
+                        )}
+                        <StyledTableCell align="right">Stato</StyledTableCell>
+                        {!isSmallScreen && (
+                          <StyledTableCell align="right">
+                            Completato
+                          </StyledTableCell>
+                        )}
+                        <StyledTableCell align="right">
+                          Assegnato a
+                        </StyledTableCell>
+                        <StyledTableCell align="right">
+                          Situazione
+                        </StyledTableCell>
+                        <StyledTableCell align="right">Azione</StyledTableCell>
+                        <StyledTableCell align="right">Note</StyledTableCell>
+                      </TableRow>
+                    </StyledTableHead>
+
+                    {/* Body tabella dell'ordine */}
+
+                    <TableBody>
+                      {order.activities.map((activity, index) => (
+                        <TableRow key={index}>
+                          <StyledTableCell component="th" scope="row">
+                            <Typography variant="subtitle1" fontWeight="medium">
+                              {activity.name}
+                            </Typography>
+                          </StyledTableCell>
+                          {!isSmallScreen && (
+                            <StyledTableCell align="right">
+                              {new Date(activity.endDate).toLocaleString(
+                                "it-IT"
+                              )}
+                            </StyledTableCell>
+                          )}
+                          <StyledTableCell align="right">
+                            <Chip
+                              label={activity.status}
+                              color={getStatusColor(activity.status)}
+                              size="small"
+                            />
+                          </StyledTableCell>
+                          {!isSmallScreen && (
+                            <StyledTableCell align="right">
+                              <Typography variant="body2" fontWeight="medium">
+                                {activity.completed
+                                  ? dayjs(activity.completed).format(
+                                      "DD/MM/YYYY HH:mm"
+                                    )
+                                  : "//"}
+                              </Typography>
+                            </StyledTableCell>
+                          )}
+                          <StyledTableCell align="right">
+                            {activity.responsible}
+                          </StyledTableCell>
+                          {!isSmallScreen && (
+                            <StyledTableCell align="right">
+                              <Box
+                                sx={{
+                                  minWidth: 35,
+                                  color: "text.primary",
+                                  fontSize: "1.2rem",
+                                  fontFamily: "Montserrat, sans-serif",
+                                }}
+                              >
+                                {handleTargetLabel(
+                                  activity.endDate,
+                                  activity.completed
+                                )}
+                              </Box>
+                            </StyledTableCell>
+                          )}
+                          <StyledTableCell align="right">
+                            <Select
+                              disabled={activity.completed ? true : false}
+                              defaultValue={activity.status}
+                              displayEmpty
+                              size="small"
+                              onChange={(e) =>
+                                updateActivityStatusInOrder(
+                                  order.id,
+                                  index,
+                                  e.target.value
+                                )
+                              }
+                              sx={{ minWidth: 120 }}
+                            >
+                              <MenuItem disabled value="Standby">
+                                Standby
+                              </MenuItem>
+                              <MenuItem value="in corso">In corso</MenuItem>
+                              <MenuItem value="in attesa">In attesa</MenuItem>
+                              <MenuItem value="Completato">
+                                <b>Completato</b>
+                              </MenuItem>
+                            </Select>
+                          </StyledTableCell>
+                          <StyledTableCell align="right">
+                            <IconButton
+                              onClick={() =>
+                                handleOpenModal(activity, order.id)
+                              }
+                              size="small"
+                            >
+                              <Email />
+                            </IconButton>
+                          </StyledTableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </StyledTableContainer>
+              </Box>
+            </Paper>
+            <Divider sx={{ my: "15px", borderBottomWidth: 5 }} />
+
+            {/* Modal */}
+          </div>
+        ))}
       {selectedItem && (
         <Modal
+          ref={messagesContainerRef}
+          id={"modal" + selectedItem.name}
           open={open}
           onClose={handleCloseModal}
-          aria-labelledby="modal-modal-title"
-          aria-describedby="modal-modal-description"
         >
           <Box sx={StyledModal}>
-            <Typography id="modal-title" sx={titleStyle}>
-              {selectedItem?.activityName}
+            <Typography id={"modal-title"} sx={titleStyle}>
+              {selectedItem?.name}
             </Typography>
             <Box
               sx={{
@@ -294,11 +479,14 @@ const MainTable = () => {
               }}
             >
               {/* Area Messaggi */}
-              <Box sx={{ flexGrow: 1, overflowY: "auto", mb: 1 }}>
+              <Box
+                ref={messagesContainerRef}
+                sx={{ flexGrow: 1, overflowY: "auto", mb: 1 }}
+              >
                 <List dense>
-                  {selectedItem.note.map((message) => (
+                  {selectedItem.note.map((message, index) => (
                     <ListItem
-                      key={message.id}
+                      key={index}
                       sx={{
                         justifyContent:
                           message.sender === authorizedUser
@@ -321,7 +509,9 @@ const MainTable = () => {
                         }}
                       >
                         {message.sender === authorizedUser
-                          ? "Tu"
+                          ? `Tu ${dayjs(message.created_at).format(
+                              "DD/MM/YYYY HH:mm"
+                            )}`
                           : message.sender}
                       </Typography>
 
@@ -352,11 +542,26 @@ const MainTable = () => {
               <Box sx={{ display: "flex" }}>
                 <TextField
                   fullWidth
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Scrivi..."
                   variant="outlined"
                   size="small"
                 />
-                <Button variant="contained" size="small" sx={{ ml: 1, mb: 4 }}>
+                <Button
+                  onClick={() =>
+                    sendMessage(
+                      selectedItem.orderId,
+                      selectedItem.name,
+                      newMessage,
+                      authorizedUser
+                    )
+                  }
+                  // onClick={() => console.log(selectedItem)}
+                  variant="contained"
+                  size="small"
+                  sx={{ ml: 1, mb: 4 }}
+                >
                   Invia
                 </Button>
               </Box>

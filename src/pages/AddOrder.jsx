@@ -130,33 +130,46 @@ const OrderForm = () => {
   const handleConfirm = async (event) => {
     event.preventDefault();
 
-    if (selectedSchema && isNewSchema === false) {
-      const presetOrder = {
-        ...formValues,
-        activities: presetActivities, // Assegna direttamente l'array activities
-      };
-      try {
-        await createOrder(presetOrder); // Se non ci sono errori, si considera completato con successo
-        console.log("Ordine creato con successo");
-        navigate("/");
-      } catch (error) {
-        console.error("Errore durante la creazione dell'ordine:", error);
-        // Gestione dell'errore, come mostrare un messaggio all'utente
-      }
-    } else
-      try {
-        if (isNewSchema) {
-          submitNewSchema(newSchemaName, activitiesNames);
-        }
+    try {
+      let orderData;
 
-        await createOrder(newOrder); // Se non ci sono errori, si considera completato con successo
-        console.log("Ordine creato con successo");
-        navigate("/");
-      } catch (error) {
-        console.error("Errore durante la creazione dell'ordine:", error);
-        // Gestione dell'errore, come mostrare un messaggio all'utente
+      if (selectedSchema && isNewSchema === false) {
+        orderData = {
+          ...formValues,
+          activities: presetActivities.map((activity) => ({
+            ...activity,
+            status: "Standby",
+            completed: false,
+            note: [],
+          })),
+        };
+      } else {
+        if (isNewSchema) {
+          await submitNewSchema(newSchemaName, activitiesNames);
+        }
+        orderData = {
+          ...newOrder,
+          activities: newOrder.activities.map((activity) => ({
+            ...activity,
+            status: "Standby",
+            completed: false,
+            note: [],
+          })),
+        };
       }
+
+      await createOrder(orderData); // Se non ci sono errori, si considera completato con successo
+      console.log("Ordine creato con successo");
+      navigate("/");
+    } catch (error) {
+      console.error("Errore durante la creazione dell'ordine:", error);
+      // Gestione dell'errore, come mostrare un messaggio all'utente
+    }
   };
+
+  useEffect(() => {
+    console.log(newOrder);
+  }, [newOrder]);
 
   return (
     <Box sx={{ p: 3 }}>
@@ -258,10 +271,10 @@ const OrderForm = () => {
                   value={urgency}
                   onChange={(e) => setUrgency(e.target.value)}
                 >
-                  <MenuItem value="urgente">Urgente</MenuItem>
-                  <MenuItem value="alta">Alta</MenuItem>
-                  <MenuItem value="media">Media</MenuItem>
-                  <MenuItem value="bassa">Bassa</MenuItem>
+                  <MenuItem value="Urgente">Urgente</MenuItem>
+                  <MenuItem value="Alta">Alta</MenuItem>
+                  <MenuItem value="Media">Media</MenuItem>
+                  <MenuItem value="Bassa">Bassa</MenuItem>
                 </Select>
               </FormControl>
             </Grid>

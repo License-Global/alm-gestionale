@@ -199,3 +199,72 @@ export const fetchActivitiesSchemes = async () => {
     throw error; // Puoi rilanciare l'errore o gestirlo diversamente
   }
 };
+
+export const updateActivityStatusInOrder = async (
+  orderId,
+  activityIndex,
+  newStatus
+) => {
+  try {
+    // 1. Recupera l'ordine con le attività
+    const { data: orderData, error: fetchError } = await supabase
+      .from("orders")
+      .select("activities")
+      .eq("id", orderId)
+      .single();
+
+    if (fetchError) {
+      console.error("Errore nel recupero dell'ordine:", fetchError);
+      return null;
+    }
+
+    // 2. Modifica l'attività specifica nell'array JSONB
+    const updatedActivities = [...orderData.activities];
+    updatedActivities[activityIndex] = {
+      ...updatedActivities[activityIndex],
+      status: newStatus,
+    };
+
+    // 3. Aggiungi il campo "completed" con data e ora correnti, se lo stato è "completed"
+    if (newStatus === "Completato") {
+      updatedActivities[activityIndex].completed = new Date().toISOString();
+    }
+
+    // 4. Aggiorna l'ordine con il nuovo array activities
+    const { data, error: updateError } = await supabase
+      .from("orders")
+      .update({ activities: updatedActivities })
+      .eq("id", orderId);
+
+    if (updateError) {
+      console.error(
+        "Errore durante l'aggiornamento dello stato dell'attività:",
+        updateError
+      );
+      return null;
+    }
+
+    console.log("Stato dell'attività aggiornato con successo:", data);
+    return data;
+  } catch (err) {
+    console.error("Errore inaspettato:", err);
+    return null;
+  }
+};
+
+// async function updateActivityCompleted(orderId, index, newCompleted) {
+//   const { data, error } = await supabase
+//     .from("orders")
+//     .update({
+//       activities: supabase.sql`jsonb_set(activities, '{${index},completed}', '${newCompleted}', true)`,
+//     })
+//     .eq("id", orderId);
+
+//   if (error) {
+//     console.error("Errore nell'aggiornamento del valore completed:", error);
+//     return { success: false, error };
+//   }
+
+//   console.log("Completed aggiornato con successo:", data);
+//   return { success: true, data };
+// }

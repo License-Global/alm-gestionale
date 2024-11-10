@@ -9,3 +9,17 @@ export const fetchOrders = async () => {
   }
   return data;
 };
+
+export const fetchOrderById = async (orderId) => {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("id", orderId)
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+};

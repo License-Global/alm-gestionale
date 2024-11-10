@@ -1,23 +1,20 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import MainTable from "../components/Tables/MainTable";
 import useSession from "../hooks/useSession";
 import { useNavigate } from "react-router-dom";
 
+import { useOrders } from "../hooks/useOrders";
+
 const Home = () => {
-  const { session, loading } = useSession();
-  const navigate = useNavigate();
+  const { session } = useSession();
+  const [allOrders, setAllOrders] = useState([]);
+  const { orders } = useOrders();
 
   useEffect(() => {
-    if (!loading) {
-      if (!session) {
-        navigate("/login");
-      }
-    }
-  }, [session, loading, navigate]);
+    setAllOrders(orders);
+  }, [orders]);
 
-  useEffect(() => {}, []);
-
-  return <div>{<MainTable />}</div>;
+  return <div>{<MainTable orders={allOrders} setOrders={setAllOrders} />}</div>;
 };
 
 export default Home;

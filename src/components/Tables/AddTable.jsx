@@ -38,7 +38,8 @@ const AddTable = ({ genericOrderData, personale, newOrderHandler }) => {
   };
   // Funzione per aggiungere una nuova riga
   const handleAddRow = () => {
-    if (newRow.name.trim() !== "") {
+    // Verifica se i campi name, startDate, ed endDate sono popolati
+    if (newRow.name.trim() !== "" && newRow.startDate && newRow.endDate) {
       setRows([...rows, { ...newRow }]);
       setNewRow({
         name: "",
@@ -48,6 +49,9 @@ const AddTable = ({ genericOrderData, personale, newOrderHandler }) => {
         startDate: null,
         endDate: null,
       }); // Resetta il campo dopo l'inserimento
+    } else {
+      // Gestione errore (facoltativo)
+      alert("Compila i campi Nome, Data Inizio e Data Fine per procedere");
     }
   };
 
@@ -238,7 +242,6 @@ const AddTable = ({ genericOrderData, personale, newOrderHandler }) => {
           </TableRow>
         </TableBody>
       </Table>
-      {/* Tasto di conferma per stampare l'ordine delle attività */}
 
       <Snackbar
         open={open}

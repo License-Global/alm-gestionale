@@ -1,6 +1,6 @@
 // src/hooks/useOrders.js
 import { useState, useEffect } from "react";
-import { fetchOrders } from "../services/orderService";
+import { fetchOrders, fetchOrderById } from "../services/orderService";
 
 export const useOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -23,4 +23,29 @@ export const useOrders = () => {
   }, []);
 
   return { orders, loading, error };
+};
+
+export const useOrder = (orderId) => {
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const getOrder = async () => {
+      try {
+        const data = await fetchOrderById(orderId);
+        setOrder(data);
+      } catch (error) {
+        setError(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (orderId) {
+      getOrder();
+    }
+  }, [orderId]);
+
+  return { order, loading, error };
 };
