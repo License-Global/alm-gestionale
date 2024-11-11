@@ -167,10 +167,6 @@ const OrderForm = () => {
     }
   };
 
-  useEffect(() => {
-    console.log(newOrder);
-  }, [newOrder]);
-
   return (
     <Box sx={{ p: 3 }}>
       <form onSubmit={handleConfirm}>

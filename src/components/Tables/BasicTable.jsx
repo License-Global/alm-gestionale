@@ -10,48 +10,99 @@ import Cancel from "@mui/icons-material/Cancel";
 import CheckCircle from "@mui/icons-material/CheckCircle";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
+import { Button, Typography } from "@mui/material";
+import { useDeleteOrder } from "../../hooks/useDeleteOrder";
+import NoOrders from "../Orders/NoOrders";
 
 export default function BasicTable({ orders }) {
   const navigate = useNavigate();
+
+  const { deleteOrder, loading, error, success } = useDeleteOrder();
+
+  const handleDelete = (orderId) => {
+    deleteOrder(orderId);
+  };
   return (
-    <TableContainer component={Paper}>
-      <Table sx={{ minWidth: 650 }} aria-label="simple table">
-        <TableHead>
-          <TableRow>
-            <TableCell>Ordini</TableCell>
-            <TableCell align="center">Responsabile</TableCell>
-            <TableCell align="center">Confermato</TableCell>
-            <TableCell align="center">Inizio</TableCell>
-            <TableCell align="center">Urgenza</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {orders &&
-            orders.map((order) => (
-              <TableRow
-                key={order.id}
-                sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-                onClick={() => navigate(order.id.toString())}
-              >
-                <TableCell component="th" scope="row">
-                  <b>{order.orderName}</b>
-                </TableCell>
-                <TableCell align="center">{order.orderManager}</TableCell>
-                <TableCell align="center">
-                  {order.isConfirmed ? (
-                    <CheckCircle fontSize="medium" color="success" />
-                  ) : (
-                    <Cancel fontSize="medium" color="error" />
-                  )}
-                </TableCell>
-                <TableCell align="center">
-                  {dayjs(order.startDate).format("DD/MM/YYYY")}
-                </TableCell>
-                <TableCell align="center">{order.urgency}</TableCell>
+    <>
+      {orders.length === 0 ? (
+        <NoOrders />
+      ) : (
+        <TableContainer component={Paper}>
+          <Table sx={{ minWidth: 650 }} aria-label="simple table">
+            <TableHead>
+              <TableRow>
+                <TableCell>Ordini</TableCell>
+                <TableCell align="center">Responsabile</TableCell>
+                <TableCell align="center">Confermato</TableCell>
+                <TableCell align="center">Inizio</TableCell>
+                <TableCell align="center">Urgenza</TableCell>
+                <TableCell align="center"></TableCell>
               </TableRow>
-            ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+            </TableHead>
+            <TableBody>
+              {orders &&
+                orders.map((order) => (
+                  <TableRow
+                    key={order.id}
+                    sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                  >
+                    <TableCell
+                      onClick={() => navigate(order.id.toString())}
+                      component="th"
+                      scope="row"
+                    >
+                      <b>{order.orderName}</b>
+                    </TableCell>
+                    <TableCell
+                      onClick={() => navigate(order.id.toString())}
+                      align="center"
+                    >
+                      {order.orderManager}
+                    </TableCell>
+                    <TableCell
+                      onClick={() => navigate(order.id.toString())}
+                      align="center"
+                    >
+                      {order.isConfirmed ? (
+                        <CheckCircle fontSize="medium" color="success" />
+                      ) : (
+                        <Cancel fontSize="medium" color="error" />
+                      )}
+                    </TableCell>
+                    <TableCell
+                      onClick={() => navigate(order.id.toString())}
+                      align="center"
+                    >
+                      {dayjs(order.startDate).format("DD/MM/YYYY")}
+                    </TableCell>
+                    <TableCell
+                      onClick={() => navigate(order.id.toString())}
+                      align="center"
+                    >
+                      {order.urgency}
+                    </TableCell>
+                    <TableCell align="center">
+                      {" "}
+                      <Button
+                        variant="contained"
+                        onClick={() => handleDelete(order.id)}
+                        color="error"
+                      >
+                        {loading
+                          ? "Eliminando..."
+                          : success
+                          ? "Eliminato"
+                          : "Elimina"}
+                      </Button>
+                      {/* {error && <p>Errore: {error}</p>}
+                  {success && <p>Ordine eliminato con successo!</p>} */}
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+    </>
   );
 }

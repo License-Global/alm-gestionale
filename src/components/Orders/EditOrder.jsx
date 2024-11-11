@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import {
-  TextField,
   Checkbox,
   FormControlLabel,
   Button,
@@ -23,86 +22,97 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  TextField,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
+import "dayjs/locale/it"; // Importa la localizzazione italiana
 import { priorityList, statusList } from "../../utils/enums/miscEnums";
+import { useOrderUpdate } from "../../hooks/useOrderUpdate";
+import { useOrderActivityUpdate } from "../../hooks/useOrderActivityUpdate";
+import { usePersonale } from "../../hooks/usePersonale";
 
 export default function EditOrder({ order }) {
-  // const [orderData, setOrderData] = useState({
-  //   id: 41,
-  //   created_at: "2024-11-02T16:43:51.72575+00:00",
-  //   startDate: "2024-11-04T07:30:56.005+00:00",
-  //   isConfirmed: false,
-  //   orderName: "Busalacchi",
-  //   materialShelf: "A84",
-  //   accessories: "A12",
-  //   internal_id: "2024/0041",
-  //   urgency: "urgente",
-  //   orderManager: "Pino",
-  //   activities: [
-  //     {
-  //       name: "Taglio",
-  //       note: [],
-  //       color: "#9900ef",
-  //       status: "Completato",
-  //       endDate: "2024-11-04T17:30:00.000Z",
-  //       completed: "2024-11-09T14:23:55.574Z",
-  //       startDate: "2024-11-03T15:30:00.000Z",
-  //       inCalendar: true,
-  //       responsible: "Walter White",
-  //     },
-  //     {
-  //       name: "Trasporto",
-  //       note: [],
-  //       color: "#000",
-  //       status: "Standby",
-  //       endDate: "2024-11-05T17:35:00.000Z",
-  //       completed: false,
-  //       startDate: "2024-11-05T07:30:00.000Z",
-  //       inCalendar: false,
-  //       responsible: "Armando",
-  //     },
-  //     // ... other activities ...
-  //   ],
-  // });
+  const {
+    loading: orderLoading,
+    error: orderError,
+    updateStartDate,
+    updateIsConfirmed,
+    updateOrderName,
+    updateMaterialShelf,
+    updateAccessories,
+    updateUrgency,
+    updateOrderManager,
+  } = useOrderUpdate();
+
+  const {
+    loading: activityLoading,
+    error: activityError,
+    updateActivities,
+    updateActivityByName,
+  } = useOrderActivityUpdate();
+
+  const personale = usePersonale();
 
   const [orderData, setOrderData] = useState(order);
+  const [tempOrderData, setTempOrderData] = useState(order);
   const [openActivityDialog, setOpenActivityDialog] = useState(false);
   const [currentActivity, setCurrentActivity] = useState(null);
   const [currentActivityIndex, setCurrentActivityIndex] = useState(null);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setOrderData((prevData) => ({
+    const updatedValue = type === "checkbox" ? checked : value;
+    setTempOrderData((prevData) => ({
       ...prevData,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: updatedValue,
     }));
+  };
+
+  const handleSaveOrder = async () => {
+    const {
+      orderName,
+      startDate,
+      materialShelf,
+      accessories,
+      urgency,
+      orderManager,
+      isConfirmed,
+    } = tempOrderData;
+
+    await updateOrderName(order.id, orderName);
+    await updateStartDate(order.id, startDate);
+    await updateMaterialShelf(order.id, materialShelf);
+    await updateAccessories(order.id, accessories);
+    await updateUrgency(order.id, urgency);
+    await updateOrderManager(order.id, orderManager);
+    await updateIsConfirmed(order.id, isConfirmed);
+
+    // Salva le modifiche alle attività
+    const updatedActivities = tempOrderData.activities.map((activity) => {
+      if (activity.status === "Completato") {
+        return { ...activity, completed: new Date().toISOString() };
+      }
+      return { ...activity, completed: null };
+    });
+
+    await Promise.all(
+      updatedActivities.map((activity) =>
+        updateActivityByName(order.id, activity.name, activity)
+      )
+    );
+
+    setOrderData(tempOrderData); // Sync temp data with order data
+    window.location.reload(); // Ricarica la pagina al termine delle modifiche
   };
 
   const handleActivityEdit = (index) => {
-    setCurrentActivity(orderData.activities[index]);
+    setCurrentActivity({ ...tempOrderData.activities[index] });
     setCurrentActivityIndex(index);
     setOpenActivityDialog(true);
-  };
-
-  const handleActivityDelete = (index) => {
-    setOrderData((prevData) => ({
-      ...prevData,
-      activities: prevData.activities.filter((_, i) => i !== index),
-    }));
-  };
-
-  const handleActivitySave = () => {
-    if (currentActivity && currentActivityIndex !== null) {
-      setOrderData((prevData) => ({
-        ...prevData,
-        activities: prevData.activities.map((activity, index) =>
-          index === currentActivityIndex ? currentActivity : activity
-        ),
-      }));
-    }
-    setOpenActivityDialog(false);
   };
 
   const handleActivityInputChange = (e) => {
@@ -115,280 +125,289 @@ export default function EditOrder({ order }) {
     }
   };
 
+  const handleDialogSave = () => {
+    if (currentActivity && currentActivityIndex !== null) {
+      const updatedActivities = [...tempOrderData.activities];
+      updatedActivities[currentActivityIndex] = currentActivity;
+      setTempOrderData((prevData) => ({
+        ...prevData,
+        activities: updatedActivities,
+      }));
+    }
+    setOpenActivityDialog(false);
+  };
+
   return (
-    <Paper elevation={3} sx={{ p: 3, m: 2 }}>
-      <Typography variant="h4" gutterBottom>
-        Modifica Ordine
-      </Typography>
-      <form>
-        <Grid container spacing={3}>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Nome Ordine"
-              name="orderName"
-              value={orderData.orderName}
-              onChange={handleInputChange}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Data di Inizio"
-              name="startDate"
-              type="datetime-local"
-              value={orderData.startDate.slice(0, 16)}
-              onChange={handleInputChange}
-              InputLabelProps={{
-                shrink: true,
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Scaffale Materiale"
-              name="materialShelf"
-              value={orderData.materialShelf}
-              onChange={handleInputChange}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Accessori"
-              name="accessories"
-              value={orderData.accessories}
-              onChange={handleInputChange}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <FormControl fullWidth>
-              <InputLabel>Urgenza</InputLabel>
-              <Select
-                label="Urgenza"
-                defaultValue={orderData.urgency}
-                displayEmpty
-                name="urgency"
-                value={orderData.urgency || ""}
+    <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="it">
+      <Paper elevation={3} sx={{ p: 3, m: 2 }}>
+        <Typography variant="h4" gutterBottom>
+          Modifica Ordine
+        </Typography>
+        <form>
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Nome Ordine"
+                name="orderName"
+                value={tempOrderData.orderName}
                 onChange={handleInputChange}
-              >
-                {priorityList.map((priority) => (
-                  <MenuItem
-                    selected={priority === orderData.urgency}
-                    key={priority}
-                    value={priority}
-                  >
-                    {priority}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Manager dell'Ordine"
-              name="orderManager"
-              value={orderData.orderManager}
-              onChange={handleInputChange}
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={orderData.isConfirmed}
-                  onChange={handleInputChange}
-                  name="isConfirmed"
-                />
-              }
-              label="Confermato"
-            />
-          </Grid>
-        </Grid>
-
-        <Box mt={4}>
-          <Typography variant="h5" gutterBottom>
-            Attività
-          </Typography>
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Nome</TableCell>
-                  <TableCell>Responsabile</TableCell>
-                  <TableCell>Stato</TableCell>
-                  <TableCell>Data Inizio</TableCell>
-                  <TableCell>Data Fine</TableCell>
-                  <TableCell>Azioni</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {orderData.activities.map((activity, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{activity.name}</TableCell>
-                    <TableCell>{activity.responsible}</TableCell>
-                    <TableCell>{activity.status}</TableCell>
-                    <TableCell>
-                      {activity.startDate
-                        ? new Date(activity.startDate).toLocaleString()
-                        : "N/A"}
-                    </TableCell>
-                    <TableCell>
-                      {activity.endDate
-                        ? new Date(activity.endDate).toLocaleString()
-                        : "N/A"}
-                    </TableCell>
-                    <TableCell>
-                      <IconButton onClick={() => handleActivityEdit(index)}>
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton onClick={() => handleActivityDelete(index)}>
-                        <DeleteIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Box>
-
-        <Box display="flex" justifyContent="flex-end" mt={3}>
-          <Button variant="contained" color="primary" type="submit">
-            Salva Modifiche
-          </Button>
-        </Box>
-      </form>
-
-      <Dialog
-        open={openActivityDialog}
-        onClose={() => setOpenActivityDialog(false)}
-      >
-        <DialogTitle>Modifica Attività</DialogTitle>
-        <DialogContent>
-          {currentActivity && (
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Nome"
-                  name="name"
-                  value={currentActivity.name}
-                  onChange={handleActivityInputChange}
-                  sx={{ mt: 1 }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Responsabile"
-                  name="responsible"
-                  value={currentActivity.responsible}
-                  onChange={handleActivityInputChange}
-                />
-              </Grid>
-
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Data Inizio"
-                  name="startDate"
-                  type="datetime-local"
-                  value={
-                    currentActivity.startDate
-                      ? currentActivity.startDate.slice(0, 16)
-                      : ""
-                  }
-                  onChange={handleActivityInputChange}
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Data Fine"
-                  name="endDate"
-                  type="datetime-local"
-                  value={
-                    currentActivity.endDate
-                      ? currentActivity.endDate.slice(0, 16)
-                      : ""
-                  }
-                  onChange={handleActivityInputChange}
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={currentActivity.inCalendar}
-                      onChange={handleActivityInputChange}
-                      name="inCalendar"
-                    />
-                  }
-                  label="In Calendario"
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <Typography variant="subtitle1">Stato:</Typography>
-                <Select
-                  fullWidth
-                  name="status"
-                  value={currentActivity.status}
-                  onChange={handleActivityInputChange}
-                >
-                  <MenuItem disabled value="Standby">
-                    Standby
-                  </MenuItem>
-                  <MenuItem value="in corso">In corso</MenuItem>
-                  <MenuItem value="in attesa">In attesa</MenuItem>
-                  <MenuItem value="Completato">
-                    <b>Completato</b>
-                  </MenuItem>
-                </Select>
-              </Grid>
+                disabled={orderLoading}
+              />
             </Grid>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button
-            variant="contained"
-            sx={{
-              boxShadow: 2,
-              "&:hover": {
-                bgcolor: "error.dark",
-                boxShadow: 4,
-              },
-            }}
-            color="error"
-            onClick={() => setOpenActivityDialog(false)}
-          >
-            Annulla
-          </Button>
-          <Button
-            variant="contained"
-            sx={{
-              boxShadow: 2,
-              "&:hover": {
-                bgcolor: "primary.main",
-                boxShadow: 4,
-              },
-            }}
-            color="primary"
-            onClick={handleActivitySave}
-          >
-            Salva
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Paper>
+            <Grid item xs={12} sm={6}>
+              <DateTimePicker
+                label="Data di Inizio"
+                value={dayjs(tempOrderData.startDate)}
+                onChange={(date) =>
+                  setTempOrderData((prevData) => ({
+                    ...prevData,
+                    startDate: date ? date.toISOString() : "",
+                  }))
+                }
+                renderInput={(params) => (
+                  <TextField {...params} fullWidth disabled={orderLoading} />
+                )}
+                disablePast
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Scaffale Materiale"
+                name="materialShelf"
+                value={tempOrderData.materialShelf}
+                onChange={handleInputChange}
+                disabled={orderLoading}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Accessori"
+                name="accessories"
+                value={tempOrderData.accessories}
+                onChange={handleInputChange}
+                disabled={orderLoading}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Urgenza</InputLabel>
+                <Select
+                  label="Urgenza"
+                  name="urgency"
+                  value={tempOrderData.urgency || ""}
+                  onChange={handleInputChange}
+                  disabled={orderLoading}
+                >
+                  {priorityList.map((priority) => (
+                    <MenuItem key={priority} value={priority}>
+                      {priority}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Manager dell'Ordine</InputLabel>
+                <Select
+                  label="Manager dell'Ordine"
+                  name="orderManager"
+                  value={tempOrderData.orderManager}
+                  onChange={handleInputChange}
+                  disabled={orderLoading}
+                >
+                  {personale.personale.map((person) => (
+                    <MenuItem key={person.workerName} value={person.workerName}>
+                      {person.workerName}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={tempOrderData.isConfirmed}
+                    onChange={handleInputChange}
+                    name="isConfirmed"
+                    disabled={orderLoading}
+                  />
+                }
+                label="Confermato"
+              />
+            </Grid>
+          </Grid>
+
+          <Box mt={4}>
+            <Typography variant="h5" gutterBottom>
+              Attività
+            </Typography>
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Nome</TableCell>
+                    <TableCell>Responsabile</TableCell>
+                    <TableCell>Stato</TableCell>
+                    <TableCell>Data Inizio</TableCell>
+                    <TableCell>Data Fine</TableCell>
+                    <TableCell></TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {tempOrderData.activities.map((activity, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{activity.name}</TableCell>
+                      <TableCell>{activity.responsible}</TableCell>
+                      <TableCell>{activity.status}</TableCell>
+                      <TableCell>
+                        {activity.startDate
+                          ? new Date(activity.startDate).toLocaleString()
+                          : "N/A"}
+                      </TableCell>
+                      <TableCell>
+                        {activity.endDate
+                          ? new Date(activity.endDate).toLocaleString()
+                          : "N/A"}
+                      </TableCell>
+                      <TableCell>
+                        <IconButton onClick={() => handleActivityEdit(index)}>
+                          <EditIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Box>
+
+          <Box display="flex" justifyContent="flex-end" mt={3}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleSaveOrder}
+              disabled={orderLoading || activityLoading}
+            >
+              Salva Modifiche
+            </Button>
+          </Box>
+        </form>
+
+        <Dialog
+          open={openActivityDialog}
+          onClose={() => setOpenActivityDialog(false)}
+        >
+          <DialogTitle>Modifica Attività</DialogTitle>
+          <DialogContent>
+            {currentActivity && (
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Nome"
+                    name="name"
+                    value={currentActivity.name}
+                    onChange={handleActivityInputChange}
+                    disabled
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Responsabile"
+                    name="responsible"
+                    value={currentActivity.responsible}
+                    onChange={handleActivityInputChange}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <DateTimePicker
+                    label="Data Inizio"
+                    value={dayjs(currentActivity.startDate)}
+                    onChange={(date) =>
+                      setCurrentActivity((prevActivity) => ({
+                        ...prevActivity,
+                        startDate: date ? date.toISOString() : "",
+                      }))
+                    }
+                    renderInput={(params) => (
+                      <TextField {...params} fullWidth />
+                    )}
+                    disablePast
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <DateTimePicker
+                    label="Data Fine"
+                    value={dayjs(currentActivity.endDate)}
+                    onChange={(date) =>
+                      setCurrentActivity((prevActivity) => ({
+                        ...prevActivity,
+                        endDate: date ? date.toISOString() : "",
+                      }))
+                    }
+                    renderInput={(params) => (
+                      <TextField {...params} fullWidth />
+                    )}
+                    disablePast
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={currentActivity.inCalendar}
+                        onChange={handleActivityInputChange}
+                        name="inCalendar"
+                      />
+                    }
+                    label="In Calendario"
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControl fullWidth>
+                    <InputLabel>Stato</InputLabel>
+                    <Select
+                      fullWidth
+                      name="status"
+                      value={currentActivity.status}
+                      onChange={handleActivityInputChange}
+                    >
+                      {statusList.map((status) => (
+                        <MenuItem key={status} value={status}>
+                          {status}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+              </Grid>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenActivityDialog(false)} color="error">
+              Annulla
+            </Button>
+            <Button onClick={handleDialogSave} color="primary">
+              Salva
+            </Button>
+          </DialogActions>
+        </Dialog>
+        {orderError && (
+          <Typography color="error">Errore ordine: {orderError}</Typography>
+        )}
+        {activityError && (
+          <Typography color="error">
+            Errore attività: {activityError}
+          </Typography>
+        )}
+      </Paper>
+    </LocalizationProvider>
   );
 }

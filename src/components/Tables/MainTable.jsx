@@ -89,7 +89,7 @@ const MainTable = ({ orders, setOrders }) => {
         return "error";
       case "Completato":
         return "success";
-      case "in corso":
+      case "In corso":
         return "primary";
       case "In attesa":
         return "warning";
@@ -424,8 +424,8 @@ const MainTable = ({ orders, setOrders }) => {
                               <MenuItem disabled value="Standby">
                                 Standby
                               </MenuItem>
-                              <MenuItem value="in corso">In corso</MenuItem>
-                              <MenuItem value="in attesa">In attesa</MenuItem>
+                              <MenuItem value="In corso">In corso</MenuItem>
+                              <MenuItem value="In attesa">In attesa</MenuItem>
                               <MenuItem value="Completato">
                                 <b>Completato</b>
                               </MenuItem>
