@@ -10,17 +10,21 @@ import Cancel from "@mui/icons-material/Cancel";
 import CheckCircle from "@mui/icons-material/CheckCircle";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
-import { Button, Typography } from "@mui/material";
+import { Button } from "@mui/material";
 import { useDeleteOrder } from "../../hooks/useDeleteOrder";
 import NoOrders from "../Orders/NoOrders";
 
 export default function BasicTable({ orders }) {
   const navigate = useNavigate();
 
-  const { deleteOrder, loading, error, success } = useDeleteOrder();
+  const { deleteOrder, loading, success } = useDeleteOrder();
 
   const handleDelete = (orderId) => {
-    deleteOrder(orderId);
+    deleteOrder(orderId).then(() => {
+      if (loading === false) {
+        window.location.reload();
+      }
+    });
   };
   return (
     <>
@@ -88,14 +92,8 @@ export default function BasicTable({ orders }) {
                         onClick={() => handleDelete(order.id)}
                         color="error"
                       >
-                        {loading
-                          ? "Eliminando..."
-                          : success
-                          ? "Eliminato"
-                          : "Elimina"}
+                        Elimina
                       </Button>
-                      {/* {error && <p>Errore: {error}</p>}
-                  {success && <p>Ordine eliminato con successo!</p>} */}
                     </TableCell>
                   </TableRow>
                 ))}

@@ -106,7 +106,6 @@ export default function EditOrder({ order }) {
     );
 
     setOrderData(tempOrderData); // Sync temp data with order data
-    window.location.reload(); // Ricarica la pagina al termine delle modifiche
   };
 
   const handleActivityEdit = (index) => {
@@ -238,7 +237,7 @@ export default function EditOrder({ order }) {
                     disabled={orderLoading}
                   />
                 }
-                label="Confermato"
+                label="Confermato dal cliente"
               />
             </Grid>
           </Grid>

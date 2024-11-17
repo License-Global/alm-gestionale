@@ -8,11 +8,13 @@ import Impostazioni from "../pages/Impostazioni";
 import CalendarComponent from "../components/Calendar/Calendar";
 import Gestisci from "../pages/Gestisci";
 import EditOrderPage from "../pages/EditOrderPage";
+import Archivio from "../pages/Archivio";
 const AppRouter = () => (
   <Routes>
     <Route exact path="/" element={<Home />} />
     <Route path="/aggiungi" element={<AddOrder />} />
     <Route path="/gestisci" element={<Gestisci />} />
+    <Route path="/archivio" element={<Archivio />} />
     <Route path="/gestisci/:id" element={<EditOrderPage />} />
     <Route path="/login" element={<Login />} />
     <Route path="/impostazioni" element={<Impostazioni />} />
