@@ -13,11 +13,12 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@mui/material";
 import { useDeleteOrder } from "../../hooks/useDeleteOrder";
 import NoOrders from "../Orders/NoOrders";
+import useRealtime from "../../hooks/useRealTime";
 
 export default function BasicTable({ orders }) {
   const navigate = useNavigate();
 
-  const { deleteOrder, loading, success } = useDeleteOrder();
+  const { deleteOrder, loading } = useDeleteOrder();
 
   const handleDelete = (orderId) => {
     deleteOrder(orderId).then(() => {
