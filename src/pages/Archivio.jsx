@@ -1,7 +1,6 @@
 import React from "react";
+import useActiveUser from "../hooks/useActiveUser";
 
-const Archivio = () => {
-  return <div></div>;
-};
+const Archivio = () => {};
 
 export default Archivio;

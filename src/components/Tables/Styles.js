@@ -24,7 +24,7 @@ export const StyledTableHead = styled(TableHead)`
 `;
 
 export const StyledTableCell = styled(TableCell)`
-  padding: 16px;
+  padding: 12px;
 `;
 
 export const OrderInfoCard = styled(Paper)(({ theme }) => ({

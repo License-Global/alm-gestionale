@@ -70,7 +70,6 @@ const Chatbox = ({ authorizedUser, selectedItem, closeModal }) => {
                       : "flex-start",
                 }}
               >
-                {/* Label del mittente */}
                 <Typography
                   variant="caption"
                   sx={{
@@ -78,11 +77,8 @@ const Chatbox = ({ authorizedUser, selectedItem, closeModal }) => {
                     mb: 0.5, // Spazio sotto la label
                   }}
                 >
-                  {message.sender === authorizedUser
-                    ? `Tu ${dayjs(message.created_at).format(
-                        "DD/MM/YYYY HH:mm"
-                      )}`
-                    : message.sender}
+                  {message.sender}{" "}
+                  {dayjs(message.created_at).format("DD/MM/YYYY HH:mm")}
                 </Typography>
 
                 <Paper

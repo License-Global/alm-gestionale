@@ -3,12 +3,18 @@ import EditOrder from "../components/Orders/EditOrder";
 import { useParams } from "react-router-dom";
 import { useOrder } from "../hooks/useOrders";
 import { Typography } from "@mui/material";
+import { CircularProgress } from "@mui/material";
 
 const EditOrderPage = () => {
   const { id } = useParams();
   const { order, loading, error } = useOrder(id);
 
-  if (loading) return <p>Loading...</p>;
+  if (loading)
+    return (
+      <div style={{ display: "flex", justifyContent: "center" }}>
+        <CircularProgress />
+      </div>
+    );
   if (error) return <p>Error: {error.message}</p>;
   if (!order) return <p>Order not found</p>;
 

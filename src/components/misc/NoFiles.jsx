@@ -1,25 +1,24 @@
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 
-function NoOrders() {
+function NoFiles() {
   return (
     <Box
       display="flex"
-      mt="12px"
-      mb="12px"
       flexDirection="column"
       alignItems="center"
       justifyContent="center"
+      textAlign={"center"}
       height="100%"
     >
       <Typography variant="h4" color="textSecondary" gutterBottom>
-        Nessun ordine disponibile
+        Nessun file disponibile
       </Typography>
       <Typography variant="body1" color="textSecondary">
-        Al momento non ci sono ordini da mostrare
+        Al momento non ci sono file da mostrare
       </Typography>
     </Box>
   );
 }
 
-export default NoOrders;
+export default NoFiles;

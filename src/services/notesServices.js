@@ -28,7 +28,7 @@ export async function addNote(
   orderId,
   activityName,
   noteContent,
-  sender = "Admin"
+  sender = "admin"
 ) {
   // Recupera l'ordine con le attività
   const { data, error } = await supabase

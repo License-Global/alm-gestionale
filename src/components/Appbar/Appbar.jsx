@@ -22,6 +22,8 @@ import {
   CalendarMonth,
 } from "@mui/icons-material";
 import { supabase } from "../../supabase/supabaseClient";
+import useSession from "../../hooks/useSession";
+import BackButton from "../misc/BackButton";
 
 const StyledAppBar = styled(AppBar)`
   background: linear-gradient(
@@ -42,6 +44,7 @@ const Appbar = () => {
   const [tabValue, setTabValue] = useState(1);
   const navigate = useNavigate();
   const location = useLocation();
+  const { session } = useSession();
 
   const handleExit = () => {
     supabase.auth.signOut();
@@ -93,13 +96,15 @@ const Appbar = () => {
               >
                 <b>Calendario</b>
               </Button>
-              <Button
-                onClick={() => navigate("/impostazioni")}
-                color="inherit"
-                startIcon={<SettingsIcon />}
-              >
-                <b>Impostazioni</b>
-              </Button>
+              {session?.user.email === "alminfissi.dev@gmail.com" && (
+                <Button
+                  onClick={() => navigate("/impostazioni")}
+                  color="inherit"
+                  startIcon={<SettingsIcon />}
+                >
+                  <b>Impostazioni</b>
+                </Button>
+              )}
               <Button
                 onClick={() => handleExit()}
                 color="inherit"
@@ -109,37 +114,42 @@ const Appbar = () => {
               </Button>
             </Toolbar>
           </StyledAppBar>
-          <Tabs
-            value={tabValue}
-            onChange={handleTabChange}
-            centered
-            sx={{ bgcolor: "background.paper", mt: 3, mb: 3 }}
-          >
-            <StyledTab
-              sx={{ borderRadius: "30px" }}
-              icon={<HomeIcon />}
-              label="Home"
-              onClick={() => navigate("/")}
-            />
-            <StyledTab
-              sx={{ borderRadius: "30px" }}
-              icon={<AddIcon />}
-              label="Aggiungi"
-              onClick={() => navigate("/aggiungi")}
-            />
-            <StyledTab
-              sx={{ borderRadius: "30px" }}
-              icon={<SettingsIcon />}
-              label="Gestisci"
-              onClick={() => navigate("/gestisci")}
-            />
-            <StyledTab
-              sx={{ borderRadius: "30px" }}
-              icon={<ArchiveIcon />}
-              label="Archiviate"
-              onClick={() => navigate("/archivio")}
-            />
-          </Tabs>
+          {session?.user.email === "alminfissi.operator@gmail.com" &&
+            location.pathname !== "/" && <BackButton />}
+
+          {session?.user.email === "alminfissi.dev@gmail.com" && (
+            <Tabs
+              value={tabValue}
+              onChange={handleTabChange}
+              centered
+              sx={{ bgcolor: "background.paper", mt: 3, mb: 3 }}
+            >
+              <StyledTab
+                sx={{ borderRadius: "30px" }}
+                icon={<HomeIcon />}
+                label="Home"
+                onClick={() => navigate("/")}
+              />
+              <StyledTab
+                sx={{ borderRadius: "30px" }}
+                icon={<AddIcon />}
+                label="Aggiungi"
+                onClick={() => navigate("/aggiungi")}
+              />
+              <StyledTab
+                sx={{ borderRadius: "30px" }}
+                icon={<SettingsIcon />}
+                label="Gestisci"
+                onClick={() => navigate("/gestisci")}
+              />
+              <StyledTab
+                sx={{ borderRadius: "30px" }}
+                icon={<ArchiveIcon />}
+                label="Archiviate"
+                onClick={() => navigate("/archivio")}
+              />
+            </Tabs>
+          )}
         </Box>
       </>
     );

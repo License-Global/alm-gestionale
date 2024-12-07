@@ -40,6 +40,7 @@ export default function EditOrder({ order }) {
     loading: orderLoading,
     error: orderError,
     updateStartDate,
+    updateEndDate,
     updateIsConfirmed,
     updateOrderName,
     updateMaterialShelf,
@@ -76,6 +77,7 @@ export default function EditOrder({ order }) {
     const {
       orderName,
       startDate,
+      endDate,
       materialShelf,
       accessories,
       urgency,
@@ -85,6 +87,7 @@ export default function EditOrder({ order }) {
 
     await updateOrderName(order.id, orderName);
     await updateStartDate(order.id, startDate);
+    await updateEndDate(order.id, endDate);
     await updateMaterialShelf(order.id, materialShelf);
     await updateAccessories(order.id, accessories);
     await updateUrgency(order.id, urgency);
@@ -144,9 +147,8 @@ export default function EditOrder({ order }) {
         </Typography>
         <form>
           <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={4}>
               <TextField
-                fullWidth
                 label="Nome Ordine"
                 name="orderName"
                 value={tempOrderData.orderName}
@@ -154,7 +156,7 @@ export default function EditOrder({ order }) {
                 disabled={orderLoading}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={4}>
               <DateTimePicker
                 label="Data di Inizio"
                 value={dayjs(tempOrderData.startDate)}
@@ -171,7 +173,24 @@ export default function EditOrder({ order }) {
                 fullWidth
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={4}>
+              <DateTimePicker
+                label="Data di fine"
+                value={dayjs(tempOrderData.endDate)}
+                onChange={(date) =>
+                  setTempOrderData((prevData) => ({
+                    ...prevData,
+                    endDate: date ? date.toISOString() : "",
+                  }))
+                }
+                renderInput={(params) => (
+                  <TextField {...params} fullWidth disabled={orderLoading} />
+                )}
+                disablePast
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={3}>
               <TextField
                 fullWidth
                 label="Scaffale Materiale"
@@ -181,7 +200,7 @@ export default function EditOrder({ order }) {
                 disabled={orderLoading}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={3}>
               <TextField
                 fullWidth
                 label="Accessori"
@@ -191,7 +210,7 @@ export default function EditOrder({ order }) {
                 disabled={orderLoading}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={3}>
               <FormControl fullWidth>
                 <InputLabel>Urgenza</InputLabel>
                 <Select
@@ -209,8 +228,9 @@ export default function EditOrder({ order }) {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={3}>
               <FormControl fullWidth>
+                <InputLabel>Manager dell'Ordine</InputLabel>
                 <InputLabel>Manager dell'Ordine</InputLabel>
                 <Select
                   label="Manager dell'Ordine"
@@ -305,7 +325,7 @@ export default function EditOrder({ order }) {
           <DialogTitle>Modifica Attività</DialogTitle>
           <DialogContent>
             {currentActivity && (
-              <Grid container spacing={2}>
+              <Grid sx={{ mt: "2px" }} container spacing={2}>
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
@@ -317,13 +337,22 @@ export default function EditOrder({ order }) {
                   />
                 </Grid>
                 <Grid item xs={12}>
-                  <TextField
-                    fullWidth
+                  <Select
                     label="Responsabile"
                     name="responsible"
                     value={currentActivity.responsible}
                     onChange={handleActivityInputChange}
-                  />
+                    disabled={orderLoading}
+                  >
+                    {personale.personale.map((person) => (
+                      <MenuItem
+                        key={person.workerName}
+                        value={person.workerName}
+                      >
+                        {person.workerName}
+                      </MenuItem>
+                    ))}
+                  </Select>
                 </Grid>
                 <Grid item xs={12}>
                   <DateTimePicker

@@ -29,6 +29,7 @@ import {
   fetchActivitiesSchemes,
 } from "../services/activitiesService";
 import ClassicTable from "../components/Tables/ClassicTable";
+import { createBucket } from "../services/bucketServices";
 
 const OrderForm = () => {
   const { session, loading } = useSession();
@@ -44,6 +45,7 @@ const OrderForm = () => {
 
   const [orderName, setOrderName] = useState("");
   const [selectedDate, setSelectedDate] = useState(dayjs().add(1, "minute"));
+  const [endDate, setEndDate] = useState(dayjs());
   const [materialShelf, setMaterialShelf] = useState("");
   const [urgency, setUrgency] = useState("");
   const [accessories, setAccessories] = useState("");
@@ -70,6 +72,7 @@ const OrderForm = () => {
   const [formValues, setFormValues] = useState({
     orderName: orderName,
     startDate: selectedDate,
+    endDate: endDate,
     materialShelf: materialShelf,
     urgency: urgency,
     accessories: accessories,
@@ -79,6 +82,7 @@ const OrderForm = () => {
     setFormValues({
       orderName: orderName,
       startDate: selectedDate.toDate(),
+      endDate: endDate.toDate(),
       materialShelf: materialShelf,
       urgency: urgency,
       accessories: accessories,
@@ -87,6 +91,7 @@ const OrderForm = () => {
   }, [
     orderName,
     selectedDate,
+    endDate,
     materialShelf,
     urgency,
     accessories,
@@ -158,9 +163,9 @@ const OrderForm = () => {
         };
       }
 
-      await createOrder(orderData); // Se non ci sono errori, si considera completato con successo
-      console.log("Ordine creato con successo");
+      await createOrder(orderData);
       navigate("/");
+      createBucket(orderData.orderName);
     } catch (error) {
       console.error("Errore durante la creazione dell'ordine:", error);
       // Gestione dell'errore, come mostrare un messaggio all'utente
@@ -188,7 +193,7 @@ const OrderForm = () => {
             Dettagli commessa
           </Typography>
           <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={4}>
               <TextField
                 fullWidth
                 label="Nome commessa"
@@ -207,7 +212,7 @@ const OrderForm = () => {
                 onChange={(e) => setOrderName(e.target.value)}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={4}>
               <DateTimePicker
                 disablePast
                 sx={{ width: "100%" }}
@@ -216,7 +221,17 @@ const OrderForm = () => {
                 onChange={(newValue) => setSelectedDate(newValue)}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={4}>
+              <DateTimePicker
+                disablePast
+                minDateTime={selectedDate || dayjs()}
+                sx={{ width: "100%" }}
+                label="Fine commessa"
+                value={endDate}
+                onChange={(newValue) => setEndDate(newValue)}
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
               <TextField
                 fullWidth
                 label="Scaffale accessori"
@@ -235,7 +250,7 @@ const OrderForm = () => {
                 }}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={4}>
               <TextField
                 fullWidth
                 label={"Scaffale materiale"}

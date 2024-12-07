@@ -75,6 +75,7 @@ const AddTable = ({ genericOrderData, personale, newOrderHandler }) => {
     setNewOrder({
       orderName: genericOrderData.orderName,
       startDate: genericOrderData.startDate,
+      endDate: genericOrderData.endDate,
       materialShelf: genericOrderData.materialShelf,
       accessories: genericOrderData.accessories,
       internal_id: genericOrderData.internal_id,

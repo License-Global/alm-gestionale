@@ -26,6 +26,8 @@ export const useOrderUpdate = () => {
   // Funzioni per aggiornare ciascun campo
   const updateStartDate = (orderId, startDate) =>
     updateField(orderId, "startDate", startDate);
+  const updateEndDate = (orderId, endDate) =>
+    updateField(orderId, "endDate", endDate);
   const updateIsConfirmed = (orderId, isConfirmed) =>
     updateField(orderId, "isConfirmed", isConfirmed);
   const updateOrderName = (orderId, orderName) =>
@@ -43,6 +45,7 @@ export const useOrderUpdate = () => {
     loading,
     error,
     updateStartDate,
+    updateEndDate,
     updateIsConfirmed,
     updateOrderName,
     updateMaterialShelf,

@@ -153,7 +153,6 @@ export const createOrder = async (newOrder) => {
     console.error("Errore nella creazione dell'ordine:", error);
     return null;
   }
-  console.log(data);
 };
 
 export const createSchema = async (schemaName, activities) => {
