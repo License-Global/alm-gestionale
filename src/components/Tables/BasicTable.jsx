@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@mui/material";
 import { useDeleteOrder } from "../../hooks/useDeleteOrder";
 import NoOrders from "../Orders/NoOrders";
+import { deleteBucket } from "../../services/bucketServices";
 import useRealtime from "../../hooks/useRealTime";
 
 export default function BasicTable({ orders }) {
@@ -20,10 +21,12 @@ export default function BasicTable({ orders }) {
 
   const { deleteOrder, loading } = useDeleteOrder();
 
-  const handleDelete = (orderId) => {
+  const handleDelete = (orderId, orderName) => {
     deleteOrder(orderId).then(() => {
       if (loading === false) {
-        window.location.reload();
+        deleteBucket(orderName).then(() => {
+          window.location.reload();
+        });
       }
     });
   };
@@ -90,7 +93,7 @@ export default function BasicTable({ orders }) {
                       {" "}
                       <Button
                         variant="contained"
-                        onClick={() => handleDelete(order.id)}
+                        onClick={() => handleDelete(order.id, order.orderName)}
                         color="error"
                       >
                         Elimina

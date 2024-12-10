@@ -23,3 +23,23 @@ export const fetchOrderById = async (orderId) => {
 
   return data;
 };
+
+export const archiveOrder = async (orderId) => {
+  try {
+    const { data, error } = await supabase
+      .from("orders") // Nome della tabella
+      .update({ isArchived: true }) // Aggiorna la colonna isArchived
+      .eq("id", orderId); // Filtra per ID dell'ordine
+
+    if (error) {
+      console.error("Errore durante l'archiviazione dell'ordine:", error);
+      return { success: false, error };
+    }
+
+    console.log("Ordine archiviato con successo:", data);
+    return { success: true, data };
+  } catch (err) {
+    console.error("Errore sconosciuto:", err);
+    return { success: false, error: err };
+  }
+};

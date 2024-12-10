@@ -49,6 +49,8 @@ import {
 import dayjs from "dayjs";
 
 import { updateActivityStatusInOrder } from "../../services/activitiesService";
+import { deleteBucket } from "../../services/bucketServices";
+import { archiveOrder } from "../../services/orderService";
 import NoOrders from "../Orders/NoOrders";
 import Chatbox from "../Chat/Chatbox";
 import AdminDocsModal from "../misc/AdminDocsModal";
@@ -59,8 +61,30 @@ const MainTable = ({ order }) => {
   const [open, setOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedItemDocs, setSelectedItemDocs] = useState(null);
-  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("lg"));
   const messagesContainerRef = useRef(null);
+
+  //Archivio
+  const [loadingArchivio, setLoadingArchivio] = useState(false);
+  const [successArchivio, setSuccessArchivio] = useState(false);
+  const [errorArchivio, setErrorArchivio] = useState(null);
+
+  const handleArchive = async () => {
+    setLoadingArchivio(true);
+    setSuccessArchivio(false);
+    setErrorArchivio(null);
+
+    const result = await archiveOrder(order.id);
+
+    if (result.success) {
+      deleteBucket(order.orderName);
+      setSuccessArchivio(true);
+    } else {
+      setErrorArchivio(result.error);
+    }
+
+    setLoadingArchivio(false);
+  };
 
   const handleOpenModal = (item, orderId) => {
     setSelectedItem({ ...item, orderId });
@@ -445,7 +469,13 @@ const MainTable = ({ order }) => {
             <Button
               variant="contained"
               color="secondary"
-              sx={{ mt: "15px", fontWeight: "bold" }}
+              sx={
+                authorizedUser !== "admin"
+                  ? { display: "none" }
+                  : { mt: "15px", fontWeight: "bold" }
+              }
+              onClick={handleArchive}
+              disabled={loadingArchivio}
             >
               Archivia
             </Button>
