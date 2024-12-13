@@ -22,6 +22,8 @@ import {
   Flag,
 } from "@mui/icons-material";
 import { useReactToPrint } from "react-to-print";
+import { useParams } from "react-router-dom";
+import { useArchivedOrder } from "../../hooks/useArchivedOrder";
 
 const StyledCard = styled(Card)(({ theme }) => ({
   maxWidth: "90vw",
@@ -110,275 +112,233 @@ const urgencyColors = {
 };
 
 // Dati di esempio basati sullo schema del CSV
-const orderData = {
-  id: "65",
-  created_at: "2024-12-09 22:19:12.433969+00",
-  startDate: "2024-12-11 19:15:04.112+00",
-  isConfirmed: "false",
-  orderName: "Prova scorrimento",
-  materialShelf: "A48",
-  accessories: "A12",
-  internal_id: "2024/0065",
-  urgency: "Bassa",
-  orderManager: "Tizio",
-  activities: JSON.stringify([
-    {
-      name: "Scorre",
-      color: "#eb144c",
-      status: "Standby",
-      responsible: "Mario",
-      startDate: "2024-12-10T20:45:04.158Z",
-      endDate: "2024-12-10T20:45:04.158Z",
-    },
-    {
-      name: "Giu",
-      color: "#9900ef",
-      status: "Standby",
-      responsible: "Tizio",
-      startDate: "2024-12-10T16:20:04.158Z",
-      endDate: "2024-12-10T17:25:04.158Z",
-    },
-    {
-      name: "Sotto",
-      color: "#00d084",
-      status: "Standby",
-      responsible: "Mario",
-      startDate: "2024-12-10T20:10:04.158Z",
-      endDate: "2024-12-12T22:10:04.158Z",
-    },
-    {
-      name: "Basso",
-      color: "#0693e3",
-      status: "Standby",
-      responsible: "Caio",
-      startDate: "2024-12-10T18:15:04.158Z",
-      endDate: "2024-12-10T22:10:04.158Z",
-    },
-  ]),
-  endDate: "2024-12-12 19:10:04.112+00",
-  isArchived: "true",
-};
 
 export default function OrderSummary() {
-  const activities = JSON.parse(orderData.activities);
+  const { id } = useParams();
+  const { order } = useArchivedOrder(id);
+
   const contentRef = useRef(null);
   const reactToPrintFn = useReactToPrint({ contentRef });
 
   return (
-    <StyledCard>
-      <button
-        onClick={() => reactToPrintFn()}
-        style={{
-          display: "block", // Mostra normalmente
-          marginTop: "20px",
-          "@media print": { display: "none" }, // Nascondi durante la stampa
-        }}
-      >
-        Stampa
-      </button>
-      <div ref={contentRef}>
-        <HeaderBox>
-          <Typography variant="h4" gutterBottom>
-            Riepilogo Commessa
-          </Typography>
-          <Typography variant="h5">{orderData.orderName}</Typography>
-        </HeaderBox>
-        <CardContent>
-          <Grid container spacing={4}>
-            <Grid item xs={12} md={6}>
-              <InfoBox>
-                <IconWrapper>
-                  <Assignment fontSize="inherit" />
-                </IconWrapper>
-                <Box>
-                  <Typography variant="subtitle1" color="textSecondary">
-                    ID Commessa
-                  </Typography>
-                  <Typography variant="h6">{orderData.internal_id}</Typography>
-                </Box>
-              </InfoBox>
-              <InfoBox>
-                <IconWrapper>
-                  <CalendarToday fontSize="inherit" />
-                </IconWrapper>
-                <Box>
-                  <Typography variant="subtitle1" color="textSecondary">
-                    Data Inizio
-                  </Typography>
-                  <Typography variant="h6">
-                    {new Date(orderData.startDate).toLocaleString()}
-                  </Typography>
-                </Box>
-              </InfoBox>
-              <InfoBox>
-                <IconWrapper>
-                  <AccessTime fontSize="inherit" />
-                </IconWrapper>
-                <Box>
-                  <Typography variant="subtitle1" color="textSecondary">
-                    Data Fine
-                  </Typography>
-                  <Typography variant="h6">
-                    {new Date(orderData.endDate).toLocaleString()}
-                  </Typography>
-                </Box>
-              </InfoBox>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <InfoBox>
-                <IconWrapper>
-                  <Person fontSize="inherit" />
-                </IconWrapper>
-                <Box>
-                  <Typography variant="subtitle1" color="textSecondary">
-                    Responsabile Commessa
-                  </Typography>
-                  <Typography variant="h6">{orderData.orderManager}</Typography>
-                </Box>
-              </InfoBox>
-              <InfoBox>
-                <IconWrapper>
-                  <Flag fontSize="inherit" />
-                </IconWrapper>
-                <Box>
-                  <Typography variant="subtitle1" color="textSecondary">
-                    Stato
-                  </Typography>
-                  <Typography variant="h6">
-                    {orderData.isConfirmed === "true"
-                      ? "Confermato"
-                      : "Non Confermato"}
-                  </Typography>
-                </Box>
-              </InfoBox>
-              <Box mt={3}>
-                <ColoredChip
-                  label={`Urgenza: ${orderData.urgency}`}
-                  urgencycolor={urgencyColors[orderData.urgency] || "#999"}
-                  icon={<Flag style={{ fontSize: "1.5rem" }} />}
-                />
-              </Box>
-            </Grid>
-          </Grid>
-
-          <Divider sx={{ my: 4 }} />
-
-          <Grid container spacing={4}>
-            <Grid item xs={12} md={6}>
-              <Typography variant="h6" gutterBottom>
-                <Inventory
-                  fontSize="medium"
-                  style={{ verticalAlign: "middle", marginRight: "8px" }}
-                />
-                Materiali
-              </Typography>
-              <InfoBox>
-                <Typography variant="subtitle1" color="textSecondary">
-                  Scaffale Materiali:
-                </Typography>
-                <Typography variant="body1" style={{ marginLeft: "8px" }}>
-                  {orderData.materialShelf}
-                </Typography>
-              </InfoBox>
-              <InfoBox>
-                <Typography variant="subtitle1" color="textSecondary">
-                  Accessori:
-                </Typography>
-                <Typography variant="body1" style={{ marginLeft: "8px" }}>
-                  {orderData.accessories}
-                </Typography>
-              </InfoBox>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Typography variant="h6" gutterBottom>
-                <Build
-                  fontSize="medium"
-                  style={{ verticalAlign: "middle", marginRight: "8px" }}
-                />
-                Progresso Attività
-              </Typography>
-              <LinearProgress
-                variant="determinate"
-                value={70}
-                sx={{ height: 12, borderRadius: 6, mb: 2 }}
-              />
-              <Typography variant="body1" color="textSecondary">
-                70% Completato
-              </Typography>
-            </Grid>
-          </Grid>
-
-          <div style={{ pageBreakBefore: "always", breakBefore: "page" }}></div>
-          <Divider sx={{ my: 4, "@media print": { visibility: "hidden" } }} />
-
-          <Typography
-            variant="h5"
-            gutterBottom
-            sx={{
-              fontWeight: "bold",
-              color: "#2196f3",
-              mb: 3,
-            }}
-          >
-            <Build
-              fontSize="medium"
-              style={{ verticalAlign: "middle", marginRight: "12px" }}
-            />
-            Attività della Commessa
-          </Typography>
-
-          {activities.map((activity, index) => (
-            <ActivityPaper key={index} elevation={3}>
-              <ActivityHeader>
-                <Box display="flex" alignItems="center">
-                  <Avatar
-                    sx={{
-                      bgcolor: activity.color,
-                      width: 48,
-                      height: 48,
-                      fontSize: "1.25rem",
-                      mr: 2,
-                    }}
-                  >
-                    {" "}
-                  </Avatar>
+    order && (
+      <StyledCard>
+        <button
+          onClick={() => reactToPrintFn()}
+          style={{
+            display: "block", // Mostra normalmente
+            marginTop: "20px",
+            "@media print": { display: "none" }, // Nascondi durante la stampa
+          }}
+        >
+          Stampa
+        </button>
+        <div ref={contentRef}>
+          <HeaderBox>
+            <Typography variant="h4" gutterBottom>
+              Riepilogo Commessa
+            </Typography>
+            <Typography variant="h5">{order.orderName}</Typography>
+          </HeaderBox>
+          <CardContent>
+            <Grid container spacing={4}>
+              <Grid item xs={12} md={6}>
+                <InfoBox>
+                  <IconWrapper>
+                    <Assignment fontSize="inherit" />
+                  </IconWrapper>
                   <Box>
-                    <Typography variant="h6">{activity.name}</Typography>
                     <Typography variant="subtitle1" color="textSecondary">
-                      Responsabile: {activity.responsible}
+                      ID Commessa
+                    </Typography>
+                    <Typography variant="h6">{order.internal_id}</Typography>
+                  </Box>
+                </InfoBox>
+                <InfoBox>
+                  <IconWrapper>
+                    <CalendarToday fontSize="inherit" />
+                  </IconWrapper>
+                  <Box>
+                    <Typography variant="subtitle1" color="textSecondary">
+                      Data Inizio
+                    </Typography>
+                    <Typography variant="h6">
+                      {new Date(order.startDate).toLocaleString()}
                     </Typography>
                   </Box>
+                </InfoBox>
+                <InfoBox>
+                  <IconWrapper>
+                    <AccessTime fontSize="inherit" />
+                  </IconWrapper>
+                  <Box>
+                    <Typography variant="subtitle1" color="textSecondary">
+                      Data Fine
+                    </Typography>
+                    <Typography variant="h6">
+                      {new Date(order.endDate).toLocaleString()}
+                    </Typography>
+                  </Box>
+                </InfoBox>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <InfoBox>
+                  <IconWrapper>
+                    <Person fontSize="inherit" />
+                  </IconWrapper>
+                  <Box>
+                    <Typography variant="subtitle1" color="textSecondary">
+                      Responsabile Commessa
+                    </Typography>
+                    <Typography variant="h6">{order.orderManager}</Typography>
+                  </Box>
+                </InfoBox>
+                <InfoBox>
+                  <IconWrapper>
+                    <Flag fontSize="inherit" />
+                  </IconWrapper>
+                  <Box>
+                    <Typography variant="subtitle1" color="textSecondary">
+                      Stato
+                    </Typography>
+                    <Typography variant="h6">
+                      {order.isConfirmed === "true"
+                        ? "Confermato"
+                        : "Non Confermato"}
+                    </Typography>
+                  </Box>
+                </InfoBox>
+                <Box mt={3}>
+                  <ColoredChip
+                    label={`Urgenza: ${order.urgency}`}
+                    urgencycolor={urgencyColors[order.urgency] || "#999"}
+                    icon={<Flag style={{ fontSize: "1.5rem" }} />}
+                  />
                 </Box>
-                <Chip
-                  label={activity.status}
-                  color={
-                    activity.status === "Completato" ? "success" : "default"
-                  }
-                  sx={{ fontSize: "0.9rem", padding: "16px 12px" }}
+              </Grid>
+            </Grid>
+
+            <Divider sx={{ my: 4 }} />
+
+            <Grid container spacing={4}>
+              <Grid item xs={12} md={6}>
+                <Typography variant="h6" gutterBottom>
+                  <Inventory
+                    fontSize="medium"
+                    style={{ verticalAlign: "middle", marginRight: "8px" }}
+                  />
+                  Materiali
+                </Typography>
+                <InfoBox>
+                  <Typography variant="subtitle1" color="textSecondary">
+                    Scaffale Materiali:
+                  </Typography>
+                  <Typography variant="body1" style={{ marginLeft: "8px" }}>
+                    {order.materialShelf}
+                  </Typography>
+                </InfoBox>
+                <InfoBox>
+                  <Typography variant="subtitle1" color="textSecondary">
+                    Accessori:
+                  </Typography>
+                  <Typography variant="body1" style={{ marginLeft: "8px" }}>
+                    {order.accessories}
+                  </Typography>
+                </InfoBox>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Typography variant="h6" gutterBottom>
+                  <Build
+                    fontSize="medium"
+                    style={{ verticalAlign: "middle", marginRight: "8px" }}
+                  />
+                  Progresso Attività
+                </Typography>
+                <LinearProgress
+                  variant="determinate"
+                  value={70}
+                  sx={{ height: 12, borderRadius: 6, mb: 2 }}
                 />
-              </ActivityHeader>
-              <ActivityProgress
-                variant="determinate"
-                value={activity.status === "Completato" ? 100 : 50}
-                sx={{ mb: 2 }}
+                <Typography variant="body1" color="textSecondary">
+                  70% Completato
+                </Typography>
+              </Grid>
+            </Grid>
+
+            <div
+              style={{ pageBreakBefore: "always", breakBefore: "page" }}
+            ></div>
+            <Divider sx={{ my: 4, "@media print": { visibility: "hidden" } }} />
+
+            <Typography
+              variant="h5"
+              gutterBottom
+              sx={{
+                fontWeight: "bold",
+                color: "#2196f3",
+                mb: 3,
+              }}
+            >
+              <Build
+                fontSize="medium"
+                style={{ verticalAlign: "middle", marginRight: "12px" }}
               />
-              <Typography variant="h6" color="textSecondary">
-                {activity.status === "Completato" ? "Completato" : "In corso"}
-              </Typography>
-              <Box mt={2}>
-                <Typography variant="body1">
-                  <strong>Data Inizio:</strong>{" "}
-                  {new Date(activity.startDate).toLocaleString()}
+              Attività della Commessa
+            </Typography>
+
+            {order.activities.map((activity, index) => (
+              <ActivityPaper key={index} elevation={3}>
+                <ActivityHeader>
+                  <Box display="flex" alignItems="center">
+                    <Avatar
+                      sx={{
+                        bgcolor: activity.color,
+                        width: 48,
+                        height: 48,
+                        fontSize: "1.25rem",
+                        mr: 2,
+                      }}
+                    >
+                      {" "}
+                    </Avatar>
+                    <Box>
+                      <Typography variant="h6">{activity.name}</Typography>
+                      <Typography variant="subtitle1" color="textSecondary">
+                        Responsabile: {activity.responsible}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Chip
+                    label={activity.status}
+                    color={
+                      activity.status === "Completato" ? "success" : "default"
+                    }
+                    sx={{ fontSize: "0.9rem", padding: "16px 12px" }}
+                  />
+                </ActivityHeader>
+                <ActivityProgress
+                  variant="determinate"
+                  value={activity.status === "Completato" ? 100 : 50}
+                  sx={{ mb: 2 }}
+                />
+                <Typography variant="h6" color="textSecondary">
+                  {activity.status === "Completato" ? "Completato" : "In corso"}
                 </Typography>
-                <Typography variant="body1">
-                  <strong>Data Fine:</strong>{" "}
-                  {new Date(activity.endDate).toLocaleString()}
-                </Typography>
-              </Box>
-            </ActivityPaper>
-          ))}
-        </CardContent>
-      </div>
-    </StyledCard>
+                <Box mt={2}>
+                  <Typography variant="body1">
+                    <strong>Data Inizio:</strong>{" "}
+                    {new Date(activity.startDate).toLocaleString()}
+                  </Typography>
+                  <Typography variant="body1">
+                    <strong>Data Fine:</strong>{" "}
+                    {new Date(activity.endDate).toLocaleString()}
+                  </Typography>
+                </Box>
+              </ActivityPaper>
+            ))}
+          </CardContent>
+        </div>
+      </StyledCard>
+    )
   );
 }

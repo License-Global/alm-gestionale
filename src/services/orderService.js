@@ -9,10 +9,31 @@ export const fetchOrders = async () => {
   }
   return data;
 };
+export const fetchArchivedOrders = async () => {
+  const { data, error } = await supabase.from("archived").select(`*`);
+  if (error) {
+    console.error("Error fetching orders:", error);
+    throw error;
+  }
+  return data;
+};
 
 export const fetchOrderById = async (orderId) => {
   const { data, error } = await supabase
     .from("orders")
+    .select("*")
+    .eq("id", orderId)
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+};
+export const fetchArchivedOrderById = async (orderId) => {
+  const { data, error } = await supabase
+    .from("archived")
     .select("*")
     .eq("id", orderId)
     .single();

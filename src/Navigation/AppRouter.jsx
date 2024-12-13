@@ -10,6 +10,7 @@ import Gestisci from "../pages/Gestisci";
 import EditOrderPage from "../pages/EditOrderPage";
 import Archivio from "../pages/Archivio";
 import ProtectedRoute from "./ProtectedRoute";
+import OrderSummary from "../components/Orders/OrderSummary";
 const AppRouter = () => (
   <Routes>
     <Route
@@ -38,6 +39,14 @@ const AppRouter = () => (
       }
     />
     <Route
+      path="/gestisci/:id"
+      element={
+        <ProtectedRoute>
+          <EditOrderPage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
       path="/archivio"
       element={
         <ProtectedRoute>
@@ -46,10 +55,10 @@ const AppRouter = () => (
       }
     />
     <Route
-      path="/gestisci/:id"
+      path="/archivio/:id"
       element={
         <ProtectedRoute>
-          <EditOrderPage />
+          <OrderSummary />
         </ProtectedRoute>
       }
     />

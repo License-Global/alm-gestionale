@@ -30,6 +30,7 @@ import {
 } from "../services/activitiesService";
 import ClassicTable from "../components/Tables/ClassicTable";
 import { createBucket } from "../services/bucketServices";
+import { PageContainer, SectionTitle } from "../styles/ArchiveDashboardStyles";
 
 const OrderForm = () => {
   const { session, loading } = useSession();
@@ -173,241 +174,229 @@ const OrderForm = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <form onSubmit={handleConfirm}>
-        <Typography
-          variant="h4"
-          gutterBottom
-          sx={{
-            fontFamily: "Montserrat, sans-serif",
-            fontWeight: "bold",
-            textAlign: "center",
-          }}
-        >
-          Nuova commessa
-        </Typography>
-
-        {/* Prima sezione del form */}
-        <Paper sx={{ p: 3, mb: 3, boxShadow: " 15px 15px 15px #ccc" }}>
-          <Typography variant="h6" gutterBottom>
-            Dettagli commessa
-          </Typography>
-          <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid item xs={12} sm={4}>
-              <TextField
-                fullWidth
-                label="Nome commessa"
-                name="orderName"
-                required
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Assignment />
-                      </InputAdornment>
-                    ),
-                  },
-                }}
-                value={orderName}
-                onChange={(e) => setOrderName(e.target.value)}
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <DateTimePicker
-                disablePast
-                sx={{ width: "100%" }}
-                label="Inizio commessa"
-                value={selectedDate}
-                onChange={(newValue) => setSelectedDate(newValue)}
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <DateTimePicker
-                disablePast
-                minDateTime={selectedDate || dayjs()}
-                sx={{ width: "100%" }}
-                label="Fine commessa"
-                value={endDate}
-                onChange={(newValue) => setEndDate(newValue)}
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <TextField
-                fullWidth
-                label="Scaffale accessori"
-                required
-                name="accessories"
-                value={formValues.accessories}
-                onChange={(e) => setAccessories(e.target.value)}
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Construction />
-                      </InputAdornment>
-                    ),
-                  },
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <TextField
-                fullWidth
-                label={"Scaffale materiale"}
-                required
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Inventory2 />
-                      </InputAdornment>
-                    ),
-                  },
-                }}
-                name="materialShelf"
-                value={materialShelf}
-                onChange={(e) => setMaterialShelf(e.target.value)}
-              />
-            </Grid>
-          </Grid>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel id="orderPriority-label">Priorità</InputLabel>
-                <Select
-                  labelId="orderPriority-label"
-                  required
-                  label="Priorità"
-                  name="urgency"
-                  value={urgency}
-                  onChange={(e) => setUrgency(e.target.value)}
-                >
-                  <MenuItem value="Urgente">Urgente</MenuItem>
-                  <MenuItem value="Alta">Alta</MenuItem>
-                  <MenuItem value="Media">Media</MenuItem>
-                  <MenuItem value="Bassa">Bassa</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel id="orderManager-label">Responsabile</InputLabel>
-                <Select
-                  required
-                  labelId="orderManager-label"
-                  label="Responsabile"
-                  name="orderManager"
-                  value={orderManager}
-                  onChange={(e) => setOrderManager(e.target.value)}
-                >
-                  {personale.map((worker, index) => (
-                    <MenuItem key={index} value={worker.workerName}>
-                      {worker.workerName}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-          </Grid>
-        </Paper>
-        <Divider sx={{ my: 4 }} />
-        <Paper sx={{ p: 3, boxShadow: " 15px 15px 15px #ccc" }}>
-          <Typography sx={{ mb: 2 }} fontSize={28} variant="h6">
-            Attività
-          </Typography>
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Typography fontSize={14} variant="h6">
-              Memorizzare schema?
-            </Typography>
-            <Switch
-              checked={isNewSchema}
-              onChange={() => setIsNewSchema(!isNewSchema)}
-              color="primary"
-            />
-          </Box>
-          <AnimatePresence mode="popLayout">
-            {isNewSchema ? (
-              <motion.div
-                key="new-schema"
-                initial={{ opacity: 0, scale: 0.8, y: -20 }} // Inizia invisibile e più piccolo
-                animate={{ opacity: 1, scale: 1, y: 0 }} // Appare con una transizione fluida
-                exit={{ opacity: 0, scale: 0.8, y: 20 }} // Scompare con effetto di riduzione e scorrimento verso il basso
-                transition={{
-                  duration: 1.0, // Durata della transizione
-                  type: "spring", // Usa una transizione di tipo molla
-                  stiffness: 300,
-                  damping: 20,
-                }}
-              >
+    <PageContainer>
+      <Box sx={{ p: 3 }}>
+        <form onSubmit={handleConfirm}>
+          {/* Prima sezione del form */}
+          <Paper sx={{ p: 3, mb: 3, boxShadow: " 15px 15px 15px #ccc" }}>
+            <SectionTitle variant="h4">Dettagli commessa</SectionTitle>
+            <Grid container spacing={2} sx={{ mb: 3 }}>
+              <Grid item xs={12} sm={4}>
                 <TextField
-                  value={newSchemaName}
-                  required={true}
-                  onChange={(e) => setNewSchemaName(e.target.value)}
-                  id="standard-basic"
-                  label="Nome schema"
-                  variant="outlined"
+                  fullWidth
+                  label="Nome commessa"
+                  name="orderName"
+                  required
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Assignment />
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
+                  value={orderName}
+                  onChange={(e) => setOrderName(e.target.value)}
                 />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="select-schema"
-                initial={{ opacity: 0, scale: 0.5 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.5 }}
-                transition={{ duration: 0.3 }}
-              >
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <DateTimePicker
+                  disablePast
+                  sx={{ width: "100%" }}
+                  label="Inizio commessa"
+                  value={selectedDate}
+                  onChange={(newValue) => setSelectedDate(newValue)}
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <DateTimePicker
+                  disablePast
+                  minDateTime={selectedDate || dayjs()}
+                  sx={{ width: "100%" }}
+                  label="Fine commessa"
+                  value={endDate}
+                  onChange={(newValue) => setEndDate(newValue)}
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label="Scaffale accessori"
+                  required
+                  name="accessories"
+                  value={formValues.accessories}
+                  onChange={(e) => setAccessories(e.target.value)}
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Construction />
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label={"Scaffale materiale"}
+                  required
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Inventory2 />
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
+                  name="materialShelf"
+                  value={materialShelf}
+                  onChange={(e) => setMaterialShelf(e.target.value)}
+                />
+              </Grid>
+            </Grid>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
                 <FormControl fullWidth>
-                  <InputLabel id="demo-simple-select-label">Schema</InputLabel>
+                  <InputLabel id="orderPriority-label">Priorità</InputLabel>
                   <Select
-                    sx={{ width: 300 }}
-                    labelId="demo-simple-select-label"
-                    id="demo-simple-select"
-                    value={selectedSchema}
-                    label="Scegli schema"
-                    onChange={(e) => setSelectedSchema(e.target.value)}
+                    labelId="orderPriority-label"
+                    required
+                    label="Priorità"
+                    name="urgency"
+                    value={urgency}
+                    onChange={(e) => setUrgency(e.target.value)}
                   >
-                    <MenuItem value="">
-                      <em>Nessuno</em>
-                    </MenuItem>
-                    {activitiesSchemes.map((schema, index) => (
-                      <MenuItem key={index} value={schema}>
-                        {schema.schemaName}
+                    <MenuItem value="Urgente">Urgente</MenuItem>
+                    <MenuItem value="Alta">Alta</MenuItem>
+                    <MenuItem value="Media">Media</MenuItem>
+                    <MenuItem value="Bassa">Bassa</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel id="orderManager-label">Responsabile</InputLabel>
+                  <Select
+                    required
+                    labelId="orderManager-label"
+                    label="Responsabile"
+                    name="orderManager"
+                    value={orderManager}
+                    onChange={(e) => setOrderManager(e.target.value)}
+                  >
+                    {personale.map((worker, index) => (
+                      <MenuItem key={index} value={worker.workerName}>
+                        {worker.workerName}
                       </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
-              </motion.div>
+              </Grid>
+            </Grid>
+          </Paper>
+
+          <Paper sx={{ p: 3, boxShadow: " 15px 15px 15px #ccc" }}>
+            <SectionTitle variant="h4">Attività</SectionTitle>
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              <Typography fontSize={14} variant="h6">
+                Memorizzare schema?
+              </Typography>
+              <Switch
+                checked={isNewSchema}
+                onChange={() => setIsNewSchema(!isNewSchema)}
+                color="primary"
+              />
+            </Box>
+            <AnimatePresence mode="popLayout">
+              {isNewSchema ? (
+                <motion.div
+                  key="new-schema"
+                  initial={{ opacity: 0, scale: 0.8, y: -20 }} // Inizia invisibile e più piccolo
+                  animate={{ opacity: 1, scale: 1, y: 0 }} // Appare con una transizione fluida
+                  exit={{ opacity: 0, scale: 0.8, y: 20 }} // Scompare con effetto di riduzione e scorrimento verso il basso
+                  transition={{
+                    duration: 1.0, // Durata della transizione
+                    type: "spring", // Usa una transizione di tipo molla
+                    stiffness: 300,
+                    damping: 20,
+                  }}
+                >
+                  <TextField
+                    value={newSchemaName}
+                    required={true}
+                    onChange={(e) => setNewSchemaName(e.target.value)}
+                    id="standard-basic"
+                    label="Nome schema"
+                    variant="outlined"
+                  />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="select-schema"
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <FormControl fullWidth>
+                    <InputLabel id="demo-simple-select-label">
+                      Schema
+                    </InputLabel>
+                    <Select
+                      sx={{ width: 300 }}
+                      labelId="demo-simple-select-label"
+                      id="demo-simple-select"
+                      value={selectedSchema}
+                      label="Scegli schema"
+                      onChange={(e) => setSelectedSchema(e.target.value)}
+                    >
+                      <MenuItem value="">
+                        <em>Nessuno</em>
+                      </MenuItem>
+                      {activitiesSchemes.map((schema, index) => (
+                        <MenuItem key={index} value={schema}>
+                          {schema.schemaName}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            {isNewSchema === false && selectedSchema !== "" ? (
+              <ClassicTable
+                selectedSchema={selectedSchema}
+                personale={personale}
+                setPresetActivities={setPresetActivities}
+              />
+            ) : (
+              <AddTable
+                isNewSchema={isNewSchema}
+                newSchemaName={newSchemaName}
+                personale={personale}
+                genericOrderData={formValues}
+                newOrderHandler={newOrderHandler}
+              />
             )}
-          </AnimatePresence>
-          {isNewSchema === false && selectedSchema !== "" ? (
-            <ClassicTable
-              selectedSchema={selectedSchema}
-              personale={personale}
-              setPresetActivities={setPresetActivities}
-            />
-          ) : (
-            <AddTable
-              isNewSchema={isNewSchema}
-              newSchemaName={newSchemaName}
-              personale={personale}
-              genericOrderData={formValues}
-              newOrderHandler={newOrderHandler}
-            />
-          )}
-        </Paper>
-        <Box sx={{ textAlign: "center" }}>
-          <Button
-            type="submit"
-            size="large"
-            variant="contained"
-            color="secondary"
-            style={{ margin: "20px" }}
-          >
-            Conferma
-          </Button>
-        </Box>
-      </form>
-    </Box>
+          </Paper>
+          <Box sx={{ textAlign: "center" }}>
+            <Button
+              type="submit"
+              size="large"
+              variant="contained"
+              color="secondary"
+              style={{ margin: "20px" }}
+            >
+              Conferma
+            </Button>
+          </Box>
+        </form>
+      </Box>
+    </PageContainer>
   );
 };
 

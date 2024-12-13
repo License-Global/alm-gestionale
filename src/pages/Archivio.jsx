@@ -1,13 +1,12 @@
 import React from "react";
 import useActiveUser from "../hooks/useActiveUser";
 import OrderSummary from "../components/Orders/OrderSummary";
-import ToDelete from "../components/ToDelete";
+import ArchivedOrderPage from "./ArchivedOrderPage";
 
 const Archivio = () => {
   return (
     <div>
-      <ToDelete />
-      <OrderSummary />{" "}
+      <ArchivedOrderPage />
     </div>
   );
 };
