@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment";
 import "moment/locale/it";
@@ -19,9 +19,13 @@ import {
   AccessTime as AccessTimeIcon,
   Notes as NotesIcon,
   Assignment as AssignmentIcon,
+  LocalPrintshop as PrintIcon,
 } from "@mui/icons-material";
-import { styled } from "@mui/system";
-import { useOrders } from "../../hooks/useOrders";
+import { Box, styled } from "@mui/system";
+import { useAllOrders } from "../../hooks/useOrders";
+
+import { useReactToPrint } from "react-to-print";
+import "../../styles/calendar.css";
 
 moment.locale("it");
 const localizer = momentLocalizer(moment);
@@ -52,10 +56,15 @@ const messages = {
   date: "Data",
   time: "Ora",
   event: "Evento",
+  showMore: (total) => `+ Mostra altri ${total}`,
+  noEventsInRange: "Nessun ordine in questo intervallo",
 };
 
 export default function CalendarComponent() {
-  const { orders } = useOrders();
+  const { orders } = useAllOrders();
+
+  const contentRef = useRef(null);
+  const reactToPrintFn = useReactToPrint({ contentRef });
 
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -117,7 +126,24 @@ export default function CalendarComponent() {
   };
 
   return (
-    <div className="h-screen p-4 bg-gray-100">
+    <div ref={contentRef} className="h-screen p-4 bg-gray-100">
+      <Box sx={{ flexGrow: 1 }}>
+        <Button
+          className="print-button"
+          onClick={() => reactToPrintFn()}
+          variant="contained"
+          color="primary"
+          style={{
+            position: "fixed",
+            bottom: "20px",
+            right: "20px",
+            zIndex: 1000, // Assicurati che il pulsante sia sopra altri elementi
+            "@media print": { display: "none" }, // Nascondi durante la stampa
+          }}
+        >
+          <PrintIcon fontSize="large" />
+        </Button>
+      </Box>
       <StyledCalendar
         localizer={localizer}
         events={events}

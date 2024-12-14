@@ -87,7 +87,7 @@ const ArchivedOrdersTable = () => {
                 Data Inizio
               </TableSortLabel>
             </TableCell>
-            <TableCell>Azioni</TableCell>
+            <TableCell>Elimina</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>

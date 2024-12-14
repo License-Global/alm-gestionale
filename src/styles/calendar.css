@@ -1,0 +1,14 @@
+@media print {
+    /* Nascondi solo i tasti di navigazione */
+    .rbc-btn-group {
+      display: none !important;
+    }
+    
+    /* Assicurati che il mese e le altre informazioni rimangano visibili */
+    .rbc-toolbar-label {
+      display: block !important;
+    }
+    .print-button {
+        display: none !important;
+      }
+  }

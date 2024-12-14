@@ -10,6 +10,7 @@ import {
   LinearProgress,
   Avatar,
   Paper,
+  Button,
 } from "@mui/material";
 import { styled } from "@mui/system";
 import {
@@ -20,10 +21,14 @@ import {
   Inventory,
   Build,
   Flag,
+  CheckCircle,
+  Cancel,
 } from "@mui/icons-material";
+
 import { useReactToPrint } from "react-to-print";
 import { useParams } from "react-router-dom";
 import { useArchivedOrder } from "../../hooks/useArchivedOrder";
+import { handleTargetLabel } from "../../utils/enums/timeManager";
 
 const StyledCard = styled(Card)(({ theme }) => ({
   maxWidth: "90vw",
@@ -78,30 +83,16 @@ const IconWrapper = styled(Box)(({ theme }) => ({
 }));
 
 const ActivityPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
-  marginBottom: theme.spacing(3),
-  borderRadius: "12px",
-  boxShadow: "0 3px 10px rgba(0, 0, 0, 0.08)",
+  padding: theme.spacing(2),
+  borderRadius: "8px",
+  height: "100%",
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "space-between",
   "@media print": {
     boxShadow: "none",
     border: "1px solid #e0e0e0",
     pageBreakInside: "avoid",
-  },
-}));
-
-const ActivityHeader = styled(Box)(({ theme }) => ({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  marginBottom: theme.spacing(2),
-}));
-
-const ActivityProgress = styled(LinearProgress)(({ theme }) => ({
-  height: 12,
-  borderRadius: 6,
-  backgroundColor: theme.palette.grey[200],
-  "& .MuiLinearProgress-bar": {
-    borderRadius: 6,
   },
 }));
 
@@ -111,8 +102,6 @@ const urgencyColors = {
   Alta: "#f44336",
 };
 
-// Dati di esempio basati sullo schema del CSV
-
 export default function OrderSummary() {
   const { id } = useParams();
   const { order } = useArchivedOrder(id);
@@ -120,19 +109,16 @@ export default function OrderSummary() {
   const contentRef = useRef(null);
   const reactToPrintFn = useReactToPrint({ contentRef });
 
+  const activitiesProgress = (order) => {
+    const completed = order.activities.filter(
+      (activity) => activity.status === "Completato"
+    );
+    return (completed.length / order.activities.length) * 100;
+  };
+
   return (
     order && (
       <StyledCard>
-        <button
-          onClick={() => reactToPrintFn()}
-          style={{
-            display: "block", // Mostra normalmente
-            marginTop: "20px",
-            "@media print": { display: "none" }, // Nascondi durante la stampa
-          }}
-        >
-          Stampa
-        </button>
         <div ref={contentRef}>
           <HeaderBox>
             <Typography variant="h4" gutterBottom>
@@ -199,7 +185,7 @@ export default function OrderSummary() {
                   </IconWrapper>
                   <Box>
                     <Typography variant="subtitle1" color="textSecondary">
-                      Stato
+                      Confermato dal Cliente
                     </Typography>
                     <Typography variant="h6">
                       {order.isConfirmed === "true"
@@ -256,11 +242,14 @@ export default function OrderSummary() {
                 </Typography>
                 <LinearProgress
                   variant="determinate"
-                  value={70}
+                  value={activitiesProgress(order)}
+                  color={
+                    activitiesProgress(order) === 100 ? "success" : "primary"
+                  }
                   sx={{ height: 12, borderRadius: 6, mb: 2 }}
                 />
                 <Typography variant="body1" color="textSecondary">
-                  70% Completato
+                  {`${activitiesProgress(order)}% Completato`}
                 </Typography>
               </Grid>
             </Grid>
@@ -286,57 +275,102 @@ export default function OrderSummary() {
               Attività della Commessa
             </Typography>
 
-            {order.activities.map((activity, index) => (
-              <ActivityPaper key={index} elevation={3}>
-                <ActivityHeader>
-                  <Box display="flex" alignItems="center">
-                    <Avatar
-                      sx={{
-                        bgcolor: activity.color,
-                        width: 48,
-                        height: 48,
-                        fontSize: "1.25rem",
-                        mr: 2,
-                      }}
-                    >
-                      {" "}
-                    </Avatar>
+            <Grid container spacing={2}>
+              {order.activities.map((activity, index) => (
+                <Grid item xs={12} sm={6} md={4} key={index}>
+                  <ActivityPaper elevation={3}>
                     <Box>
-                      <Typography variant="h6">{activity.name}</Typography>
-                      <Typography variant="subtitle1" color="textSecondary">
-                        Responsabile: {activity.responsible}
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
+                        <Typography
+                          sx={{ display: "flex", gap: 2, alignItems: "center" }}
+                          variant="h6"
+                          noWrap
+                        >
+                          <Avatar
+                            sx={{
+                              bgcolor: activity.color,
+                              width: 24,
+                              height: 24,
+                            }}
+                          >
+                            {" "}
+                          </Avatar>
+                          {activity.name}
+                        </Typography>
+                        {activity.status === "Completato" ? (
+                          <CheckCircle fontSize="large" color="success" />
+                        ) : (
+                          <Cancel fontSize="large" color="error" />
+                        )}
+                      </Box>
+                      <Typography variant="body2" color="textSecondary" noWrap>
+                        Responsabile: <b>{activity.responsible}</b>
                       </Typography>
                     </Box>
-                  </Box>
-                  <Chip
-                    label={activity.status}
-                    color={
-                      activity.status === "Completato" ? "success" : "default"
-                    }
-                    sx={{ fontSize: "0.9rem", padding: "16px 12px" }}
-                  />
-                </ActivityHeader>
-                <ActivityProgress
-                  variant="determinate"
-                  value={activity.status === "Completato" ? 100 : 50}
-                  sx={{ mb: 2 }}
-                />
-                <Typography variant="h6" color="textSecondary">
-                  {activity.status === "Completato" ? "Completato" : "In corso"}
-                </Typography>
-                <Box mt={2}>
-                  <Typography variant="body1">
-                    <strong>Data Inizio:</strong>{" "}
-                    {new Date(activity.startDate).toLocaleString()}
-                  </Typography>
-                  <Typography variant="body1">
-                    <strong>Data Fine:</strong>{" "}
-                    {new Date(activity.endDate).toLocaleString()}
-                  </Typography>
-                </Box>
-              </ActivityPaper>
-            ))}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: 2,
+                      }}
+                      mt={1}
+                    >
+                      <Typography variant="body2">
+                        <strong>Inizio:</strong>{" "}
+                        {new Date(activity.startDate).toLocaleDateString()}
+                      </Typography>
+                      <Typography variant="body2">
+                        <strong>Fine:</strong>{" "}
+                        {new Date(activity.endDate).toLocaleDateString()}
+                      </Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        {handleTargetLabel(
+                          activity.endDate,
+                          activity.completed
+                        )}
+                      </Typography>
+                    </Box>
+                    <Box
+                      mt={1}
+                      display="flex"
+                      justifyContent="space-between"
+                      alignItems="center"
+                    ></Box>
+                  </ActivityPaper>
+                </Grid>
+              ))}
+            </Grid>
           </CardContent>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            textAlign: "center",
+            gap: 8,
+            marginBottom: 8,
+            marginRight: 16,
+          }}
+        >
+          <Button
+            onClick={() => reactToPrintFn()}
+            variant="contained"
+            color="primary"
+            style={{
+              display: "block", // Mostra normalmente
+              marginTop: "20px",
+              "@media print": { display: "none" }, // Nascondi durante la stampa
+            }}
+          >
+            Stampa
+          </Button>
         </div>
       </StyledCard>
     )

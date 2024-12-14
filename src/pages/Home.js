@@ -5,7 +5,6 @@ import NoOrders from "../components/Orders/NoOrders";
 import useRealtime from "../hooks/useRealTime";
 
 const Home = () => {
-  const { session } = useSession();
   let orders = useRealtime("orders");
 
   return (

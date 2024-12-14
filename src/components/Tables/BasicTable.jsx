@@ -8,6 +8,8 @@ import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
 import Cancel from "@mui/icons-material/Cancel";
 import CheckCircle from "@mui/icons-material/CheckCircle";
+import LocalPrintshopIcon from "@mui/icons-material/LocalPrintshop";
+import DeleteIcon from "@mui/icons-material/Delete";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@mui/material";
@@ -89,14 +91,13 @@ export default function BasicTable({ orders }) {
                     >
                       {order.urgency}
                     </TableCell>
-                    <TableCell align="center">
-                      {" "}
+                    <TableCell align="right">
                       <Button
                         variant="contained"
                         onClick={() => handleDelete(order.id, order.orderName)}
                         color="error"
                       >
-                        Elimina
+                        <DeleteIcon fontSize="medium" />
                       </Button>
                     </TableCell>
                   </TableRow>

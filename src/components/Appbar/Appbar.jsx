@@ -84,9 +84,10 @@ const Appbar = () => {
               <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
                 <img
                   alt="Logo"
+                  onClick={() => navigate("/")}
                   src={logo}
                   width={isSmallScreen ? 0 : 120}
-                  style={{ paddingTop: "6px" }} // Percorso del logo
+                  style={{ paddingTop: "6px", cursor: "pointer" }} // Percorso del logo
                 />
               </Typography>
               <Button
