@@ -11,6 +11,9 @@ import EditOrderPage from "../pages/EditOrderPage";
 import Archivio from "../pages/Archivio";
 import ProtectedRoute from "./ProtectedRoute";
 import OrderSummary from "../components/Orders/OrderSummary";
+import Calendar from "../pages/Calendar";
+import DailyAgenda from "../components/Calendar/DailyAgenda";
+import Agenda from "../pages/Agenda";
 const AppRouter = () => (
   <Routes>
     <Route
@@ -75,7 +78,15 @@ const AppRouter = () => (
       path="/calendario"
       element={
         <ProtectedRoute>
-          <CalendarComponent />
+          <Calendar />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/calendario/:date"
+      element={
+        <ProtectedRoute>
+          <Agenda />
         </ProtectedRoute>
       }
     />

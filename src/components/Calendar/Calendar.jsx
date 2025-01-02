@@ -23,7 +23,7 @@ import {
 } from "@mui/icons-material";
 import { Box, styled } from "@mui/system";
 import { useAllOrders } from "../../hooks/useOrders";
-
+import { useNavigate } from "react-router-dom";
 import { useReactToPrint } from "react-to-print";
 import "../../styles/calendar.css";
 
@@ -56,12 +56,13 @@ const messages = {
   date: "Data",
   time: "Ora",
   event: "Evento",
-  showMore: (total) => `+ Mostra altri ${total}`,
+  showMore: (total) => `+ ${total}`,
   noEventsInRange: "Nessun ordine in questo intervallo",
 };
 
 export default function CalendarComponent() {
   const { orders } = useAllOrders();
+  const navigate = useNavigate();
 
   const contentRef = useRef(null);
   const reactToPrintFn = useReactToPrint({ contentRef });
@@ -102,6 +103,11 @@ export default function CalendarComponent() {
   const handleSelectEvent = (event) => {
     setSelectedEvent(event);
     setIsEventDialogOpen(true);
+    navigate(
+      event.start.toISOString().slice(8, 10) +
+        event.start.toISOString().slice(5, 7) +
+        event.start.toISOString().slice(0, 4)
+    );
   };
 
   const handleCloseEventDialog = () => {
@@ -119,7 +125,6 @@ export default function CalendarComponent() {
         opacity: 0.9,
         color: "white",
         border: "0px",
-        display: "block",
         padding: "2px",
       },
     };
@@ -147,6 +152,7 @@ export default function CalendarComponent() {
       <StyledCalendar
         localizer={localizer}
         events={events}
+        views={["month", "week", "agenda"]}
         startAccessor="start"
         endAccessor="end"
         messages={messages}
@@ -156,7 +162,9 @@ export default function CalendarComponent() {
         style={{ height: "calc(100vh - 2rem)" }}
       />
 
-      {/* Event Details Dialog */}
+      {/* Dialog */}
+      {/*
+      }
       <Dialog
         open={isEventDialogOpen}
         onClose={handleCloseEventDialog}
@@ -175,7 +183,6 @@ export default function CalendarComponent() {
         <DialogContent dividers>
           {selectedEvent && (
             <Grid container spacing={2}>
-              {/* Titolo e Urgenza */}
               <Grid item xs={12}>
                 <Typography variant="h5" gutterBottom>
                   {selectedEvent.title}
@@ -195,7 +202,6 @@ export default function CalendarComponent() {
                 )}
               </Grid>
 
-              {/* Responsabile */}
               <Grid item xs={12} sm={6}>
                 <Grid container alignItems="center" spacing={1}>
                   <Grid item>
@@ -209,7 +215,6 @@ export default function CalendarComponent() {
                 </Grid>
               </Grid>
 
-              {/* Stato */}
               <Grid item xs={12} sm={6}>
                 <Grid container alignItems="center" spacing={1}>
                   <Grid item>
@@ -223,7 +228,6 @@ export default function CalendarComponent() {
                 </Grid>
               </Grid>
 
-              {/* Date e Orari */}
               <Grid item xs={12}>
                 <Grid container alignItems="center" spacing={1}>
                   <Grid item>
@@ -252,7 +256,6 @@ export default function CalendarComponent() {
                 </Grid>
               </Grid>
 
-              {/* Note */}
               {selectedEvent.notes && selectedEvent.notes.length > 0 && (
                 <Grid item xs={12}>
                   <Grid container alignItems="center" spacing={1}>
@@ -288,6 +291,7 @@ export default function CalendarComponent() {
           </Button>
         </DialogActions>
       </Dialog>
+*/}
     </div>
   );
 }

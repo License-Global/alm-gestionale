@@ -17,7 +17,7 @@ import {
 
 import { Inventory2, Construction, Assignment } from "@mui/icons-material";
 import { motion, AnimatePresence } from "framer-motion";
-import { DateTimePicker } from "@mui/x-date-pickers";
+import { DateTimePicker, DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { usePersonale } from "../hooks/usePersonale";
 import useSession from "../hooks/useSession";
@@ -201,7 +201,7 @@ const OrderForm = () => {
                 />
               </Grid>
               <Grid item xs={12} sm={4}>
-                <DateTimePicker
+                <DatePicker
                   disablePast
                   sx={{ width: "100%" }}
                   label="Inizio commessa"
@@ -210,7 +210,7 @@ const OrderForm = () => {
                 />
               </Grid>
               <Grid item xs={12} sm={4}>
-                <DateTimePicker
+                <DatePicker
                   disablePast
                   minDateTime={selectedDate || dayjs()}
                   sx={{ width: "100%" }}

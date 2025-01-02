@@ -175,6 +175,13 @@ const AddTable = ({ genericOrderData, personale, newOrderHandler }) => {
             <TableCell>
               {newRow.inCalendar && newRow.inCalendar ? (
                 <TwitterPicker
+                  styles={{
+                    default: {
+                      card: {
+                        boxShadow: `0 0 10px ${newRow.color}`,
+                      },
+                    },
+                  }}
                   color={newRow.color}
                   onChangeComplete={(color) => handleChange("color", color.hex)}
                 />
@@ -182,6 +189,13 @@ const AddTable = ({ genericOrderData, personale, newOrderHandler }) => {
                 <>
                   <div style={{ visibility: "hidden" }}>
                     <TwitterPicker
+                      styles={{
+                        default: {
+                          card: {
+                            boxShadow: `0 0 10px ${newRow.color}`,
+                          },
+                        },
+                      }}
                       color={newRow.color}
                       onChangeComplete={(color) =>
                         handleChange("color", color.hex)
@@ -214,20 +228,24 @@ const AddTable = ({ genericOrderData, personale, newOrderHandler }) => {
             <TableCell>
               <DateTimePicker
                 label="Data inizio"
+                skipDisabled
                 value={newRow.startDate}
                 defaultValue={dayjs().add(5, "minute")}
                 onChange={(date) => handleChange("startDate", date)}
-                minDateTime={dayjs()} // Impedisce di selezionare una data passata
+                minTime={dayjs().hour(6).minute(0)}
+                maxTime={dayjs().hour(20).minute(0)}
                 renderInput={(params) => <TextField {...params} fullWidth />}
               />
             </TableCell>
             <TableCell>
               <DateTimePicker
                 label="Data scadenza"
+                skipDisabled
                 value={newRow.endDate}
                 defaultValue={dayjs().add(15, "minute")}
                 onChange={(date) => handleChange("endDate", date)}
-                minDateTime={newRow.startDate || dayjs()}
+                minTime={dayjs().hour(6).minute(0)}
+                maxTime={dayjs().hour(20).minute(0)}
                 renderInput={(params) => <TextField {...params} fullWidth />}
               />
             </TableCell>

@@ -34,6 +34,7 @@ import { priorityList, statusList } from "../../utils/enums/miscEnums";
 import { useOrderUpdate } from "../../hooks/useOrderUpdate";
 import { useOrderActivityUpdate } from "../../hooks/useOrderActivityUpdate";
 import { usePersonale } from "../../hooks/usePersonale";
+import { DatePicker } from "@mui/x-date-pickers";
 
 export default function EditOrder({ order }) {
   const {
@@ -157,7 +158,7 @@ export default function EditOrder({ order }) {
               />
             </Grid>
             <Grid item xs={12} sm={4}>
-              <DateTimePicker
+              <DatePicker
                 label="Data di Inizio"
                 value={dayjs(tempOrderData.startDate)}
                 onChange={(date) =>
@@ -174,7 +175,7 @@ export default function EditOrder({ order }) {
               />
             </Grid>
             <Grid item xs={12} sm={4}>
-              <DateTimePicker
+              <DatePicker
                 label="Data di fine"
                 value={dayjs(tempOrderData.endDate)}
                 onChange={(date) =>
@@ -356,6 +357,7 @@ export default function EditOrder({ order }) {
                 </Grid>
                 <Grid item xs={12}>
                   <DateTimePicker
+                    skipDisabled
                     label="Data Inizio"
                     value={dayjs(currentActivity.startDate)}
                     onChange={(date) =>
@@ -367,11 +369,13 @@ export default function EditOrder({ order }) {
                     renderInput={(params) => (
                       <TextField {...params} fullWidth />
                     )}
-                    disablePast
+                    minTime={dayjs().hour(6).minute(0)}
+                    maxTime={dayjs().hour(20).minute(0)}
                   />
                 </Grid>
                 <Grid item xs={12}>
                   <DateTimePicker
+                    skipDisabled
                     label="Data Fine"
                     value={dayjs(currentActivity.endDate)}
                     onChange={(date) =>
@@ -383,7 +387,8 @@ export default function EditOrder({ order }) {
                     renderInput={(params) => (
                       <TextField {...params} fullWidth />
                     )}
-                    disablePast
+                    minTime={dayjs().hour(6).minute(0)}
+                    maxTime={dayjs().hour(20).minute(0)}
                   />
                 </Grid>
                 <Grid item xs={12}>

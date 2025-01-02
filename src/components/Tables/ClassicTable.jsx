@@ -7,7 +7,6 @@ import {
   TableHead,
   TableRow,
   TextField,
-  Button,
   Switch,
   Select,
   MenuItem,
@@ -88,6 +87,13 @@ const ActivityTable = ({ selectedSchema, personale, setPresetActivities }) => {
               <TableCell>
                 {row.inCalendar ? (
                   <TwitterPicker
+                    styles={{
+                      default: {
+                        card: {
+                          boxShadow: `0 0 10px ${row.color}`,
+                        },
+                      },
+                    }}
                     color={row.color || "#000"}
                     onChangeComplete={(color) =>
                       handleChange(index, "color", color.hex)
@@ -96,6 +102,13 @@ const ActivityTable = ({ selectedSchema, personale, setPresetActivities }) => {
                 ) : (
                   <div style={{ visibility: "hidden" }}>
                     <TwitterPicker
+                      styles={{
+                        default: {
+                          card: {
+                            boxShadow: `0 0 10px ${row.color}`,
+                          },
+                        },
+                      }}
                       color={row.color || "#000"}
                       onChangeComplete={(color) =>
                         handleChange(index, "color", color.hex)
@@ -128,9 +141,11 @@ const ActivityTable = ({ selectedSchema, personale, setPresetActivities }) => {
               <TableCell>
                 <DateTimePicker
                   label="Data inizio"
+                  skipDisabled
                   value={row.startDate}
                   onChange={(date) => handleChange(index, "startDate", date)}
-                  minDateTime={dayjs()}
+                  minTime={dayjs().hour(6).minute(0)}
+                  maxTime={dayjs().hour(20).minute(0)}
                   renderInput={(params) => (
                     <TextField
                       {...params}
@@ -145,9 +160,11 @@ const ActivityTable = ({ selectedSchema, personale, setPresetActivities }) => {
               <TableCell>
                 <DateTimePicker
                   label="Data scadenza"
+                  skipDisabled
                   value={row.endDate}
                   onChange={(date) => handleChange(index, "endDate", date)}
-                  minDateTime={row.startDate || dayjs()}
+                  minTime={dayjs().hour(6).minute(0)}
+                  maxTime={dayjs().hour(20).minute(0)}
                   renderInput={(params) => (
                     <TextField
                       {...params}

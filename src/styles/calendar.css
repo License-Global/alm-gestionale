@@ -12,3 +12,6 @@
         display: none !important;
       }
   }
+  .rbc-agenda-view table.rbc-agenda-table .rbc-agenda-time-cell {
+    width: 100px;
+  }

@@ -23,11 +23,14 @@ const StyledButton = styled(Button)(({ theme }) => ({
   },
 }));
 
-const BackButton = () => {
+const BackButton = ({ title, direction }) => {
   const navigate = useNavigate();
   return (
-    <StyledButton startIcon={<ArrowBackIcon />} onClick={() => navigate("/")}>
-      Home
+    <StyledButton
+      startIcon={<ArrowBackIcon />}
+      onClick={() => navigate(direction)}
+    >
+      {title}
     </StyledButton>
   );
 };

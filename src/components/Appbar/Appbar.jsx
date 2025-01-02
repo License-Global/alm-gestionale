@@ -116,7 +116,9 @@ const Appbar = () => {
             </Toolbar>
           </StyledAppBar>
           {session?.user.email === "alminfissi.operator@gmail.com" &&
-            location.pathname !== "/" && <BackButton />}
+            location.pathname !== "/" && (
+              <BackButton title={"Home"} direction={"/"} />
+            )}
 
           {session?.user.email === "alminfissi.dev@gmail.com" && (
             <Tabs
