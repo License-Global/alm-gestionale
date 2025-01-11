@@ -12,6 +12,10 @@
         display: none !important;
       }
   }
-  .rbc-agenda-view table.rbc-agenda-table .rbc-agenda-time-cell {
-    width: 100px;
+  .rbc-agenda-view table.rbc-agenda-table .rbc-agenda-date-cell {
+    border-bottom: 2px dashed black;
+  }
+
+  .rbc-agenda-view table.rbc-agenda-table tbody > tr > td {
+    vertical-align: middle;
   }

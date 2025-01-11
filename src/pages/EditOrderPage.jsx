@@ -4,12 +4,15 @@ import { useParams } from "react-router-dom";
 import { useOrder } from "../hooks/useOrders";
 import { Typography } from "@mui/material";
 import { CircularProgress } from "@mui/material";
+import ModificaOrdine from "../components/Orders/ModificaOrdine";
+import { usePersonale } from "../hooks/usePersonale";
 
 const EditOrderPage = () => {
+  const personale = usePersonale();
   const { id } = useParams();
   const { order, loading, error } = useOrder(id);
 
-  if (loading)
+  if (loading || personale.loading)
     return (
       <div style={{ display: "flex", justifyContent: "center" }}>
         <CircularProgress />
@@ -28,7 +31,8 @@ const EditOrderPage = () => {
       >
         Dettaglio dell'ordine
       </Typography>
-      <EditOrder order={order} />
+      {/* <EditOrder order={order} /> */}
+      <ModificaOrdine order={order} personale={personale} />
     </div>
   );
 };

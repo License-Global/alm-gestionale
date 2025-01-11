@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import theme from "../../theme";
 import {
   Typography,
@@ -17,6 +17,7 @@ import {
   Divider,
   Modal,
   LinearProgress,
+  Badge,
 } from "@mui/material";
 
 import {
@@ -49,7 +50,7 @@ import {
 import dayjs from "dayjs";
 
 import { updateActivityStatusInOrder } from "../../services/activitiesService";
-import { deleteBucket } from "../../services/bucketServices";
+import { deleteBucket, getFileCount } from "../../services/bucketServices";
 import { archiveOrder } from "../../services/orderService";
 import NoOrders from "../Orders/NoOrders";
 import Chatbox from "../Chat/Chatbox";
@@ -68,6 +69,7 @@ const MainTable = ({ order }) => {
   const [loadingArchivio, setLoadingArchivio] = useState(false);
   const [successArchivio, setSuccessArchivio] = useState(false);
   const [errorArchivio, setErrorArchivio] = useState(null);
+  const [fileCounts, setFileCounts] = useState({}); // Stato per memorizzare i conteggi dei file per ogni attività
 
   const handleArchive = async () => {
     setLoadingArchivio(true);
@@ -200,7 +202,22 @@ const MainTable = ({ order }) => {
 
     return Math.round(percentage); // Arrotonda la percentuale
   };
+  useEffect(() => {
+    const fetchFileCounts = async () => {
+      const counts = {}; // Oggetto per memorizzare i conteggi
+      const promises = order.activities.map(async (activity) => {
+        const count = await getFileCount(order.orderName, activity.name); // Ottieni il conteggio dei file per attività
+        counts[activity.name] = count; // Salva il conteggio per l'attività
+      });
 
+      await Promise.all(promises); // Attendi che tutte le promesse siano risolte
+      setFileCounts(counts); // Aggiorna lo stato con i conteggi finali
+    };
+
+    if (order && order.activities) {
+      fetchFileCounts(); // Esegui la funzione quando l'ordine è disponibile
+    }
+  }, [order]); // Esegui l'effetto ogni volta che `order` cambia
   if (order === false) return <NoOrders />;
   else
     return (
@@ -208,7 +225,7 @@ const MainTable = ({ order }) => {
         <Paper
           sx={{
             backgroundColor: theme.palette.grey[100],
-            padding: 4,
+            padding: 2,
             m: 3,
             boxShadow: 4,
             border: "2px solid ",
@@ -221,6 +238,20 @@ const MainTable = ({ order }) => {
               mx: "16px",
             }}
           >
+            <Typography
+              sx={{
+                display: "flex",
+                justifyContent: "flex-end",
+                alignContent: "center",
+                mb: "2px",
+              }}
+              variant="h5"
+            >
+              <i>
+                <b>ID: </b>{" "}
+              </i>
+              <i> {order?.internal_id}</i>
+            </Typography>
             <OrderInfoCard>
               <Grid
                 container
@@ -392,27 +423,22 @@ const MainTable = ({ order }) => {
                         </StyledTableCell>
                       )}
                       <StyledTableCell align="right">
-                        {}
-                        {/* <FindInPage
-                          sx={{
-                            color: theme.palette.primary.main,
-                            cursor: "pointer",
-                          }}
-                          fontSize="large"
-                          onClick={() =>
-                            handleOpenModalDocs(activity, order.id)
-                          }
-                        /> */}
-                        <FindInPage
-                          sx={{
-                            color: theme.palette.secondary.main,
-                            cursor: "pointer",
-                          }}
-                          fontSize="large"
-                          onClick={() =>
-                            handleOpenModalDocs(activity, order.id)
-                          }
-                        />
+                        <Badge
+                          key={activity.name}
+                          badgeContent={fileCounts[activity.name] || 0} // Usa il conteggio dei file per l'attività
+                          color="primary"
+                        >
+                          <FindInPage
+                            sx={{
+                              color: theme.palette.secondary.main,
+                              cursor: "pointer",
+                            }}
+                            fontSize="large"
+                            onClick={() =>
+                              handleOpenModalDocs(activity, order.id)
+                            }
+                          />
+                        </Badge>
                       </StyledTableCell>
                       <StyledTableCell align="right">
                         <Select

@@ -25,3 +25,25 @@ export const deleteBucket = async (bucketName) => {
     return { success: true, data };
   }
 };
+
+export async function getFileCount(bucketName, folderPath) {
+  try {
+    // Ottieni la lista dei file nella cartella specificata
+    const { data, error } = await supabase.storage
+      .from(bucketName)
+      .list(folderPath, {
+        limit: 100, // Limite massimo di file da ottenere
+        offset: 0, // Offset per la paginazione
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    // Restituisci il numero di file
+    return data.length;
+  } catch (error) {
+    console.error("Errore nel prelevare i file:", error.message);
+    return 0;
+  }
+}

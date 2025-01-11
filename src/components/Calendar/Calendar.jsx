@@ -3,16 +3,7 @@ import { Calendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment";
 import "moment/locale/it";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import {
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Typography,
-  Grid,
-  Chip,
-} from "@mui/material";
+import { Button } from "@mui/material";
 import {
   Event as EventIcon,
   Person as PersonIcon,
@@ -45,7 +36,7 @@ const StyledCalendar = styled(Calendar)`
 `;
 
 const messages = {
-  allDay: "Tutto il giorno",
+  allDay: "Giornata",
   previous: "Precedente",
   next: "Successivo",
   today: "Oggi",
@@ -159,7 +150,7 @@ export default function CalendarComponent() {
         selectable
         onSelectEvent={handleSelectEvent}
         eventPropGetter={eventPropGetter}
-        style={{ height: "calc(100vh - 2rem)" }}
+        style={{ height: "110vh" }}
       />
 
       {/* Dialog */}
