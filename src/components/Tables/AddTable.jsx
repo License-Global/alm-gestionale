@@ -71,6 +71,17 @@ const AddTable = ({ genericOrderData, personale, newOrderHandler }) => {
     setNewRow({ ...newRow, [field]: value });
   };
 
+  const handleKeyDown = (event) => {
+    const regex = /^[a-zA-Z0-9 ]*$/; // Permette lettere, numeri e spazi
+    if (
+      !regex.test(event.key) &&
+      event.key !== "Backspace" &&
+      event.key !== "Delete"
+    ) {
+      event.preventDefault();
+    }
+  };
+
   useEffect(() => {
     setNewOrder({
       orderName: genericOrderData.orderName,
@@ -163,6 +174,7 @@ const AddTable = ({ genericOrderData, personale, newOrderHandler }) => {
                 onChange={(e) => handleChange("name", e.target.value)}
                 label="Nome attività"
                 variant="outlined"
+                onKeyDown={handleKeyDown}
                 fullWidth
               />
             </TableCell>

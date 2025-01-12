@@ -64,3 +64,21 @@ export const archiveOrder = async (orderId) => {
     return { success: false, error: err };
   }
 };
+
+export async function updateOrder(orderId, orderData) {
+  try {
+    const { data, error } = await supabase
+      .from("orders")
+      .update(orderData) // Passa direttamente l'oggetto con i campi
+      .eq("id", orderId); // Condizione per identificare la riga
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Errore durante l'aggiornamento dell'ordine:", error.message);
+    throw error;
+  }
+}

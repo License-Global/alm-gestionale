@@ -62,6 +62,17 @@ const OrderForm = () => {
 
   const [presetActivities, setPresetActivities] = useState([]);
 
+  const handleKeyDown = (event) => {
+    const regex = /^[a-zA-Z0-9 ]*$/; // Permette lettere, numeri e spazi
+    if (
+      !regex.test(event.key) &&
+      event.key !== "Backspace" &&
+      event.key !== "Delete"
+    ) {
+      event.preventDefault();
+    }
+  };
+
   // Funzione per aggiornare lo stato
   const newOrderHandler = (ordine, activitiesNames) => {
     setNewOrder(ordine);
@@ -198,6 +209,7 @@ const OrderForm = () => {
                   }}
                   value={orderName}
                   onChange={(e) => setOrderName(e.target.value)}
+                  onKeyDown={handleKeyDown}
                 />
               </Grid>
               <Grid item xs={12} sm={4}>

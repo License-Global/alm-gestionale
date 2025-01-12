@@ -22,12 +22,27 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
-
+import { ToastContainer, toast } from "react-toastify";
 import { DatePicker } from "@mui/x-date-pickers";
 import OrderEditRow from "./OrderEditRow";
+import { updateOrder } from "../../services/orderService";
 
 const ModificaOrdine = ({ order, personale }) => {
   const [orderData, setOrderData] = useState({});
+
+  const notifySuccess = (message) => toast.success(message);
+  const notifyError = (message) => toast.error(message);
+
+  const handleKeyDown = (event) => {
+    const regex = /^[a-zA-Z0-9 ]*$/; // Permette lettere, numeri e spazi
+    if (
+      !regex.test(event.key) &&
+      event.key !== "Backspace" &&
+      event.key !== "Delete"
+    ) {
+      event.preventDefault();
+    }
+  };
 
   useEffect(() => {
     if (order) {
@@ -44,13 +59,21 @@ const ModificaOrdine = ({ order, personale }) => {
     }
   }, [order]);
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    console.log(orderData);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const orderId = order.id; // ID dell'ordine da aggiornare
+    try {
+      const result = await updateOrder(orderId, orderData);
+      notifySuccess("Ordine aggiornato:", result);
+    } catch (error) {
+      console.error("Errore durante l'aggiornamento:", error.message);
+      notifyError(error.message);
+    }
   };
 
   return (
     <div>
+      <ToastContainer />
       <Container maxWidth={false}>
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
@@ -62,6 +85,7 @@ const ModificaOrdine = ({ order, personale }) => {
                 }
                 label="Nome Ordine"
                 name="orderName"
+                onKeyDown={handleKeyDown}
               />
             </Grid>
             <Grid item xs={12} sm={4}>

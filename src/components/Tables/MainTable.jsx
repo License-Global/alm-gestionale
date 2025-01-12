@@ -291,7 +291,15 @@ const MainTable = ({ order }) => {
                   <OrderInfoItem>
                     <PriorityHigh fontSize="large" />
                     <Typography variant="body1">
-                      <b>Priorità:</b> <br /> {order?.urgency}
+                      <b>Priorità:</b> <br />{" "}
+                      <Chip
+                        sx={{
+                          backgroundColor: handleOrderPriorityHighlight(
+                            order?.urgency
+                          ),
+                        }}
+                        label={order?.urgency}
+                      />
                     </Typography>
                   </OrderInfoItem>
                 </Grid>
