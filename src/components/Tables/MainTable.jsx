@@ -28,7 +28,11 @@ import {
   DateRange,
   Email,
   FindInPage,
+  Check,
+  Clear,
 } from "@mui/icons-material";
+
+import CheckIcon from "@mui/icons-material/Check";
 
 import Timer from "../misc/Timer";
 
@@ -241,16 +245,33 @@ const MainTable = ({ order }) => {
             <Typography
               sx={{
                 display: "flex",
-                justifyContent: "flex-end",
+                justifyContent: "space-between",
                 alignContent: "center",
+                alignItems: "center",
                 mb: "2px",
               }}
               variant="h5"
             >
-              <i>
-                <b>ID: </b>{" "}
-              </i>
-              <i> {order?.internal_id}</i>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  textDecoration: "underline",
+                }}
+              >
+                <i>Confermato: </i>
+                {order.isConfirmed ? (
+                  <Check fontSize="large" color="success" />
+                ) : (
+                  <Clear fontSize="large" color="error" />
+                )}
+              </div>
+              <div>
+                <i>
+                  <b>ID: </b>{" "}
+                </i>
+                <i> {order?.internal_id}</i>
+              </div>
             </Typography>
             <OrderInfoCard>
               <Grid

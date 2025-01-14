@@ -72,7 +72,9 @@ export default function CalendarComponent() {
             .filter((activity) => activity.inCalendar)
             .forEach((activity) => {
               extractedEvents.push({
-                title: `${order.orderName} - ${activity.name}`,
+                title: `${order.orderName} - ${activity.name} ${" "}${
+                  order.isConfirmed ? "✓" : ""
+                } `,
                 start: new Date(activity.startDate),
                 end: new Date(activity.endDate),
                 orderName: order.orderName,
@@ -82,6 +84,7 @@ export default function CalendarComponent() {
                 notes: activity.note,
                 activityName: activity.name,
                 urgency: order.urgency,
+                isConfirmed: order.isConfirmed,
               });
             });
         }
