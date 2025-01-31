@@ -73,7 +73,7 @@ const Appbar = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (location.pathname === "/login") {
+  if (location.pathname === "/login" || location.pathname === "/role") {
     return null;
   } else
     return (
@@ -97,7 +97,7 @@ const Appbar = () => {
               >
                 <b>Calendario</b>
               </Button>
-              {session?.user.email === "alminfissi.dev@gmail.com" && (
+              {session?.user.email === process.env.REACT_APP_ADMIN && (
                 <Button
                   onClick={() => navigate("/impostazioni")}
                   color="inherit"
@@ -120,7 +120,7 @@ const Appbar = () => {
               <BackButton title={"Home"} direction={"/"} />
             )}
 
-          {session?.user.email === "alminfissi.dev@gmail.com" && (
+          {session?.user.email === process.env.REACT_APP_ADMIN && (
             <Tabs
               value={tabValue}
               onChange={handleTabChange}

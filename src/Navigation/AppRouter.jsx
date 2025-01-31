@@ -14,6 +14,7 @@ import OrderSummary from "../components/Orders/OrderSummary";
 import Calendar from "../pages/Calendar";
 import DailyAgenda from "../components/Calendar/DailyAgenda";
 import Agenda from "../pages/Agenda";
+import RoleSelection from "../pages/RoleSelection";
 const AppRouter = () => (
   <Routes>
     <Route
@@ -25,6 +26,17 @@ const AppRouter = () => (
         </ProtectedRoute>
       }
     />
+
+    <Route
+      exact
+      path="/role"
+      element={
+        <ProtectedRoute>
+          <RoleSelection />
+        </ProtectedRoute>
+      }
+    />
+
     <Route
       path="/aggiungi"
       element={
