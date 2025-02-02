@@ -159,7 +159,7 @@ export const createSchema = async (schemaName, activities) => {
   try {
     // Effettua la chiamata POST per inserire i dati
     const { data, error } = await supabase
-      .from("activitiesSchemes") // Sostituisci con il nome della tua tabella
+      .from("activitiesschemes") // Sostituisci con il nome della tua tabella
       .insert([
         { schemaName, activities }, // Oggetto da inserire
       ]);
@@ -181,15 +181,15 @@ export const createSchema = async (schemaName, activities) => {
 // Funzione per ottenere tutti gli schemi
 export const fetchActivitiesSchemes = async () => {
   try {
-    let { data: activitiesSchemes, error } = await supabase
-      .from("activitiesSchemes")
+    let { data: activitiesschemes, error } = await supabase
+      .from("activitiesschemes")
       .select("*");
 
     if (error) {
       throw error;
     }
 
-    return activitiesSchemes;
+    return activitiesschemes;
   } catch (error) {
     console.error(
       "Errore nel recupero degli schemi di attività:",

@@ -24,6 +24,7 @@ import {
 import { supabase } from "../../supabase/supabaseClient";
 import useSession from "../../hooks/useSession";
 import BackButton from "../misc/BackButton";
+import { useRole } from "../../context/RoleContext";
 
 const StyledAppBar = styled(AppBar)`
   background: linear-gradient(
@@ -46,7 +47,11 @@ const Appbar = () => {
   const location = useLocation();
   const { session } = useSession();
 
+  const { role, removeRole } = useRole();
+
+
   const handleExit = () => {
+    removeRole();
     supabase.auth.signOut();
     navigate("/login");
   };
@@ -90,6 +95,7 @@ const Appbar = () => {
                   style={{ paddingTop: "6px", cursor: "pointer" }} // Percorso del logo
                 />
               </Typography>
+              
               <Button
                 onClick={() => navigate("/calendario")}
                 color="inherit"
@@ -97,7 +103,7 @@ const Appbar = () => {
               >
                 <b>Calendario</b>
               </Button>
-              {session?.user.email === process.env.REACT_APP_ADMIN && (
+              {role === 'admin' && (
                 <Button
                   onClick={() => navigate("/impostazioni")}
                   color="inherit"
@@ -115,12 +121,12 @@ const Appbar = () => {
               </Button>
             </Toolbar>
           </StyledAppBar>
-          {session?.user.email === "alminfissi.operator@gmail.com" &&
+          {role === "operator" &&
             location.pathname !== "/" && (
               <BackButton title={"Home"} direction={"/"} />
             )}
 
-          {session?.user.email === process.env.REACT_APP_ADMIN && (
+          {role === 'admin' && (
             <Tabs
               value={tabValue}
               onChange={handleTabChange}

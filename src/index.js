@@ -6,12 +6,16 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material/styles";
 import reportWebVitals from "./reportWebVitals";
 import theme from "./theme";
+import { RoleProvider } from "./context/RoleContext";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
+  
   <ThemeProvider theme={theme}>
+    <RoleProvider>
     <CssBaseline />
     <App />
+  </RoleProvider>
   </ThemeProvider>
 );
 

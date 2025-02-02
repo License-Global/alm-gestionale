@@ -2,7 +2,7 @@
 import { supabase } from "../supabase/supabaseClient";
 
 export const fetchPersonale = async () => {
-  const { data, error } = await supabase.from("Personale").select(`*`);
+  const { data, error } = await supabase.from("personale").select(`*`);
   if (error) {
     console.error("Error fetching orders:", error);
     throw error;
@@ -13,7 +13,7 @@ export const fetchPersonale = async () => {
 export async function insertPersonale(record) {
   try {
     const { data, error } = await supabase
-      .from("Personale")
+      .from("personale")
       .insert([record])
       .select();
 
@@ -31,7 +31,7 @@ export async function insertPersonale(record) {
 
 export async function deletePersonale(id) {
   const { data, error } = await supabase
-    .from("Personale")
+    .from("personale")
     .delete()
     .eq("id", id);
 

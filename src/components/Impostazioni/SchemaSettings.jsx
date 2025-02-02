@@ -27,7 +27,7 @@ export default function SchemaSettings() {
     setError(null);
     try {
       const { data, error } = await supabase
-        .from("activitiesSchemes")
+        .from("activitiesschemes")
         .select("*");
       if (error) {
         console.error("Error fetching schemas:", error);
@@ -45,7 +45,7 @@ export default function SchemaSettings() {
 
   const handleDeleteSchema = async (id) => {
     try {
-      await supabase.from("activitiesSchemes").delete().eq("id", id);
+      await supabase.from("activitiesschemes").delete().eq("id", id);
       fetchSchemas(); // Aggiorna la lista dopo la cancellazione
     } catch (error) {
       console.error("Error deleting schema:", error);
@@ -55,10 +55,10 @@ export default function SchemaSettings() {
   useEffect(() => {
     fetchSchemas();
     const channel = supabase
-      .channel("public:activitiesSchemes")
+      .channel("public:activitiesschemes")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "activitiesSchemes" },
+        { event: "*", schema: "public", table: "activitiesschemes" },
         (payload) => {
           console.log("Change received!", payload);
           fetchSchemas();
@@ -67,7 +67,7 @@ export default function SchemaSettings() {
       .subscribe((status) => {
         if (status === "SUBSCRIBED") {
           console.log(
-            "Subscribed to real-time changes on 'activitiesSchemes' table."
+            "Subscribed to real-time changes on 'activitiesschemes' table."
           );
         }
       });

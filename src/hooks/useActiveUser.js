@@ -1,20 +1,12 @@
-import { useState, useEffect } from "react";
-import useSession from "./useSession";
+import { useRole } from "../context/RoleContext";
 
 const useActiveUser = () => {
-  const { session } = useSession();
-  const [email, setEmail] = useState(null);
+  const { role } = useRole();
+  
 
-  useEffect(() => {
-    const user = session?.user;
-    if (user && user.email) {
-      setEmail(user.email);
-    }
-  }, [session]);
-
-  if (email === process.env.REACT_APP_ADMIN) {
+  if (role === 'admin') {
     return "admin";
-  } else if (email === process.env.REACT_APP_OPERATOR) {
+  } else if (role === 'operator') {
     return "operator";
   }
 };

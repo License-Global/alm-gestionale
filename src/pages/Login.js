@@ -65,7 +65,7 @@ export default function Login() {
       console.error("Errore nel login:", error);
       handleClick();
     } else {
-      setTimeout(() => navigate("/"), 1000);
+      setTimeout(() => navigate("/role"), 1000);
     }
   };
 
