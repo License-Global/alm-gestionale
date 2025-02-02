@@ -32,7 +32,7 @@ export default function EmployeeCards() {
   useEffect(() => {
     // Function to fetch employees
     const fetchEmployees = async () => {
-      const { data, error } = await supabase.from("Personale").select("*");
+      const { data, error } = await supabase.from("personale").select("*");
       if (error) {
         console.error("Error fetching employees:", error);
       } else {
@@ -45,10 +45,10 @@ export default function EmployeeCards() {
 
     // Set up real-time subscription
     const channel = supabase
-      .channel("public:Personale")
+      .channel("public:personale")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "Personale" },
+        { event: "*", schema: "public", table: "personale" },
         (payload) => {
           console.log("Change received!", payload);
           fetchEmployees();
