@@ -3,16 +3,11 @@ import {
   Box,
   Button,
   Container,
-  TextField,
   Typography,
-  useMediaQuery,
 } from "@mui/material";
 import { styled } from "@mui/system";
-import theme from "../theme";
 import { useRole } from "../context/RoleContext";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../supabase/supabaseClient";
-import bcrypt from "bcryptjs";
 
 const GradientBackground = styled(Box)({
   background: "linear-gradient(45deg, #4fc3f7 30%, #81c784 90%)",
@@ -32,11 +27,7 @@ const FormContainer = styled(Container)({
 const RoleSelection = () => {
   const navigate = useNavigate();
 
-  //Il ruolo è criptato in base64 è una soluzione temporanea
   const [selectedRole, setSelectedRole] = useState("");
-  const [showAdminPass, setShowAdminPass] = useState(false);
-  const [adminPass, setAdminPass] = useState("");
-  const [selectedPass, setSelectedPass] = useState("");
 
   // const getPasskey = async () => {
   //   let { data: account, error } = await supabase
@@ -49,7 +40,7 @@ const RoleSelection = () => {
   //   getPasskey();
   // }, []);
 
-  const { setRole } = useRole();
+  const { role, setRole } = useRole();
 
   const handleAdmin = () => {
     setSelectedRole("admin");
@@ -58,31 +49,38 @@ const RoleSelection = () => {
   const handleOperator = () => {
     setSelectedRole("operator");
   };
-//   const handleRoleSelection = async () => {
-//     if (selectedRole === "admin") {
-//         const match = await bcrypt.compare(selectedPass, adminPass); // Verifica la password
+  //   const handleRoleSelection = async () => {
+  //     if (selectedRole === "admin") {
+  //         const match = await bcrypt.compare(selectedPass, adminPass); // Verifica la password
 
-//         if (match) {
-//             setRole(selectedRole);
-//             navigate("/");
-//         } else {
-//             alert("Password errata");
-//         }
-//     } else if (selectedRole === "operator") {
-//         setRole(selectedRole);
-//         navigate("/");
-//     }
-// };
+  //         if (match) {
+  //             setRole(selectedRole);
+  //             navigate("/");
+  //         } else {
+  //             alert("Password errata");
+  //         }
+  //     } else if (selectedRole === "operator") {
+  //         setRole(selectedRole);
+  //         navigate("/");
+  //     }
+  // };
 
-const handleRoleSelection = () => {
-  if(selectedRole === "admin") {
-    setRole(selectedRole);
-    navigate("/");
-  } else if(selectedRole === "operator") {
-    setRole(selectedRole);
-    navigate("/");
+  const handleRoleSelection = () => {
+    if (selectedRole === "admin") {
+      setRole(selectedRole);
+      navigate("/");
+    } else if (selectedRole === "operator") {
+      setRole(selectedRole);
+      navigate("/");
+    }
   }
-}
+
+  useEffect(() => {
+    if (role) {
+      navigate("/");
+    }
+  }, [])
+
 
   return (
     <GradientBackground>
