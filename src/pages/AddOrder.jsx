@@ -31,10 +31,13 @@ import {
 import ClassicTable from "../components/Tables/ClassicTable";
 import { createBucket } from "../services/bucketServices";
 import { PageContainer, SectionTitle } from "../styles/ArchiveDashboardStyles";
+import { ToastContainer, toast } from "react-toastify";
 
 const OrderForm = () => {
   const { session, loading } = useSession();
   const navigate = useNavigate();
+
+  const notifyError = (message) => toast.error(message);
 
   useEffect(() => {
     if (!loading) {
@@ -68,7 +71,9 @@ const OrderForm = () => {
       !regex.test(event.key) &&
       event.key !== "Backspace" &&
       event.key !== "Delete"
+      
     ) {
+      notifyError("Inserire solo numeri e lettere");
       event.preventDefault();
     }
   };
@@ -186,6 +191,7 @@ const OrderForm = () => {
 
   return (
     <PageContainer>
+    <ToastContainer  limit={1}/>
       <Box sx={{ p: 3 }}>
         <form onSubmit={handleConfirm}>
           {/* Prima sezione del form */}
