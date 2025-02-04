@@ -46,8 +46,8 @@ const AddTable = ({ genericOrderData, personale, newOrderHandler }) => {
         inCalendar: false,
         color: "",
         responsible: "",
-        startDate: null,
-        endDate: null,
+        startDate: dayjs().add(5, "minute"),
+        endDate: dayjs().add(15, "minute"),
       }); // Resetta il campo dopo l'inserimento
     } else {
       // Gestione errore (facoltativo)
@@ -166,7 +166,6 @@ const AddTable = ({ genericOrderData, personale, newOrderHandler }) => {
             </TableRow>
           ))}
           {/* Riga per aggiungere nuovi dati */}
-          {}
           <TableRow>
             <TableCell>
               <TextField
@@ -241,7 +240,7 @@ const AddTable = ({ genericOrderData, personale, newOrderHandler }) => {
               <DateTimePicker
                 label="Data inizio"
                 skipDisabled
-                value={newRow.startDate}
+                value={newRow.startDate || dayjs().add(5, "minute")}
                 defaultValue={dayjs().add(5, "minute")}
                 onChange={(date) => handleChange("startDate", date)}
                 minTime={dayjs().hour(6).minute(0)}
@@ -253,7 +252,7 @@ const AddTable = ({ genericOrderData, personale, newOrderHandler }) => {
               <DateTimePicker
                 label="Data scadenza"
                 skipDisabled
-                value={newRow.endDate}
+                value={newRow.endDate || dayjs().add(15, "minute")}
                 defaultValue={dayjs().add(15, "minute")}
                 onChange={(date) => handleChange("endDate", date)}
                 minTime={dayjs().hour(6).minute(0)}

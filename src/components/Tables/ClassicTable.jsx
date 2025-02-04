@@ -146,6 +146,7 @@ const ActivityTable = ({ selectedSchema, personale, setPresetActivities }) => {
                   onChange={(date) => handleChange(index, "startDate", date)}
                   minTime={dayjs().hour(6).minute(0)}
                   maxTime={dayjs().hour(20).minute(0)}
+                  defaultValue={dayjs().add(5, "minute")}
                   renderInput={(params) => (
                     <TextField
                       {...params}
@@ -165,6 +166,7 @@ const ActivityTable = ({ selectedSchema, personale, setPresetActivities }) => {
                   onChange={(date) => handleChange(index, "endDate", date)}
                   minTime={dayjs().hour(6).minute(0)}
                   maxTime={dayjs().hour(20).minute(0)}
+                  defaultValue={dayjs().add(15, "minute")}
                   renderInput={(params) => (
                     <TextField
                       {...params}
