@@ -33,7 +33,6 @@ import { createBucket } from "../services/bucketServices";
 import { PageContainer, SectionTitle } from "../styles/ArchiveDashboardStyles";
 import { ToastContainer, toast } from "react-toastify";
 import { useFormik } from "formik";
-import * as Yup from 'yup';
 import { mainOrderSchema } from "../utils/validations/validationSchemes";
 
 const OrderForm = () => {
@@ -50,10 +49,11 @@ const OrderForm = () => {
       urgency: '',
       accessories: '',
       orderManager: '',
+      activities: [],
     },
     validationSchema: mainOrderSchema,
     onSubmit: (values) => {
-      console.log('Dati inviati:', values);
+      handleConfirm();
     },
   });
 
@@ -77,6 +77,8 @@ const OrderForm = () => {
 
   const [presetActivities, setPresetActivities] = useState([]);
 
+  const [finalOrder, setFinalOrder] = useState([]);
+
 
   // Funzione per aggiornare lo stato
   const newOrderHandler = (ordine, activitiesNames) => {
@@ -84,6 +86,8 @@ const OrderForm = () => {
     if (activitiesNames) {
       setActivitiesNames(activitiesNames);
     }
+    console.log(ordine, "ordine");
+    console.log(newOrder, "newOrder");
   };
 
   // Richiede gli schemi di attività al caricamento della pagina
@@ -112,41 +116,52 @@ const OrderForm = () => {
     } else return;
   };
 
+  const handleOrder = () => {
+    if (!isNewSchema) {
+      setFinalOrder({
+        ...formik.values,
+        activities: presetActivities.map((activity) => ({
+          ...activity,
+          status: "Standby",
+          completed: false,
+          note: [],
+        })),
+      });
+    } else if (isNewSchema) {
+      setFinalOrder({
+        ...newOrder,
+        activities: newOrder.activities.map((activity) => ({
+          ...activity,
+          status: "Standby",
+          completed: false,
+          note: [],
+        })),
+      });
+    } else if(selectedSchema !== "") {
+      setFinalOrder({
+        ...newOrder,
+        activities: newOrder.activities.map((activity) => ({
+          ...activity,
+          status: "Standby",
+          completed: false,
+          note: [],
+        })),
+      });
+    }
+  }
   useEffect(() => {
-console.log(formik.values)
-  }, [formik.values]);
-
-
-
+    handleOrder();
+  }, [presetActivities, newOrder, formik.values, selectedSchema]);
+  
   const handleConfirm = async () => {
     try {
-      let orderData = {
-        status: "Standby",
-        completed: false,
-        note: [],
-      };
-      if (!isNewSchema) {
-        orderData = {
-          ...formik.values,
-          activities: presetActivities.map((activity) => ({
-            ...activity,
-          })),
-        };
-      } else if (isNewSchema) {
-        orderData = {
-          ...newOrder,
-          activities: newOrder.activities.map((activity) => ({
-            ...activity,
-          })),
-        };
-      }
       try {
-        const result = await createOrder(orderData);
+        const result = await createOrder(finalOrder);
         if (result.success) {
           // Se l'ordine è stato creato con successo, fornisci un feedback
           console.log("Ordine creato con successo!");
           await submitNewSchema(newSchemaName, activitiesNames);
-          createBucket(orderData.orderName);
+          createBucket(finalOrder.orderName);
           // Puoi mostrare una notifica o aggiornare lo stato dell'interfaccia utente
         } else {
           // Se c'è stato un errore, mostra l'errore
@@ -167,6 +182,9 @@ console.log(formik.values)
     }
   };
 
+useEffect(() => {
+  setFinalOrder(newOrder)
+}, [newOrder])
 
 
   return (
@@ -318,7 +336,6 @@ console.log(formik.values)
           </Paper>
 
           {/* Sezione attività */}
-
           <Paper sx={{ p: 3, boxShadow: " 15px 15px 15px #ccc" }}>
             <SectionTitle variant="h4">Attività</SectionTitle>
             <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -405,6 +422,7 @@ console.log(formik.values)
           </Paper>
           <Box sx={{ textAlign: "center" }}>
             <Button
+              disabled={!(formik.isValid && finalOrder.activities?.length > 0)}
               type="submit"
               size="large"
               variant="contained"

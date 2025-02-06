@@ -28,8 +28,8 @@ const AddTable = ({ genericOrderData, personale, newOrderHandler }) => {
     inCalendar: false,
     color: "",
     responsible: "",
-    startDate: null,
-    endDate: null,
+    startDate: dayjs().add(5, "minute"),
+    endDate: dayjs().add(15, "minute"),
   });
   const [activitiesNames, setActivitiesNames] = useState([]);
   const [open, setOpen] = useState(false);
@@ -39,7 +39,7 @@ const AddTable = ({ genericOrderData, personale, newOrderHandler }) => {
   // Funzione per aggiungere una nuova riga
   const handleAddRow = () => {
     // Verifica se i campi name, startDate, ed endDate sono popolati
-    if (newRow.name.trim() !== "" && newRow.startDate && newRow.endDate) {
+    if (newRow.name.trim() !== "" && newRow.startDate && newRow.endDate && newRow.responsible) {
       setRows([...rows, { ...newRow }]);
       setNewRow({
         name: "",

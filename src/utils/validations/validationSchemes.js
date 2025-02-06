@@ -11,14 +11,14 @@ export const mainOrderSchema = Yup.object({
     urgency: Yup.string().required('Campo obbligatorio'),
     accessories: Yup.string().required('Campo obbligatorio'),
     orderManager: Yup.string().required('Campo obbligatorio'),
-    activities: Yup.array().of(
-        Yup.object({
-            name: Yup.string().required('Campo obbligatorio'),
-            calendar: Yup.string().required('Campo obbligatorio'),
-            color: Yup.string().required('Campo obbligatorio'),
-            responsible: Yup.string().required('Campo obbligatorio'),
-            startDate: Yup.date().required('Campo obbligatorio'),
-            endDate: Yup.date().required('Campo obbligatorio'),
-        })
-    ).required('Campo obbligatorio'),
+});
+export const activityOrderSchema = Yup.object({
+    name: Yup.string()
+        .matches(/^[a-zA-Z0-9À-ÿ ]+$/, "Sono ammessi solo lettere e numeri")
+        .max(15, "Non deve superare i 15 caratteri")
+        .required("Campo obbligatorio"),
+    responsible: Yup.string().required('Campo obbligatorio'),
+    startDate: Yup.date().required('Campo obbligatorio'),
+    endDate: Yup.date().required('Campo obbligatorio'),
+
 });
