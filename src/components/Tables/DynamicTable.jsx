@@ -156,10 +156,6 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
     }, 1000);
   };
 
-  useEffect(() => {
-    console.log(formikValues.orderName);
-  }, [formikValues]);
-
   return (
     <Box sx={{ p: 2 }}>
       <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>

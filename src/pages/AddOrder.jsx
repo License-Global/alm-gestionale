@@ -28,7 +28,7 @@ import {
   createSchema,
   fetchActivitiesSchemes,
 } from "../services/activitiesService";
-import ClassicTable from "../components/Tables/ClassicTable";
+import ClassicTable from "../components/Tables/ActivityTable";
 import { createBucket } from "../services/bucketServices";
 import { PageContainer, SectionTitle } from "../styles/ArchiveDashboardStyles";
 import { ToastContainer, toast } from "react-toastify";
@@ -42,13 +42,13 @@ const OrderForm = () => {
 
   const formik = useFormik({
     initialValues: {
-      orderName: '',
+      orderName: "",
       startDate: dayjs().add(2, "minute"),
       endDate: dayjs().add(1, "day"),
-      materialShelf: '',
-      urgency: '',
-      accessories: '',
-      orderManager: '',
+      materialShelf: "",
+      urgency: "",
+      accessories: "",
+      orderManager: "",
       activities: [],
     },
     validationSchema: mainOrderSchema,
@@ -78,7 +78,6 @@ const OrderForm = () => {
   const [presetActivities, setPresetActivities] = useState([]);
 
   const [finalOrder, setFinalOrder] = useState([]);
-
 
   // Funzione per aggiornare lo stato
   const newOrderHandler = (ordine, activitiesNames) => {
@@ -137,7 +136,7 @@ const OrderForm = () => {
           note: [],
         })),
       });
-    } else if(selectedSchema !== "") {
+    } else if (selectedSchema !== "") {
       setFinalOrder({
         ...newOrder,
         activities: newOrder.activities.map((activity) => ({
@@ -148,11 +147,11 @@ const OrderForm = () => {
         })),
       });
     }
-  }
+  };
   useEffect(() => {
     handleOrder();
   }, [presetActivities, newOrder, formik.values, selectedSchema]);
-  
+
   const handleConfirm = async () => {
     try {
       try {
@@ -165,8 +164,11 @@ const OrderForm = () => {
           // Puoi mostrare una notifica o aggiornare lo stato dell'interfaccia utente
         } else {
           // Se c'è stato un errore, mostra l'errore
-          notifyError("Errore durante la creazione dell'ordine:", result.message);
-          console.log(result.message)
+          notifyError(
+            "Errore durante la creazione dell'ordine:",
+            result.message
+          );
+          console.log(result.message);
           // Mostra un messaggio di errore all'utente (opzionale)
         }
       } catch (error) {
@@ -182,10 +184,9 @@ const OrderForm = () => {
     }
   };
 
-useEffect(() => {
-  setFinalOrder(newOrder)
-}, [newOrder])
-
+  useEffect(() => {
+    setFinalOrder(newOrder);
+  }, [newOrder]);
 
   return (
     <PageContainer>
@@ -206,8 +207,12 @@ useEffect(() => {
                   value={formik.values.orderName}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
-                  error={formik.touched.orderName && Boolean(formik.errors.orderName)}
-                  helperText={formik.touched.orderName && formik.errors.orderName}
+                  error={
+                    formik.touched.orderName && Boolean(formik.errors.orderName)
+                  }
+                  helperText={
+                    formik.touched.orderName && formik.errors.orderName
+                  }
                 />
               </Grid>
               <Grid item xs={12} sm={4}>
@@ -218,10 +223,14 @@ useEffect(() => {
                   sx={{ width: "100%" }}
                   label="Inizio commessa"
                   value={formik.values.startDate}
-                  onChange={(value) => formik.setFieldValue('startDate', value)}
+                  onChange={(value) => formik.setFieldValue("startDate", value)}
                   onBlur={formik.handleBlur}
-                  error={formik.touched.startDate && Boolean(formik.errors.startDate)}
-                  helperText={formik.touched.startDate && formik.errors.startDate}
+                  error={
+                    formik.touched.startDate && Boolean(formik.errors.startDate)
+                  }
+                  helperText={
+                    formik.touched.startDate && formik.errors.startDate
+                  }
                 />
               </Grid>
               <Grid item xs={12} sm={4}>
@@ -233,9 +242,11 @@ useEffect(() => {
                   sx={{ width: "100%" }}
                   label="Fine commessa"
                   value={formik.values.endDate}
-                  onChange={(value) => formik.setFieldValue('endDate', value)}
+                  onChange={(value) => formik.setFieldValue("endDate", value)}
                   onBlur={formik.handleBlur}
-                  error={formik.touched.endDate && Boolean(formik.errors.endDate)}
+                  error={
+                    formik.touched.endDate && Boolean(formik.errors.endDate)
+                  }
                   helperText={formik.touched.endDate && formik.errors.endDate}
                 />
               </Grid>
@@ -249,8 +260,13 @@ useEffect(() => {
                   value={formik.values.accessories}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
-                  error={formik.touched.accessories && Boolean(formik.errors.accessories)}
-                  helperText={formik.touched.accessories && formik.errors.accessories}
+                  error={
+                    formik.touched.accessories &&
+                    Boolean(formik.errors.accessories)
+                  }
+                  helperText={
+                    formik.touched.accessories && formik.errors.accessories
+                  }
                   slotProps={{
                     input: {
                       startAdornment: (
@@ -281,8 +297,13 @@ useEffect(() => {
                   value={formik.values.materialShelf}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
-                  error={formik.touched.materialShelf && Boolean(formik.errors.materialShelf)}
-                  helperText={formik.touched.materialShelf && formik.errors.materialShelf}
+                  error={
+                    formik.touched.materialShelf &&
+                    Boolean(formik.errors.materialShelf)
+                  }
+                  helperText={
+                    formik.touched.materialShelf && formik.errors.materialShelf
+                  }
                 />
               </Grid>
             </Grid>
@@ -299,7 +320,9 @@ useEffect(() => {
                     value={formik.values.urgency}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
-                    error={formik.touched.urgency && Boolean(formik.errors.urgency)}
+                    error={
+                      formik.touched.urgency && Boolean(formik.errors.urgency)
+                    }
                     helperText={formik.touched.urgency && formik.errors.urgency}
                   >
                     <MenuItem value="Urgente">Urgente</MenuItem>
@@ -321,8 +344,13 @@ useEffect(() => {
                     value={formik.values.orderManager}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
-                    error={formik.touched.orderManager && Boolean(formik.errors.orderManager)}
-                    helperText={formik.touched.orderManager && formik.errors.orderManager}
+                    error={
+                      formik.touched.orderManager &&
+                      Boolean(formik.errors.orderManager)
+                    }
+                    helperText={
+                      formik.touched.orderManager && formik.errors.orderManager
+                    }
                   >
                     {personale.map((worker, index) => (
                       <MenuItem key={index} value={worker.workerName}>

@@ -1,7 +1,6 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import Home from "../pages/Home";
-import AddOrder from "../pages/AddOrder";
 import NewOrder from "../pages/NewOrder";
 import Login from "../pages/Login";
 import NotFound from "../pages/NotFound";
