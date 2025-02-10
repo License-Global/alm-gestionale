@@ -495,12 +495,18 @@ const MainTable = ({ order }) => {
                         </Select>
                       </StyledTableCell>
                       <StyledTableCell align="right">
-                        <IconButton
-                          onClick={() => handleOpenModal(activity, order.id)}
-                          size="small"
+                        <Badge
+                          key={activity.name + "note"}
+                          badgeContent={activity.note.length} // Usa il conteggio dei file per l'attività
+                          color="secondary"
                         >
-                          <Email />
-                        </IconButton>
+                          <IconButton
+                            onClick={() => handleOpenModal(activity, order.id)}
+                            size="small"
+                          >
+                            <Email color="primary" />
+                          </IconButton>
+                        </Badge>
                       </StyledTableCell>
                     </TableRow>
                   ))}
