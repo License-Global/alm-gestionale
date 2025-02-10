@@ -525,13 +525,18 @@ const MainTable = ({ order }) => {
               <LinearProgress
                 variant="determinate"
                 value={handleProgressPercentage(order?.activities)}
+                color={
+                  order?.activities.every((act) => act.status === "Completato")
+                    ? "secondary"
+                    : "primary"
+                }
               />
             </Box>
             <Button
               variant="contained"
               color="secondary"
               sx={
-                authorizedUser !== "admin"
+                authorizedUser !== btoa("admin")
                   ? { display: "none" }
                   : { mt: "15px", fontWeight: "bold" }
               }
@@ -557,7 +562,7 @@ const MainTable = ({ order }) => {
                 {selectedItem?.name}
               </Typography>
               <Chatbox
-                authorizedUser={authorizedUser}
+                authorizedUser={atob(authorizedUser)}
                 selectedItem={selectedItem}
                 closeModal={handleCloseModal}
               />

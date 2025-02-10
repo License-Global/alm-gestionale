@@ -61,9 +61,9 @@ const AdminDocsModal = ({ bucketName, folderName }) => {
 
   return (
     <div>
-      {user === "admin" && <Divider sx={{ mb: 4 }} />}
+      {user === btoa("admin") && <Divider sx={{ mb: 4 }} />}
       <Stack spacing={4}>
-        {user === "admin" && (
+        {user === btoa("admin") && (
           <Box>
             <Typography
               variant="h6"

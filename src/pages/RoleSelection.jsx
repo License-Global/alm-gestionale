@@ -1,10 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  Box,
-  Button,
-  Container,
-  Typography,
-} from "@mui/material";
+import { Box, Button, Container, Typography } from "@mui/material";
 import { styled } from "@mui/system";
 import { useRole } from "../context/RoleContext";
 import { useNavigate } from "react-router-dom";
@@ -73,14 +68,13 @@ const RoleSelection = () => {
       setRole(selectedRole);
       navigate("/");
     }
-  }
+  };
 
   useEffect(() => {
     if (role) {
       navigate("/");
     }
-  }, [])
-
+  }, []);
 
   return (
     <GradientBackground>

@@ -8,8 +8,8 @@ export const RoleProvider = ({ children }) => {
 
   // Imposta il ruolo sia nello stato che nei cookie
   const handleSetRole = (newRole) => {
-    setRoleState(newRole);
-    setRole(newRole); // Salva il ruolo nel cookie
+    setRoleState(btoa(newRole));
+    setRole(btoa(newRole)); // Salva il ruolo nel cookie
   };
 
   // Rimuove il ruolo (per il logout)
@@ -19,7 +19,9 @@ export const RoleProvider = ({ children }) => {
   };
 
   return (
-    <RoleContext.Provider value={{ role, setRole: handleSetRole, removeRole: handleRemoveRole }}>
+    <RoleContext.Provider
+      value={{ role, setRole: handleSetRole, removeRole: handleRemoveRole }}
+    >
       {children}
     </RoleContext.Provider>
   );

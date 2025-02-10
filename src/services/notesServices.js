@@ -57,9 +57,6 @@ export async function addNote(
     return activity;
   });
 
-  // Logga l'attività aggiornata per conferma
-  console.log("Attività dopo aggiunta nota:", JSON.stringify(activities));
-
   // Esegui l'aggiornamento con `activities` modificato
   const { error: updateError } = await supabase
     .from("orders")
