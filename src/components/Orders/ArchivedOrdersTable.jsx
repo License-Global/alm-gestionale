@@ -12,6 +12,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { TableContainer } from "../../styles/ArchiveDashboardStyles";
 import { supabase } from "../../supabase/supabaseClient";
 import { useNavigate } from "react-router-dom";
+import NoOrders from "./NoOrders";
 
 const ArchivedOrdersTable = () => {
   const navigate = useNavigate();
@@ -64,62 +65,65 @@ const ArchivedOrdersTable = () => {
     }
   };
 
-  return (
-    <TableContainer>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>
-              <TableSortLabel
-                active={orderBy === "orderName"}
-                direction={orderBy === "orderName" ? order : "asc"}
-                onClick={() => handleRequestSort("orderName")}
-              >
-                Nome Ordine
-              </TableSortLabel>
-            </TableCell>
-            <TableCell>
-              <TableSortLabel
-                active={orderBy === "startDate"}
-                direction={orderBy === "startDate" ? order : "asc"}
-                onClick={() => handleRequestSort("startDate")}
-              >
-                Data Inizio
-              </TableSortLabel>
-            </TableCell>
-            <TableCell>Elimina</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {loading ? (
+  if (!orders.length) {
+    return <NoOrders />;
+  } else
+    return (
+      <TableContainer>
+        <Table>
+          <TableHead>
             <TableRow>
-              <TableCell colSpan={3}>Caricamento...</TableCell>
+              <TableCell>
+                <TableSortLabel
+                  active={orderBy === "orderName"}
+                  direction={orderBy === "orderName" ? order : "asc"}
+                  onClick={() => handleRequestSort("orderName")}
+                >
+                  Nome Ordine
+                </TableSortLabel>
+              </TableCell>
+              <TableCell>
+                <TableSortLabel
+                  active={orderBy === "startDate"}
+                  direction={orderBy === "startDate" ? order : "asc"}
+                  onClick={() => handleRequestSort("startDate")}
+                >
+                  Data Inizio
+                </TableSortLabel>
+              </TableCell>
+              <TableCell>Elimina</TableCell>
             </TableRow>
-          ) : (
-            orders.map((order) => (
-              <TableRow
-                onClick={() => navigate(`/archivio/${order.id}`)}
-                key={order.id}
-              >
-                <TableCell>{order.orderName}</TableCell>
-                <TableCell>
-                  {new Date(order.startDate).toLocaleDateString("it-IT")}
-                </TableCell>
-                <TableCell>
-                  <IconButton
-                    color="error"
-                    onClick={() => handleDelete(order.id)}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </TableCell>
+          </TableHead>
+          <TableBody>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={3}>Caricamento...</TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-    </TableContainer>
-  );
+            ) : (
+              orders.map((order) => (
+                <TableRow
+                  onClick={() => navigate(`/archivio/${order.id}`)}
+                  key={order.id}
+                >
+                  <TableCell>{order.orderName}</TableCell>
+                  <TableCell>
+                    {new Date(order.startDate).toLocaleDateString("it-IT")}
+                  </TableCell>
+                  <TableCell>
+                    <IconButton
+                      color="error"
+                      onClick={() => handleDelete(order.id)}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    );
 };
 
 export default ArchivedOrdersTable;

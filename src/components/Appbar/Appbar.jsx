@@ -49,7 +49,6 @@ const Appbar = () => {
 
   const { role, removeRole } = useRole();
 
-
   const handleExit = () => {
     removeRole();
     supabase.auth.signOut();
@@ -95,7 +94,7 @@ const Appbar = () => {
                   style={{ paddingTop: "6px", cursor: "pointer" }} // Percorso del logo
                 />
               </Typography>
-              
+
               <Button
                 onClick={() => navigate("/calendario")}
                 color="inherit"
@@ -103,7 +102,7 @@ const Appbar = () => {
               >
                 <b>Calendario</b>
               </Button>
-              {role === 'admin' && (
+              {role === btoa("admin") && (
                 <Button
                   onClick={() => navigate("/impostazioni")}
                   color="inherit"
@@ -121,12 +120,11 @@ const Appbar = () => {
               </Button>
             </Toolbar>
           </StyledAppBar>
-          {role === "operator" &&
-            location.pathname !== "/" && (
-              <BackButton title={"Home"} direction={"/"} />
-            )}
+          {role === btoa("operator") && location.pathname !== "/" && (
+            <BackButton title={"Home"} direction={"/"} />
+          )}
 
-          {role === 'admin' && (
+          {role === btoa("admin") && (
             <Tabs
               value={tabValue}
               onChange={handleTabChange}

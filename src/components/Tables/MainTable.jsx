@@ -495,12 +495,18 @@ const MainTable = ({ order }) => {
                         </Select>
                       </StyledTableCell>
                       <StyledTableCell align="right">
-                        <IconButton
-                          onClick={() => handleOpenModal(activity, order.id)}
-                          size="small"
+                        <Badge
+                          key={activity.name + "note"}
+                          badgeContent={activity.note.length} // Usa il conteggio dei file per l'attività
+                          color="secondary"
                         >
-                          <Email />
-                        </IconButton>
+                          <IconButton
+                            onClick={() => handleOpenModal(activity, order.id)}
+                            size="small"
+                          >
+                            <Email color="primary" />
+                          </IconButton>
+                        </Badge>
                       </StyledTableCell>
                     </TableRow>
                   ))}
@@ -519,13 +525,18 @@ const MainTable = ({ order }) => {
               <LinearProgress
                 variant="determinate"
                 value={handleProgressPercentage(order?.activities)}
+                color={
+                  order?.activities.every((act) => act.status === "Completato")
+                    ? "secondary"
+                    : "primary"
+                }
               />
             </Box>
             <Button
               variant="contained"
               color="secondary"
               sx={
-                authorizedUser !== "admin"
+                authorizedUser !== btoa("admin")
                   ? { display: "none" }
                   : { mt: "15px", fontWeight: "bold" }
               }
@@ -551,7 +562,7 @@ const MainTable = ({ order }) => {
                 {selectedItem?.name}
               </Typography>
               <Chatbox
-                authorizedUser={authorizedUser}
+                authorizedUser={atob(authorizedUser)}
                 selectedItem={selectedItem}
                 closeModal={handleCloseModal}
               />

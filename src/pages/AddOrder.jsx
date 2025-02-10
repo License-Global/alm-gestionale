@@ -28,13 +28,36 @@ import {
   createSchema,
   fetchActivitiesSchemes,
 } from "../services/activitiesService";
-import ClassicTable from "../components/Tables/ClassicTable";
+import ClassicTable from "../components/Tables/ActivityTable";
 import { createBucket } from "../services/bucketServices";
 import { PageContainer, SectionTitle } from "../styles/ArchiveDashboardStyles";
+import { ToastContainer, toast } from "react-toastify";
+import { useFormik } from "formik";
+import { mainOrderSchema } from "../utils/validations/validationSchemes";
 
 const OrderForm = () => {
   const { session, loading } = useSession();
+  const { personale } = usePersonale();
   const navigate = useNavigate();
+
+  const formik = useFormik({
+    initialValues: {
+      orderName: "",
+      startDate: dayjs().add(2, "minute"),
+      endDate: dayjs().add(1, "day"),
+      materialShelf: "",
+      urgency: "",
+      accessories: "",
+      orderManager: "",
+      activities: [],
+    },
+    validationSchema: mainOrderSchema,
+    onSubmit: (values) => {
+      handleConfirm();
+    },
+  });
+
+  const notifyError = (message) => toast.error(message);
 
   useEffect(() => {
     if (!loading) {
@@ -43,14 +66,6 @@ const OrderForm = () => {
       }
     }
   }, [session, loading, navigate]);
-
-  const [orderName, setOrderName] = useState("");
-  const [selectedDate, setSelectedDate] = useState(dayjs().add(1, "minute"));
-  const [endDate, setEndDate] = useState(dayjs());
-  const [materialShelf, setMaterialShelf] = useState("");
-  const [urgency, setUrgency] = useState("");
-  const [accessories, setAccessories] = useState("");
-  const [orderManager, setOrderManager] = useState("");
 
   const [isNewSchema, setIsNewSchema] = useState(false);
   const [newSchemaName, setNewSchemaName] = useState("");
@@ -62,16 +77,7 @@ const OrderForm = () => {
 
   const [presetActivities, setPresetActivities] = useState([]);
 
-  const handleKeyDown = (event) => {
-    const regex = /^[a-zA-Z0-9 ]*$/; // Permette lettere, numeri e spazi
-    if (
-      !regex.test(event.key) &&
-      event.key !== "Backspace" &&
-      event.key !== "Delete"
-    ) {
-      event.preventDefault();
-    }
-  };
+  const [finalOrder, setFinalOrder] = useState([]);
 
   // Funzione per aggiornare lo stato
   const newOrderHandler = (ordine, activitiesNames) => {
@@ -79,37 +85,11 @@ const OrderForm = () => {
     if (activitiesNames) {
       setActivitiesNames(activitiesNames);
     }
+    console.log(ordine, "ordine");
+    console.log(newOrder, "newOrder");
   };
 
-  const [formValues, setFormValues] = useState({
-    orderName: orderName,
-    startDate: selectedDate,
-    endDate: endDate,
-    materialShelf: materialShelf,
-    urgency: urgency,
-    accessories: accessories,
-    orderManager: orderManager,
-  });
-  useEffect(() => {
-    setFormValues({
-      orderName: orderName,
-      startDate: selectedDate.toDate(),
-      endDate: endDate.toDate(),
-      materialShelf: materialShelf,
-      urgency: urgency,
-      accessories: accessories,
-      orderManager: orderManager,
-    });
-  }, [
-    orderName,
-    selectedDate,
-    endDate,
-    materialShelf,
-    urgency,
-    accessories,
-    orderManager,
-  ]);
-
+  // Richiede gli schemi di attività al caricamento della pagina
   useEffect(() => {
     const getActivitiesSchemes = async () => {
       try {
@@ -119,19 +99,9 @@ const OrderForm = () => {
         console.log(err.message);
       }
     };
-
     getActivitiesSchemes();
   }, []);
-
-  // const handleSelectChange = (e) => {
-  //   const { name, value } = e.target;
-  //   setFormValues({
-  //     ...formValues,
-  //     [name]: value,
-  //   });
-  // };
-
-  const { personale } = usePersonale();
+  //-------------------------------------------
 
   const submitNewSchema = async (schemaName, activities) => {
     if (isNewSchema) {
@@ -144,101 +114,159 @@ const OrderForm = () => {
       }
     } else return;
   };
-  const handleConfirm = async (event) => {
-    event.preventDefault();
 
+  const handleOrder = () => {
+    if (!isNewSchema) {
+      setFinalOrder({
+        ...formik.values,
+        activities: presetActivities.map((activity) => ({
+          ...activity,
+          status: "Standby",
+          completed: false,
+          note: [],
+        })),
+      });
+    } else if (isNewSchema) {
+      setFinalOrder({
+        ...newOrder,
+        activities: newOrder.activities.map((activity) => ({
+          ...activity,
+          status: "Standby",
+          completed: false,
+          note: [],
+        })),
+      });
+    } else if (selectedSchema !== "") {
+      setFinalOrder({
+        ...newOrder,
+        activities: newOrder.activities.map((activity) => ({
+          ...activity,
+          status: "Standby",
+          completed: false,
+          note: [],
+        })),
+      });
+    }
+  };
+  useEffect(() => {
+    handleOrder();
+  }, [presetActivities, newOrder, formik.values, selectedSchema]);
+
+  const handleConfirm = async () => {
     try {
-      let orderData;
-
-      if (selectedSchema && isNewSchema === false) {
-        orderData = {
-          ...formValues,
-          activities: presetActivities.map((activity) => ({
-            ...activity,
-            status: "Standby",
-            completed: false,
-            note: [],
-          })),
-        };
-      } else {
-        if (isNewSchema) {
+      try {
+        const result = await createOrder(finalOrder);
+        if (result.success) {
+          // Se l'ordine è stato creato con successo, fornisci un feedback
+          console.log("Ordine creato con successo!");
           await submitNewSchema(newSchemaName, activitiesNames);
+          createBucket(finalOrder.orderName);
+          // Puoi mostrare una notifica o aggiornare lo stato dell'interfaccia utente
+        } else {
+          // Se c'è stato un errore, mostra l'errore
+          notifyError(
+            "Errore durante la creazione dell'ordine:",
+            result.message
+          );
+          console.log(result.message);
+          // Mostra un messaggio di errore all'utente (opzionale)
         }
-        orderData = {
-          ...newOrder,
-          activities: newOrder.activities.map((activity) => ({
-            ...activity,
-            status: "Standby",
-            completed: false,
-            note: [],
-          })),
-        };
+      } catch (error) {
+        // Se c'è un errore imprevisto, lo catturiamo qui
+        console.error("Errore imprevisto:", error);
+      } finally {
+        // Dopo aver gestito il risultato (sia successo che errore), naviga alla home
+        // navigate("/");
       }
-
-      await createOrder(orderData);
-      navigate("/");
-      createBucket(orderData.orderName);
     } catch (error) {
       console.error("Errore durante la creazione dell'ordine:", error);
       // Gestione dell'errore, come mostrare un messaggio all'utente
     }
   };
 
+  useEffect(() => {
+    setFinalOrder(newOrder);
+  }, [newOrder]);
+
   return (
     <PageContainer>
+      <ToastContainer limit={1} />
       <Box sx={{ p: 3 }}>
-        <form onSubmit={handleConfirm}>
+        <form onSubmit={formik.handleSubmit}>
           {/* Prima sezione del form */}
           <Paper sx={{ p: 3, mb: 3, boxShadow: " 15px 15px 15px #ccc" }}>
             <SectionTitle variant="h4">Dettagli commessa</SectionTitle>
             <Grid container spacing={2} sx={{ mb: 3 }}>
               <Grid item xs={12} sm={4}>
                 <TextField
+                  id="orderName"
+                  name="orderName"
                   fullWidth
                   label="Nome commessa"
-                  name="orderName"
                   required
-                  slotProps={{
-                    input: {
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Assignment />
-                        </InputAdornment>
-                      ),
-                    },
-                  }}
-                  value={orderName}
-                  onChange={(e) => setOrderName(e.target.value)}
-                  onKeyDown={handleKeyDown}
+                  value={formik.values.orderName}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  error={
+                    formik.touched.orderName && Boolean(formik.errors.orderName)
+                  }
+                  helperText={
+                    formik.touched.orderName && formik.errors.orderName
+                  }
                 />
               </Grid>
               <Grid item xs={12} sm={4}>
                 <DatePicker
+                  id="startDate"
+                  name="startDate"
                   disablePast
                   sx={{ width: "100%" }}
                   label="Inizio commessa"
-                  value={selectedDate}
-                  onChange={(newValue) => setSelectedDate(newValue)}
+                  value={formik.values.startDate}
+                  onChange={(value) => formik.setFieldValue("startDate", value)}
+                  onBlur={formik.handleBlur}
+                  error={
+                    formik.touched.startDate && Boolean(formik.errors.startDate)
+                  }
+                  helperText={
+                    formik.touched.startDate && formik.errors.startDate
+                  }
                 />
               </Grid>
               <Grid item xs={12} sm={4}>
                 <DatePicker
+                  id="endDate"
+                  name="endDate"
                   disablePast
-                  minDateTime={selectedDate || dayjs()}
+                  minDate={formik.values.startDate}
                   sx={{ width: "100%" }}
                   label="Fine commessa"
-                  value={endDate}
-                  onChange={(newValue) => setEndDate(newValue)}
+                  value={formik.values.endDate}
+                  onChange={(value) => formik.setFieldValue("endDate", value)}
+                  onBlur={formik.handleBlur}
+                  error={
+                    formik.touched.endDate && Boolean(formik.errors.endDate)
+                  }
+                  helperText={formik.touched.endDate && formik.errors.endDate}
                 />
               </Grid>
               <Grid item xs={12} sm={4}>
                 <TextField
+                  id="accessories"
+                  name="accessories"
                   fullWidth
                   label="Scaffale accessori"
                   required
-                  name="accessories"
-                  value={formValues.accessories}
-                  onChange={(e) => setAccessories(e.target.value)}
+                  value={formik.values.accessories}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  error={
+                    formik.touched.accessories &&
+                    Boolean(formik.errors.accessories)
+                  }
+                  helperText={
+                    formik.touched.accessories && formik.errors.accessories
+                  }
                   slotProps={{
                     input: {
                       startAdornment: (
@@ -252,6 +280,8 @@ const OrderForm = () => {
               </Grid>
               <Grid item xs={12} sm={4}>
                 <TextField
+                  id="materialShelf"
+                  name="materialShelf"
                   fullWidth
                   label={"Scaffale materiale"}
                   required
@@ -264,9 +294,16 @@ const OrderForm = () => {
                       ),
                     },
                   }}
-                  name="materialShelf"
-                  value={materialShelf}
-                  onChange={(e) => setMaterialShelf(e.target.value)}
+                  value={formik.values.materialShelf}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  error={
+                    formik.touched.materialShelf &&
+                    Boolean(formik.errors.materialShelf)
+                  }
+                  helperText={
+                    formik.touched.materialShelf && formik.errors.materialShelf
+                  }
                 />
               </Grid>
             </Grid>
@@ -275,12 +312,18 @@ const OrderForm = () => {
                 <FormControl fullWidth>
                   <InputLabel id="orderPriority-label">Priorità</InputLabel>
                   <Select
+                    id="urgency"
+                    name="urgency"
                     labelId="orderPriority-label"
                     required
                     label="Priorità"
-                    name="urgency"
-                    value={urgency}
-                    onChange={(e) => setUrgency(e.target.value)}
+                    value={formik.values.urgency}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={
+                      formik.touched.urgency && Boolean(formik.errors.urgency)
+                    }
+                    helperText={formik.touched.urgency && formik.errors.urgency}
                   >
                     <MenuItem value="Urgente">Urgente</MenuItem>
                     <MenuItem value="Alta">Alta</MenuItem>
@@ -293,12 +336,21 @@ const OrderForm = () => {
                 <FormControl fullWidth>
                   <InputLabel id="orderManager-label">Responsabile</InputLabel>
                   <Select
+                    id="orderManager"
+                    name="orderManager"
                     required
                     labelId="orderManager-label"
                     label="Responsabile"
-                    name="orderManager"
-                    value={orderManager}
-                    onChange={(e) => setOrderManager(e.target.value)}
+                    value={formik.values.orderManager}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={
+                      formik.touched.orderManager &&
+                      Boolean(formik.errors.orderManager)
+                    }
+                    helperText={
+                      formik.touched.orderManager && formik.errors.orderManager
+                    }
                   >
                     {personale.map((worker, index) => (
                       <MenuItem key={index} value={worker.workerName}>
@@ -311,6 +363,7 @@ const OrderForm = () => {
             </Grid>
           </Paper>
 
+          {/* Sezione attività */}
           <Paper sx={{ p: 3, boxShadow: " 15px 15px 15px #ccc" }}>
             <SectionTitle variant="h4">Attività</SectionTitle>
             <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -390,13 +443,14 @@ const OrderForm = () => {
                 isNewSchema={isNewSchema}
                 newSchemaName={newSchemaName}
                 personale={personale}
-                genericOrderData={formValues}
+                genericOrderData={formik.values}
                 newOrderHandler={newOrderHandler}
               />
             )}
           </Paper>
           <Box sx={{ textAlign: "center" }}>
             <Button
+              disabled={!(formik.isValid && finalOrder.activities?.length > 0)}
               type="submit"
               size="large"
               variant="contained"

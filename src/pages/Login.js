@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   AppBar,
   Box,
@@ -14,6 +14,7 @@ import { styled } from "@mui/system";
 import theme from "../theme";
 import logo from "../assets/logo.webp";
 import { useNavigate } from "react-router-dom";
+import { useRole } from "../context/RoleContext";
 import { supabase } from "../supabase/supabaseClient";
 
 // Create a gradient background
@@ -35,6 +36,8 @@ const FormContainer = styled(Container)({
 
 export default function Login() {
   const navigate = useNavigate();
+  const { role, removeRole } = useRole();
+
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
 
@@ -68,6 +71,13 @@ export default function Login() {
       setTimeout(() => navigate("/role"), 1000);
     }
   };
+
+  useEffect(() => {
+    if (role) {
+      removeRole();
+      supabase.auth.signOut();
+    }
+  }, [role, removeRole]);
 
   return (
     <GradientBackground>

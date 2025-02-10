@@ -2,12 +2,11 @@ import { useRole } from "../context/RoleContext";
 
 const useActiveUser = () => {
   const { role } = useRole();
-  
 
-  if (role === 'admin') {
-    return "admin";
-  } else if (role === 'operator') {
-    return "operator";
+  if (role === btoa("admin")) {
+    return btoa("admin");
+  } else if (role === btoa("operator")) {
+    return btoa("operator");
   }
 };
 

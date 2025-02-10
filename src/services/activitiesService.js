@@ -147,11 +147,21 @@ export const patchActivity = async (orderId, activityIndex, updatedFields) => {
 
 // Funzione per creare un nuovo ordine
 export const createOrder = async (newOrder) => {
-  const { data, error } = await supabase.from(TABLE_NAME).insert([newOrder]);
-
-  if (error) {
-    console.error("Errore nella creazione dell'ordine:", error);
-    return null;
+  try {
+    const { data, error } = await supabase.from(TABLE_NAME).insert([newOrder]);
+  
+    if (error) {
+      throw error; // Solleva l'errore per essere catturato dal catch
+    }
+  
+    // Se non c'è errore, successivamente restituiamo il risultato positivo
+    console.log("Ordine inserito con successo:", data);
+    return { success: true, data }; // Puoi restituire il dato dell'ordine o altro come feedback
+  
+  } catch (err) {
+    // Gestione dell'errore
+    console.error("Errore durante l'inserimento dell'ordine:", err.message);
+    return { success: false, message: err.message }; // Restituisce un feedback con l'errore
   }
 };
 
