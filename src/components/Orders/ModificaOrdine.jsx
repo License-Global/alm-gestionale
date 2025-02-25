@@ -74,7 +74,7 @@ const ModificaOrdine = ({ order, personale }) => {
   return (
     <div>
       <ToastContainer />
-      <Container maxWidth={false}>
+      <Container sx={{ bgcolor: "white" }} maxWidth={false}>
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
             <Grid item xs={12} sm={4}>

@@ -15,6 +15,11 @@ import Calendar from "../pages/Calendar";
 import DailyAgenda from "../components/Calendar/DailyAgenda";
 import Agenda from "../pages/Agenda";
 import RoleSelection from "../pages/RoleSelection";
+import OrderPage from "../pages/OrderPage";
+import CustomerPage from "../pages/CustomerPage";
+import OperatorPage from "../pages/OperatorPage";
+import AddOperator from "../pages/AddOperator";
+import AddCustomer from "../pages/AddCustomer";
 const AppRouter = () => (
   <Routes>
     <Route
@@ -99,6 +104,46 @@ const AppRouter = () => (
       element={
         <ProtectedRoute>
           <Agenda />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/order/:id"
+      element={
+        <ProtectedRoute>
+          <OrderPage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/cliente/:id"
+      element={
+        <ProtectedRoute>
+          <CustomerPage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/aggiungi-cliente"
+      element={
+        <ProtectedRoute>
+          <AddCustomer />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/operatore/:id"
+      element={
+        <ProtectedRoute>
+          <OperatorPage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/aggiungi-operatore"
+      element={
+        <ProtectedRoute>
+          <AddOperator />
         </ProtectedRoute>
       }
     />

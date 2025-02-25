@@ -10,7 +10,7 @@ const theme = createTheme({
       main: "#A5D6A7", // Verde chiaro
     },
     background: {
-      default: "#FFFFFF", // Bianco
+      default: "#f5f5f5", // Bianco
     },
   },
   typography: {

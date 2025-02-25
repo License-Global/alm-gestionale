@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TableSortLabel,
-  IconButton,
-} from "@mui/material";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Paper from "@mui/material/Paper";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { TableContainer } from "../../styles/ArchiveDashboardStyles";
-import { supabase } from "../../supabase/supabaseClient";
 import { useNavigate } from "react-router-dom";
-import NoOrders from "./NoOrders";
+import { TableSortLabel } from "@mui/material";
+import { IconButton } from "@mui/material";
+import NoOrders from "../Orders/NoOrders";
+import { supabase } from "../../supabase/supabaseClient";
 
 const ArchivedOrdersTable = () => {
   const navigate = useNavigate();
@@ -69,7 +68,7 @@ const ArchivedOrdersTable = () => {
     return <NoOrders />;
   } else
     return (
-      <TableContainer>
+      <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>

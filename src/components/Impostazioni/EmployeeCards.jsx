@@ -133,7 +133,11 @@ export default function EmployeeCards() {
                   >
                     <Typography
                       variant="subtitle1"
-                      sx={{ fontWeight: 500, color: "text.primary" }}
+                      sx={{
+                        fontWeight: 500,
+                        color: "text.primary",
+                        cursor: "pointer",
+                      }}
                     >
                       {employee.workerName}
                     </Typography>

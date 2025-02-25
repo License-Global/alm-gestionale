@@ -1,8 +1,9 @@
 import React from "react";
-import EditOrder from "../components/Orders/EditOrder";
 import { useParams } from "react-router-dom";
 import { useOrder } from "../hooks/useOrders";
-import { Typography } from "@mui/material";
+import { Typography, Box, Paper, Container } from "@mui/material";
+import { PageContainer } from "../styles/ArchiveDashboardStyles";
+import { SectionTitle } from "../styles/ArchiveDashboardStyles";
 import { CircularProgress } from "@mui/material";
 import ModificaOrdine from "../components/Orders/ModificaOrdine";
 import { usePersonale } from "../hooks/usePersonale";
@@ -22,18 +23,12 @@ const EditOrderPage = () => {
   if (!order) return <p>Order not found</p>;
 
   return (
-    <div>
-      <Typography
-        variant="h4"
-        component="h4"
-        gutterBottom
-        sx={{ mt: 2, mb: 1, textAlign: "center" }}
-      >
-        Dettaglio dell'ordine
-      </Typography>
-      {/* <EditOrder order={order} /> */}
-      <ModificaOrdine order={order} personale={personale} />
-    </div>
+    <Box sx={{ bgcolor: "white" }}>
+      <PageContainer sx={{ bgcolor: "white" }}>
+        <SectionTitle variant="h4">Gestione Ordini</SectionTitle>
+        <ModificaOrdine order={order} personale={personale} />
+      </PageContainer>
+    </Box>
   );
 };
 

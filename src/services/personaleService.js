@@ -10,6 +10,20 @@ export const fetchPersonale = async () => {
   return data;
 };
 
+export const fetchPersonaleById = async (operator_id) => {
+  const { data, error } = await supabase
+    .from("personale")
+    .select("*")
+    .eq("id", operator_id)
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+};
+
 export async function insertPersonale(record) {
   try {
     const { data, error } = await supabase
@@ -27,6 +41,20 @@ export async function insertPersonale(record) {
     console.error("Errore imprevisto:", err.message);
     return { data: null, error: err };
   }
+}
+
+export async function updatePersonale(id, workerName) {
+  const { data, error } = await supabase
+    .from("personale")
+    .update({ workerName })
+    .eq("id", id);
+
+  if (error) {
+    console.error("Errore nell'aggiornamento del personale:", error.message);
+    return { data: null, error };
+  }
+
+  return { data, error: null };
 }
 
 export async function deletePersonale(id) {

@@ -8,6 +8,7 @@ import {
   Tab,
   Box,
   useMediaQuery,
+  Paper,
 } from "@mui/material";
 import theme from "../../theme";
 import logo from "../../assets/logo.webp";
@@ -25,6 +26,8 @@ import { supabase } from "../../supabase/supabaseClient";
 import useSession from "../../hooks/useSession";
 import BackButton from "../misc/BackButton";
 import { useRole } from "../../context/RoleContext";
+import Searchbar from "./Searchbar";
+import BasicMenu from "./BasicMenu";
 
 const StyledAppBar = styled(AppBar)`
   background: linear-gradient(
@@ -75,7 +78,7 @@ const Appbar = () => {
   useEffect(() => {
     handleSelectedTab();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [location.pathname]);
 
   if (location.pathname === "/login" || location.pathname === "/role") {
     return null;
@@ -94,7 +97,7 @@ const Appbar = () => {
                   style={{ paddingTop: "6px", cursor: "pointer" }} // Percorso del logo
                 />
               </Typography>
-
+              <Searchbar />
               <Button
                 onClick={() => navigate("/calendario")}
                 color="inherit"
@@ -102,22 +105,16 @@ const Appbar = () => {
               >
                 <b>Calendario</b>
               </Button>
-              {role === btoa("admin") && (
+              {role === btoa("admin") && <BasicMenu />}
+              {role === btoa("operator") && (
                 <Button
-                  onClick={() => navigate("/impostazioni")}
+                  onClick={() => handleExit()}
                   color="inherit"
-                  startIcon={<SettingsIcon />}
+                  startIcon={<ExitToApp />}
                 >
-                  <b>Impostazioni</b>
+                  <b>Esci</b>
                 </Button>
               )}
-              <Button
-                onClick={() => handleExit()}
-                color="inherit"
-                startIcon={<ExitToApp />}
-              >
-                <b>Esci</b>
-              </Button>
             </Toolbar>
           </StyledAppBar>
           {role === btoa("operator") && location.pathname !== "/" && (
@@ -129,7 +126,7 @@ const Appbar = () => {
               value={tabValue}
               onChange={handleTabChange}
               centered
-              sx={{ bgcolor: "background.paper", mt: 3, mb: 3 }}
+              sx={{ bgcolor: "#f5f5f5", pt: 3, pb: 3 }}
             >
               <StyledTab
                 sx={{ borderRadius: "30px" }}
