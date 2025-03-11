@@ -1,70 +1,70 @@
 import { supabase } from "../supabase/supabaseClient";
 
 /**
- * Fetch notes for a specific activity within an order
+ * Restituisce l'array di note (campo JSONB) per un'attività specifica
  */
-export async function getNotes(orderId, activityName) {
+export async function getNotes(activityId) {
+  // maybeSingle() evita l'errore se non troviamo nessuna riga
   const { data, error } = await supabase
-    .from("orders")
-    .select("activities")
-    .eq("id", orderId)
-    .single();
+    .from("activities")
+    .select("note")
+    .eq("id", activityId)
+    .maybeSingle();
 
   if (error) {
-    console.error("Error fetching notes:", error);
+    console.error("Errore nel recupero delle note:", error);
+    return null;
+  }
+  if (!data) {
+    // Nessuna activity trovata con quell'id
+    console.warn("Attività non trovata con id:", activityId);
     return null;
   }
 
-  const activity = data.activities.find(
-    (activity) => activity.activityName === activityName
-  );
-  return activity ? activity.note : [];
+  // data.note è l'array di note; se non è mai stato impostato, data.note potrebbe essere null
+  return data.note || [];
 }
 
 /**
- * Add a new note to a specific activity within an order
+ * Aggiunge una nuova nota all'array note di un'attività
  */
-export async function addNote(
-  orderId,
-  activityName,
-  noteContent,
-  sender = "admin"
-) {
-  // Recupera l'ordine con le attività
+export async function addNote(activityId, noteContent, sender = "admin") {
+  // 1. Ottieni l'attività
   const { data, error } = await supabase
-    .from("orders")
-    .select("activities")
-    .eq("id", orderId)
-    .single();
+    .from("activities")
+    .select("note")
+    .eq("id", activityId)
+    .maybeSingle();
 
   if (error) {
-    console.error("Errore recupero ordine:", error);
+    console.error("Errore nel recupero dell'attività:", error);
+    return null;
+  }
+  if (!data) {
+    console.warn("Attività non trovata con id:", activityId);
     return null;
   }
 
-  // Trova l'attività e aggiungi la nota
-  const activities = data.activities.map((activity) => {
-    if (activity.name === activityName) {
-      const newNote = {
-        content: noteContent,
-        created_at: new Date().toISOString(),
-        sender,
-        _id: Date.now(),
-      };
-      // Aggiungi la nuova nota
-      activity.note = [...activity.note, newNote];
-    }
-    return activity;
-  });
+  // 2. Prepara la nuova nota
+  const newNote = {
+    content: noteContent,
+    created_at: new Date().toISOString(),
+    sender,
+    _id: Date.now(), // in alternativa, potresti usare una libreria come uuid
+  };
 
-  // Esegui l'aggiornamento con `activities` modificato
+  // 3. Unisci la nota nuova alle eventuali esistenti
+  const existingNotes = data.note || [];
+  const updatedNotes = [...existingNotes, newNote];
+
+  // 4. Aggiorna la riga nella tabella
   const { error: updateError } = await supabase
-    .from("orders")
-    .update({ activities })
-    .eq("id", orderId);
+    .from("activities")
+    .update({ note: updatedNotes })
+    .eq("id", activityId);
 
   if (updateError) {
-    console.error("Errore aggiornamento ordine:", updateError);
+    console.error("Errore durante l'aggiornamento delle note:", updateError);
     return null;
   }
 
@@ -72,73 +72,79 @@ export async function addNote(
 }
 
 /**
- * Update a note in a specific activity within an order
+ * Aggiorna il contenuto di una nota, identificata da noteId
  */
-export async function updateNote(orderId, activityName, noteId, newContent) {
+export async function updateNote(activityId, noteId, newContent) {
+  // 1. Recupera l'array di note
   const { data, error } = await supabase
-    .from("orders")
-    .select("activities")
-    .eq("id", orderId)
-    .single();
+    .from("activities")
+    .select("note")
+    .eq("id", activityId)
+    .maybeSingle();
 
   if (error) {
-    console.error("Error fetching order:", error);
+    console.error("Errore nel recupero dell'attività:", error);
+    return null;
+  }
+  if (!data) {
+    console.warn("Attività non trovata con id:", activityId);
     return null;
   }
 
-  const activities = data.activities.map((activity) => {
-    if (activity.activityName === activityName) {
-      activity.note = activity.note.map((note) =>
-        note._id === noteId ? { ...note, content: newContent } : note
-      );
-    }
-    return activity;
-  });
+  // 2. Aggiorna la singola nota
+  const existingNotes = data.note || [];
+  const updatedNotes = existingNotes.map((note) =>
+    note._id === noteId ? { ...note, content: newContent } : note
+  );
 
+  // 3. Salva le note aggiornate
   const { error: updateError } = await supabase
-    .from("orders")
-    .update({ activities })
-    .eq("id", orderId);
+    .from("activities")
+    .update({ note: updatedNotes })
+    .eq("id", activityId);
 
   if (updateError) {
-    console.error("Error updating note:", updateError);
+    console.error("Errore durante l'aggiornamento della nota:", updateError);
     return null;
   }
 
-  return "Note updated successfully";
+  return "Nota aggiornata con successo";
 }
 
 /**
- * Delete a note from a specific activity within an order
+ * Elimina una nota da un'attività
  */
-export async function deleteNote(orderId, activityName, noteId) {
+export async function deleteNote(activityId, noteId) {
+  // 1. Recupera l'array di note
   const { data, error } = await supabase
-    .from("orders")
-    .select("activities")
-    .eq("id", orderId)
-    .single();
+    .from("activities")
+    .select("note")
+    .eq("id", activityId)
+    .maybeSingle();
 
   if (error) {
-    console.error("Error fetching order:", error);
+    console.error("Errore nel recupero dell'attività:", error);
+    return null;
+  }
+  if (!data) {
+    console.warn("Attività non trovata con id:", activityId);
     return null;
   }
 
-  const activities = data.activities.map((activity) => {
-    if (activity.activityName === activityName) {
-      activity.note = activity.note.filter((note) => note._id !== noteId);
-    }
-    return activity;
-  });
+  // 2. Rimuovi la nota specifica
+  const existingNotes = data.note || [];
+  const updatedNotes = existingNotes.filter((note) => note._id !== noteId);
 
+  // 3. Salva l'array aggiornato
   const { error: updateError } = await supabase
-    .from("orders")
-    .update({ activities })
-    .eq("id", orderId);
+    .from("activities")
+    .update({ note: updatedNotes })
+    .eq("id", activityId);
 
   if (updateError) {
-    console.error("Error deleting note:", updateError);
+    console.error("Errore durante l'eliminazione della nota:", updateError);
     return null;
   }
 
-  return "Note deleted successfully";
+  return "Nota eliminata con successo";
 }

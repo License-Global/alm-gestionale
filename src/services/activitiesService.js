@@ -146,24 +146,112 @@ export const patchActivity = async (orderId, activityIndex, updatedFields) => {
 };
 
 // Funzione per creare un nuovo ordine
-export const createOrder = async (newOrder) => {
+// export const createOrder = async (newOrder) => {
+//   try {
+//     // Aggiungi ".select()" alla query
+//     const { data, error } = await supabase
+//       .from(TABLE_NAME)
+//       .insert([newOrder])
+//       .select("*");
+
+//     if (error) {
+//       throw error;
+//     }
+
+//     // Se il record inserito viene restituito correttamente,
+//     // `data` sarà un array contenente l'ordine creato.
+//     console.log("Ordine inserito con successo:", data);
+//     return { success: true, data: data[0] };
+//     // Se la tabella può restituire più record contemporaneamente,
+//     // puoi restituire direttamente `data` invece di `data[0]`.
+//   } catch (err) {
+//     console.error("Errore durante l'inserimento dell'ordine:", err.message);
+//     return { success: false, message: err.message };
+//   }
+// };
+
+export async function createOrder(newOrder) {
+  const {
+    orderName,
+    startDate,
+    endDate,
+    materialShelf,
+    urgency,
+    accessories,
+    orderManager, // ID di un dipendente già esistente
+    activities = [], // array di oggetti, ciascuno descrive un'attività
+    internal_id = 123456,
+  } = newOrder;
+
   try {
-    const { data, error } = await supabase.from(TABLE_NAME).insert([newOrder]);
-  
-    if (error) {
-      throw error; // Solleva l'errore per essere catturato dal catch
+    // 1) Inserisci l'ordine in "orders_duplicate"
+    //    Usiamo .select('*') per forzare la restituzione di tutti i campi, inclusa la PK "id"
+    const { data: orderData, error: orderError } = await supabase
+      .from("orders")
+      .insert([
+        {
+          orderName,
+          startDate,
+          endDate,
+          materialShelf,
+          urgency,
+          accessories,
+          // orderManager è un ID esistente di personale
+          orderManager,
+          internal_id,
+        },
+      ])
+      .select("*") // <<--- forza a ricevere tutti i campi della riga
+      .single();
+
+    // Se c'è un errore, lo lanciamo
+    if (orderError) {
+      throw new Error(`Errore inserimento ordine: ${orderError.message}`);
     }
-  
-    // Se non c'è errore, successivamente restituiamo il risultato positivo
-    console.log("Ordine inserito con successo:", data);
-    return { success: true, data }; // Puoi restituire il dato dell'ordine o altro come feedback
-  
-  } catch (err) {
-    // Gestione dell'errore
-    console.error("Errore durante l'inserimento dell'ordine:", err.message);
-    return { success: false, message: err.message }; // Restituisce un feedback con l'errore
+
+    // Se orderData è null, significa che Supabase non ci ha restituito la riga (potenziali cause: RLS, policy, ecc.)
+    if (!orderData) {
+      throw new Error(
+        "Impossibile recuperare la riga inserita in orders: orderData è null."
+      );
+    }
+
+    // 2) Se ci sono attività, le inseriamo nella tabella "activities" con FK "order_id"
+    if (activities.length > 0) {
+      // Colleghiamo ogni attività all'ordine appena creato usando orderData.id
+      const activitiesToInsert = activities.map((activity) => ({
+        ...activity,
+        order_id: orderData.id,
+      }));
+
+      const { data: insertedActivities, error: activitiesError } =
+        await supabase
+          .from("activities")
+          .insert(activitiesToInsert)
+          .select("*"); // se vogliamo anche i dati delle attività
+
+      if (activitiesError) {
+        throw new Error(
+          `Errore inserimento attività: ${activitiesError.message}`
+        );
+      }
+
+      return {
+        order: orderData,
+        activities: insertedActivities,
+      };
+    }
+
+    // Se non ci sono attività, restituiamo solo l'ordine
+    return {
+      order: orderData,
+      activities: [],
+    };
+  } catch (error) {
+    console.error(error);
+    throw error; // rimanda l'errore al chiamante
   }
-};
+}
 
 export const createSchema = async (schemaName, activities) => {
   try {
@@ -209,52 +297,22 @@ export const fetchActivitiesSchemes = async () => {
   }
 };
 
-export const updateActivityStatusInOrder = async (
-  orderId,
-  activityIndex,
-  newStatus
-) => {
+export const updateActivityStatusInOrder = async (activityId, newStatus) => {
   try {
-    // 1. Recupera l'ordine con le attività
-    const { data: orderData, error: fetchError } = await supabase
-      .from("orders")
-      .select("activities")
-      .eq("id", orderId)
-      .single();
-
-    if (fetchError) {
-      console.error("Errore nel recupero dell'ordine:", fetchError);
-      return null;
-    }
-
-    // 2. Modifica l'attività specifica nell'array JSONB
-    const updatedActivities = [...orderData.activities];
-    updatedActivities[activityIndex] = {
-      ...updatedActivities[activityIndex],
-      status: newStatus,
-    };
-
-    // 3. Aggiungi il campo "completed" con data e ora correnti, se lo stato è "completed"
     if (newStatus === "Completato") {
-      updatedActivities[activityIndex].completed = new Date().toISOString();
+      const { data, error } = await supabase
+        .from("activities")
+        .update({ status: newStatus, completed: new Date().toISOString() })
+        .eq("id", activityId)
+        .select();
+    } else {
+      const { data, error } = await supabase
+        .from("activities")
+        .update({ status: newStatus })
+        .eq("id", activityId)
+        .select();
     }
-
-    // 4. Aggiorna l'ordine con il nuovo array activities
-    const { data, error: updateError } = await supabase
-      .from("orders")
-      .update({ activities: updatedActivities })
-      .eq("id", orderId);
-
-    if (updateError) {
-      console.error(
-        "Errore durante l'aggiornamento dello stato dell'attività:",
-        updateError
-      );
-      return null;
-    }
-
-    console.log("Stato dell'attività aggiornato con successo:", data);
-    return data;
+    console.log("Stato dell'attività aggiornato con successo:");
   } catch (err) {
     console.error("Errore inaspettato:", err);
     return null;

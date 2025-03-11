@@ -1,8 +1,7 @@
 import React from "react";
 import MainTable from "../components/Tables/MainTable";
-import useSession from "../hooks/useSession";
 import NoOrders from "../components/Orders/NoOrders";
-import useRealtime from "../hooks/useRealTime";
+import useRealtimeOrderWithActivities from "../hooks/useRealTime";
 
 const urgencyLevels = {
   Bassa: 0,
@@ -12,7 +11,7 @@ const urgencyLevels = {
 };
 
 const Home = () => {
-  let orders = useRealtime("orders");
+  let orders = useRealtimeOrderWithActivities("orders", "activities");
 
   const sortedOrders = orders.sort((a, b) => {
     return urgencyLevels[b.urgency] - urgencyLevels[a.urgency];

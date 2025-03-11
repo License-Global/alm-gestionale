@@ -60,24 +60,29 @@ export const useAllOrders = () => {
     const fetchOrders = async () => {
       setLoading(true);
       try {
-        // Fetch orders
-        const { data: ordersData, error: ordersError } = await supabase
-          .from("orders")
-          .select("*");
+        // 1. Recupera gli ordini dalla tabella 'orders'
+        //    con le attività collegate tramite la foreign key esistente
+        const { data: ordersData, error: ordersError } = await supabase.from(
+          "orders"
+        ).select(`
+            *,
+            activities(*)
+          `);
 
         if (ordersError) throw ordersError;
 
-        // Fetch archived orders
+        // 2. Recupera gli ordini dalla tabella 'archived'
+        //    Se non hai relazioni con 'activities', basta fare una select dei campi di archived
         const { data: archivedData, error: archivedError } = await supabase
           .from("archived")
-          .select("*");
+          .select("*"); // qui niente activities(*)
 
         if (archivedError) throw archivedError;
 
-        // Combina i dati delle due tabelle in un unico array
+        // 3. Combina i risultati in un unico array
         const combinedData = [...ordersData, ...archivedData];
 
-        // Imposta i dati combinati
+        // 4. Aggiorna lo stato
         setOrders(combinedData);
       } catch (err) {
         setError(err.message);

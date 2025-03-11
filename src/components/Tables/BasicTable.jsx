@@ -15,9 +15,11 @@ import { Button } from "@mui/material";
 import { useDeleteOrder } from "../../hooks/useDeleteOrder";
 import NoOrders from "../Orders/NoOrders";
 import { deleteBucket } from "../../services/bucketServices";
+import { usePersonale } from "../../hooks/usePersonale";
 
 export default function BasicTable({ orders }) {
   const navigate = useNavigate();
+  const personale = usePersonale();
 
   const { deleteOrder, loading } = useDeleteOrder();
 
@@ -65,7 +67,11 @@ export default function BasicTable({ orders }) {
                       onClick={() => navigate(order.id.toString())}
                       align="center"
                     >
-                      {order.orderManager}
+                      {
+                        personale.personale.find(
+                          (person) => person.id === order.orderManager
+                        )?.workerName
+                      }
                     </TableCell>
                     <TableCell
                       onClick={() => navigate(order.id.toString())}

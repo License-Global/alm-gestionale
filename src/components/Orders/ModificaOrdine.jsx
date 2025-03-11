@@ -86,6 +86,7 @@ const ModificaOrdine = ({ order, personale }) => {
                 label="Nome Ordine"
                 name="orderName"
                 onKeyDown={handleKeyDown}
+                disabled
               />
             </Grid>
             <Grid item xs={12} sm={4}>
@@ -171,7 +172,7 @@ const ModificaOrdine = ({ order, personale }) => {
                   }
                 >
                   {personale.personale.map((person) => (
-                    <MenuItem key={person.workerName} value={person.workerName}>
+                    <MenuItem key={person.id} value={person.id}>
                       {person.workerName}
                     </MenuItem>
                   ))}
@@ -217,7 +218,7 @@ const ModificaOrdine = ({ order, personale }) => {
                     key={index}
                     activity={activity}
                     personale={personale}
-                    orderid={order.id}
+                    activityId={activity.id}
                   />
                 ))}
               </TableBody>

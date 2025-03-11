@@ -9,9 +9,6 @@ const OrderPage = () => {
   const { id } = useParams();
   const { order, loading } = useOrder(id);
 
-  useEffect(() => {
-    console.log(loading);
-  }, [loading]);
   return (
     <div>
       {loading || !order ? (

@@ -33,6 +33,9 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
   const [saveNewSchema, setSaveNewSchema] = useState(false);
   const [newSchemaName, setNewSchemaName] = useState("");
 
+  const getWorkerName = (id) =>
+    personale.find((p) => p.id === id)?.workerName || "Sconosciuto";
+
   const navigate = useNavigate();
 
   const notifyWarn = (message) =>
@@ -89,7 +92,7 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
         startDate: row.startDate ? dayjs(row.startDate).toDate() : null, // Converte in formato ISO
         endDate: row.endDate ? dayjs(row.endDate).toDate() : null,
         status: "Standby",
-        completed: false,
+        completed: null,
         note: [], // Converte in formato ISO
       }));
       return formattedRows;
@@ -147,6 +150,7 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
     try {
       createOrder(data);
       createBucket(formikValues.orderName);
+      console.log(data);
     } catch (e) {
       console.error(e);
     }
@@ -223,7 +227,7 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
                     ></div>
                   )}
                 </TableCell>
-                <TableCell>{row.responsible}</TableCell>
+                <TableCell>{getWorkerName(row.responsible)}</TableCell>
                 <TableCell>
                   {row.startDate
                     ? dayjs(row.startDate).format("DD/MM/YYYY HH:mm")
@@ -323,10 +327,7 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
                     <em>Seleziona responsabile</em>
                   </MenuItem>
                   {personale.map((personale) => (
-                    <MenuItem
-                      key={personale.workerName}
-                      value={personale.workerName}
-                    >
+                    <MenuItem key={personale.workerName} value={personale.id}>
                       {personale.workerName}
                     </MenuItem>
                   ))}

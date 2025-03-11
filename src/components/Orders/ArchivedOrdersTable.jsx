@@ -100,12 +100,11 @@ const ArchivedOrdersTable = () => {
               </TableRow>
             ) : (
               orders.map((order) => (
-                <TableRow
-                  onClick={() => navigate(`/archivio/${order.id}`)}
-                  key={order.id}
-                >
-                  <TableCell>{order.orderName}</TableCell>
-                  <TableCell>
+                <TableRow key={order.id}>
+                  <TableCell onClick={() => navigate(`/archivio/${order.id}`)}>
+                    {order.orderName}
+                  </TableCell>
+                  <TableCell onClick={() => navigate(`/archivio/${order.id}`)}>
                     {new Date(order.startDate).toLocaleDateString("it-IT")}
                   </TableCell>
                   <TableCell>

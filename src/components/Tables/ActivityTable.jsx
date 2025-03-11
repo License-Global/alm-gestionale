@@ -87,7 +87,7 @@ const ActivityTable = ({ selectedSchema, personale, formikValues }) => {
         startDate: row.startDate ? dayjs(row.startDate).toDate() : null, // Converte in formato ISO
         endDate: row.endDate ? dayjs(row.endDate).toDate() : null,
         status: "Standby",
-        completed: false,
+        completed: null,
         note: [], // Converte in formato ISO
       }));
       return formattedRows;
@@ -100,8 +100,11 @@ const ActivityTable = ({ selectedSchema, personale, formikValues }) => {
       activities: formatRows(rows),
     };
     try {
-      createOrder(data);
+      createOrder(data).then((res) => {
+        console.log(res);
+      });
       createBucket(formikValues.orderName);
+      console.log(data);
     } catch (e) {
       console.error(e);
     }
@@ -184,7 +187,7 @@ const ActivityTable = ({ selectedSchema, personale, formikValues }) => {
                       <em>Seleziona responsabile</em>
                     </MenuItem>
                     {personale.map((person, i) => (
-                      <MenuItem key={i} value={person.workerName}>
+                      <MenuItem key={i} value={person.id}>
                         {person.workerName}
                       </MenuItem>
                     ))}

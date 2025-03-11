@@ -6,40 +6,37 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
+  CircularProgress,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import Inventory2Icon from "@mui/icons-material/Inventory2";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
-import { useAllOrders } from "../../hooks/useOrders";
-import { useCustomers } from "../../hooks/useCustomeres";
 import { useNavigate } from "react-router-dom";
-import { usePersonale } from "../../hooks/usePersonale";
+import SearchDataLoader from "./SearchDataLoader"; // importa il componente loader
 
 const Searchbar = ({ minisearch, type }) => {
-  const { orders } = useAllOrders();
-  const { customers } = useCustomers();
-  const personale = usePersonale();
-
   const navigate = useNavigate();
 
-  const [ordersList, setOrdersList] = useState([]);
-  const [customersList, setCustomersList] = useState([]);
-  const [operatorsList, setOperatorsList] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
-  const [inputValue, setInputValue] = useState(""); // Stato per il testo nell'input
-  const [value, setValue] = useState(null); // Stato per l'opzione selezionata
+  const [inputValue, setInputValue] = useState("");
+  const [value, setValue] = useState(null);
 
-  useEffect(() => {
-    orders && setOrdersList(orders);
-    customers && setCustomersList(customers);
-    personale && setOperatorsList(personale.personale);
-  }, [orders, customers, personale]);
+  // Quando il loader passa i dati, li salvo nello stato locale
+  const handleDataLoaded = (data) => {
+    setDataLoaded(data);
+  };
 
+  // Genera le suggestions in base al tipo e alla modalità
   useEffect(() => {
+    if (!dataLoaded) return;
+
+    const { orders, customers, personale } = dataLoaded;
     if (minisearch) {
       if (type === "orders") {
-        const suggestions = ordersList.map((order, index) => ({
+        const suggestions = orders.map((order, index) => ({
           key: index + "order",
           id: order.id,
           isArchived: order.isArchived,
@@ -53,7 +50,7 @@ const Searchbar = ({ minisearch, type }) => {
         }));
         setSuggestions(suggestions);
       } else if (type === "customers") {
-        const customersSuggestions = customersList.map((customer, index) => ({
+        const customersSuggestions = customers.map((customer, index) => ({
           key: index + "customer",
           id: customer.id,
           label: customer.customer_name,
@@ -62,7 +59,7 @@ const Searchbar = ({ minisearch, type }) => {
         }));
         setSuggestions(customersSuggestions);
       } else if (type === "operators") {
-        const operatorsSuggestions = operatorsList.map((operator, index) => ({
+        const operatorsSuggestions = personale.map((operator, index) => ({
           key: index + "operator",
           id: operator.id,
           label: operator.workerName,
@@ -72,7 +69,8 @@ const Searchbar = ({ minisearch, type }) => {
         setSuggestions(operatorsSuggestions);
       }
     } else {
-      const suggestions = ordersList.map((order, index) => ({
+      // In modalità non minisearch combiniamo ordini e clienti
+      const orderSuggestions = orders.map((order, index) => ({
         key: index + "order",
         id: order.id,
         isArchived: order.isArchived,
@@ -83,78 +81,98 @@ const Searchbar = ({ minisearch, type }) => {
           <AssignmentIcon color="secondary" />
         ),
       }));
-      setSuggestions(suggestions);
-      const customersSuggestions = customersList.map((customer, index) => ({
+      const customersSuggestions = customers.map((customer, index) => ({
         key: index + "customer",
         id: customer.id,
         label: customer.customer_name,
         icon: <PersonRoundedIcon color="warning" />,
         isCustomer: true,
       }));
-      setSuggestions((prev) => [...prev, ...customersSuggestions]);
+      setSuggestions([...orderSuggestions, ...customersSuggestions]);
     }
-  }, [ordersList, customersList, operatorsList, type, minisearch]);
+  }, [dataLoaded, type, minisearch]);
+
+  // Calcola il loading in base al fatto che i dati siano stati caricati o no
+  const loading = open && !dataLoaded;
 
   return (
-    <Autocomplete
-      value={value} // Controlla il valore selezionato
-      onChange={(event, newValue) => {
-        if (newValue) {
-          if (newValue.isArchived) {
-            navigate(`/archivio/${newValue.id}`);
-          } else if (newValue.isOrder && !newValue.isArchived) {
-            navigate(`/order/${newValue.id}`);
-          } else if (newValue.isCustomer) {
-            navigate(`/cliente/${newValue.id}`);
-          } else if (newValue.isOperator) {
-            navigate(`/operatore/${newValue.id}`);
+    <>
+      {open && !dataLoaded && (
+        <SearchDataLoader onDataLoaded={handleDataLoaded} />
+      )}
+      <Autocomplete
+        open={open}
+        onOpen={() => {
+          setOpen(true);
+          setDataLoaded(null); // Reset per forzare il reload dei dati se necessario
+        }}
+        onClose={() => setOpen(false)}
+        value={value}
+        onChange={(event, newValue) => {
+          if (newValue) {
+            if (newValue.isArchived) {
+              navigate(`/archivio/${newValue.id}`);
+            } else if (newValue.key.includes("order") && !newValue.isArchived) {
+              navigate(`/order/${newValue.id}`);
+            } else if (newValue.isCustomer) {
+              navigate(`/cliente/${newValue.id}`);
+            } else if (newValue.isOperator) {
+              navigate(`/operatore/${newValue.id}`);
+            }
+            setValue(null);
+            setInputValue("");
           }
-          setValue(null); // Ripristina il valore selezionato a null
-          setInputValue(""); // Svuota anche il campo di testo
-        }
-      }}
-      inputValue={inputValue} // Colleghiamo lo stato all'input
-      onInputChange={(event, newInputValue) => setInputValue(newInputValue)}
-      disableClearable
-      includeInputInList
-      renderOption={(props, option) => (
-        <ListItem {...props} key={option.key}>
-          <ListItemIcon>{option.icon}</ListItemIcon>
-          <ListItemText primary={option.label} />
-        </ListItem>
-      )}
-      noOptionsText={"Nessuna corrispondenza..."}
-      forcePopupIcon={false}
-      options={suggestions}
-      sx={{
-        width: "25%",
-        mr: 8,
-      }}
-      renderInput={(params) => (
-        <TextField
-          {...params}
-          variant="standard"
-          placeholder="Cerca..."
-          fullWidth
-          sx={{
-            "& .MuiInput-underline:before": {
-              borderBottomColor: "black",
-            },
-            "& .MuiInput-underline:after": {
-              borderBottomColor: "black",
-            },
-          }}
-          InputProps={{
-            ...params.InputProps,
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-        />
-      )}
-    />
+        }}
+        inputValue={inputValue}
+        onInputChange={(event, newInputValue) => setInputValue(newInputValue)}
+        disableClearable
+        includeInputInList
+        renderOption={(props, option) => (
+          <ListItem {...props} key={option.key}>
+            <ListItemIcon>{option.icon}</ListItemIcon>
+            <ListItemText primary={option.label} />
+          </ListItem>
+        )}
+        noOptionsText={"Nessuna corrispondenza..."}
+        forcePopupIcon={false}
+        options={suggestions}
+        loading={loading}
+        sx={{
+          width: "25%",
+          mr: 8,
+        }}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            variant="standard"
+            placeholder="Cerca..."
+            fullWidth
+            sx={{
+              "& .MuiInput-underline:before": {
+                borderBottomColor: "black",
+              },
+              "& .MuiInput-underline:after": {
+                borderBottomColor: "black",
+              },
+            }}
+            InputProps={{
+              ...params.InputProps,
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+              endAdornment: (
+                <>
+                  {loading && <CircularProgress color="inherit" size={20} />}
+                  {params.InputProps.endAdornment}
+                </>
+              ),
+            }}
+          />
+        )}
+      />
+    </>
   );
 };
 

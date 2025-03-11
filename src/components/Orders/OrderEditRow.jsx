@@ -10,14 +10,14 @@ import { ToastContainer, toast, Slide } from "react-toastify";
 import dayjs from "dayjs";
 import "dayjs/locale/it";
 // Importa la localizzazione italiana
-const OrderEditRow = ({ activity, personale, orderid }) => {
+const OrderEditRow = ({ activity, personale, activityId }) => {
   const [activityName, setActivityName] = useState("");
   const [activityResponsible, setActivityResponsible] = useState("");
   const [activityStatus, setActivityStatus] = useState("");
   const [activityStartDate, setActivityStartDate] = useState(dayjs());
   const [activityEndDate, setActivityEndDate] = useState(dayjs());
   const [inCalendar, setInCalendar] = useState(false);
-  const [completed, setCompleted] = useState(false);
+  const [completed, setCompleted] = useState(null);
 
   const notifySuccess = (message) =>
     toast.success(message, {
@@ -53,31 +53,35 @@ const OrderEditRow = ({ activity, personale, orderid }) => {
     setInCalendar(activity.inCalendar);
   }, [activity]);
 
-  const updateActivity = async (orderId, updatedActivity) => {
+  const updateActivity = async (activityId, updatedActivity) => {
     try {
-      // Recupera la riga attuale con le attività
-      const { data: order, error: fetchError } = await supabase
-        .from("orders")
-        .select("activities")
-        .eq("id", orderId)
-        .single();
+      const {
+        id,
+        name,
+        status,
+        endDate,
+        startDate,
+        responsible,
+        inCalendar,
+        completed,
+      } = updatedActivity;
 
-      if (fetchError) throw fetchError;
-
-      // Aggiorna l'attività specifica nell'array
-      const updatedActivities = order.activities.map((activity) =>
-        activity.name === updatedActivity.name ? updatedActivity : activity
-      );
-
-      // Salva le attività aggiornate nel database
-      const { error: updateError } = await supabase
-        .from("orders")
-        .update({ activities: updatedActivities })
-        .eq("id", orderId);
-
-      if (updateError) throw updateError;
+      const { data, error } = await supabase
+        .from("activities") // Nome della tabella
+        .update({
+          name,
+          status,
+          endDate,
+          startDate,
+          responsible,
+          inCalendar,
+          completed,
+        })
+        .eq("id", id); // Filtra per ID attività
+      if (error) throw error; // Se c'è un errore, lo cattura il catch
 
       notifySuccess("Attività aggiornata con successo!");
+      return { success: true, data };
     } catch (error) {
       console.error(
         "Errore durante l'aggiornamento dell'attività:",
@@ -91,7 +95,7 @@ const OrderEditRow = ({ activity, personale, orderid }) => {
     if (activityStatus === "Completato") {
       setCompleted(dayjs().toISOString());
     } else if (activityStatus !== "Completato") {
-      setCompleted(false);
+      setCompleted(null);
     }
   };
 
@@ -111,7 +115,7 @@ const OrderEditRow = ({ activity, personale, orderid }) => {
       completed: completed,
     };
 
-    updateActivity(orderid, updatedActivity);
+    updateActivity(activityId, updatedActivity);
   };
 
   return (
@@ -145,7 +149,7 @@ const OrderEditRow = ({ activity, personale, orderid }) => {
               onChange={(e) => setActivityResponsible(e.target.value)}
             >
               {personale.personale.map((person) => (
-                <MenuItem key={person.workerName} value={person.workerName}>
+                <MenuItem key={person.id} value={person.id}>
                   {person.workerName}
                 </MenuItem>
               ))}

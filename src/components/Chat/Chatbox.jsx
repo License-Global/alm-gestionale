@@ -15,22 +15,16 @@ const Chatbox = ({ authorizedUser, selectedItem, closeModal }) => {
   const [newMessage, setNewMessage] = useState("");
   const endOfMessagesRef = useRef(null);
 
-  const sendMessage = async (
-    orderId,
-    activityName,
-    noteContent,
-    sender = authorizedUser
-  ) => {
+  const sendMessage = async (activityId, noteContent, sender) => {
     try {
-      await addNote(orderId, activityName, noteContent, sender);
-      setNewMessage(""); // Clear the input field after sending the message
+      await addNote(activityId, noteContent, sender);
+      setNewMessage("");
     } catch (error) {
       console.error("Error sending message:", error);
     } finally {
       closeModal();
     }
   };
-
   useEffect(() => {
     endOfMessagesRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [selectedItem.note]);
@@ -114,8 +108,7 @@ const Chatbox = ({ authorizedUser, selectedItem, closeModal }) => {
           <Button
             onClick={() =>
               sendMessage(
-                selectedItem.orderId,
-                selectedItem.name,
+                selectedItem.id, // <-- passiamo l'id dell'attività
                 newMessage,
                 authorizedUser
               )

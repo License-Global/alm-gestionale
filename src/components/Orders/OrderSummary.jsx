@@ -29,6 +29,7 @@ import { useReactToPrint } from "react-to-print";
 import { useParams } from "react-router-dom";
 import { useArchivedOrder } from "../../hooks/useArchivedOrder";
 import { handleTargetLabel } from "../../utils/enums/timeManager";
+import { usePersonale } from "../../hooks/usePersonale";
 
 const StyledCard = styled(Card)(({ theme }) => ({
   maxWidth: "90vw",
@@ -105,6 +106,7 @@ const urgencyColors = {
 export default function OrderSummary() {
   const { id } = useParams();
   const { order } = useArchivedOrder(id);
+  const { personale } = usePersonale();
 
   const contentRef = useRef(null);
   const reactToPrintFn = useReactToPrint({ contentRef });
@@ -176,7 +178,12 @@ export default function OrderSummary() {
                     <Typography variant="subtitle1" color="textSecondary">
                       Responsabile Commessa
                     </Typography>
-                    <Typography variant="h6">{order.orderManager}</Typography>
+                    <Typography variant="h6">
+                      {personale.find(
+                        (membro) =>
+                          String(membro.id) === String(order.orderManager)
+                      )?.workerName || "Manager non trovato"}
+                    </Typography>
                   </Box>
                 </InfoBox>
                 <InfoBox>
@@ -310,7 +317,14 @@ export default function OrderSummary() {
                         )}
                       </Box>
                       <Typography variant="body2" color="textSecondary" noWrap>
-                        Responsabile: <b>{activity.responsible}</b>
+                        Responsabile:{" "}
+                        <b>
+                          {" "}
+                          {personale.find(
+                            (membro) =>
+                              String(membro.id) === String(activity.responsible)
+                          )?.workerName || "Manager non trovato"}
+                        </b>
                       </Typography>
                     </Box>
                     <Box

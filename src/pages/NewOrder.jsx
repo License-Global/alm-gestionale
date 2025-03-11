@@ -14,38 +14,48 @@ import {
   alpha,
   Card,
   CardContent,
-  IconButton,
 } from "@mui/material";
 import { Inventory2, Construction } from "@mui/icons-material";
 import { motion, AnimatePresence } from "framer-motion";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { usePersonale } from "../hooks/usePersonale";
-import useSession from "../hooks/useSession";
-import { useNavigate } from "react-router-dom";
 import DynamicTable from "../components/Tables/DynamicTable";
-import ClassicTable from "../components/Tables/ActivityTable";
 import theme from "../theme";
-import {
-  createOrder,
-  createSchema,
-  fetchActivitiesSchemes,
-} from "../services/activitiesService";
-import { createBucket } from "../services/bucketServices";
+import { fetchActivitiesSchemes } from "../services/activitiesService";
 import { PageContainer, SectionTitle } from "../styles/ArchiveDashboardStyles";
-import { ToastContainer, toast } from "react-toastify";
+import { ToastContainer } from "react-toastify";
 import { useFormik } from "formik";
-import { mainOrderSchema } from "../utils/validations/validationSchemes";
 import ActivityTable from "../components/Tables/ActivityTable";
+import * as Yup from "yup";
+import { useAllOrders } from "../hooks/useOrders";
 
 const NewOrder = () => {
   const [formStep, setFormStep] = useState(1);
   const [activitiesSchemes, setActivitiesSchemes] = useState([]);
   const [selectedSchema, setSelectedSchema] = useState(null);
   const { personale } = usePersonale();
+  const { orders } = useAllOrders();
 
   const MotionCard = motion(Card);
   const MotionGrid = motion(Grid);
+
+  const mainOrderSchema = Yup.object({
+    orderName: Yup.string()
+      .matches(/^[a-zA-Z0-9À-ÿ ]+$/, "Sono ammessi solo lettere e numeri")
+      .max(30, "Non deve superare i 30 caratteri")
+      .notOneOf(
+        orders.map((order) => order.orderName),
+        "Nome commessa già esistente"
+      )
+      .required("Campo obbligatorio"),
+    startDate: Yup.date().required("Campo obbligatorio"),
+    endDate: Yup.date().required("Campo obbligatorio"),
+    materialShelf: Yup.string().required("Campo obbligatorio"),
+    urgency: Yup.string().required("Campo obbligatorio"),
+    accessories: Yup.string().required("Campo obbligatorio"),
+    orderManager: Yup.string().required("Campo obbligatorio"),
+  });
 
   const formik = useFormik({
     initialValues: {
@@ -72,7 +82,8 @@ const NewOrder = () => {
       formik.values.materialShelf &&
       formik.values.urgency &&
       formik.values.accessories &&
-      formik.values.orderManager
+      formik.values.orderManager &&
+      formik.isValid
     ) {
       return true;
     } else {
@@ -295,7 +306,7 @@ const NewOrder = () => {
                         }
                       >
                         {personale.map((worker, index) => (
-                          <MenuItem key={index} value={worker.workerName}>
+                          <MenuItem key={index} value={worker.id}>
                             {worker.workerName}
                           </MenuItem>
                         ))}

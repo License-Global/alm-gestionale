@@ -32,8 +32,6 @@ import {
   Clear,
 } from "@mui/icons-material";
 
-import CheckIcon from "@mui/icons-material/Check";
-
 import Timer from "../misc/Timer";
 
 import {
@@ -60,14 +58,18 @@ import NoOrders from "../Orders/NoOrders";
 import Chatbox from "../Chat/Chatbox";
 import AdminDocsModal from "../misc/AdminDocsModal";
 import useActiveUser from "../../hooks/useActiveUser";
+import { usePersonale } from "../../hooks/usePersonale";
 
 const MainTable = ({ order }) => {
   const authorizedUser = useActiveUser();
+  const { personale } = usePersonale();
   const [open, setOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedItemDocs, setSelectedItemDocs] = useState(null);
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("lg"));
   const messagesContainerRef = useRef(null);
+  const getWorkerName = (id) =>
+    personale.find((p) => p.id === id)?.workerName || "Sconosciuto";
 
   //Archivio
   const [loadingArchivio, setLoadingArchivio] = useState(false);
@@ -328,7 +330,8 @@ const MainTable = ({ order }) => {
                   <OrderInfoItem>
                     <Person fontSize="large" />
                     <Typography variant="body1">
-                      <b>Responsabile:</b> <br /> {order?.orderManager}
+                      <b>Responsabile:</b> <br />{" "}
+                      {getWorkerName(order?.orderManager)}
                     </Typography>
                   </OrderInfoItem>
                 </Grid>
@@ -432,7 +435,7 @@ const MainTable = ({ order }) => {
                         </StyledTableCell>
                       )}
                       <StyledTableCell align="right">
-                        {activity.responsible}
+                        {getWorkerName(activity.responsible)}
                       </StyledTableCell>
                       {!isSmallScreen && (
                         <StyledTableCell align="right">
@@ -477,8 +480,7 @@ const MainTable = ({ order }) => {
                           size="small"
                           onChange={(e) =>
                             updateActivityStatusInOrder(
-                              order.id,
-                              index,
+                              activity.id,
                               e.target.value
                             )
                           }
