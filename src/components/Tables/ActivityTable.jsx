@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import PropTypes from "prop-types";
 import {
   Table,
   TableBody,
@@ -21,15 +22,171 @@ import { createOrder } from "../../services/activitiesService";
 import { createBucket } from "../../services/bucketServices";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
+import { supabase } from "../../supabase/supabaseClient";
+
+// Funzione helper per controllare la disponibilità del responsabile
+const checkAvailability = async (responsible, start, end) => {
+  // Recupera le attività esistenti per il responsabile
+  const { data, error } = await supabase
+    .from("activities")
+    .select("startDate, endDate")
+    .eq("responsible", responsible);
+  if (error) {
+    console.error("Error checking availability:", error);
+    // In caso di errore, consideriamo il responsabile non disponibile per evitare conflitti
+    return false;
+  }
+  // Verifica se esiste una sovrapposizione:
+  // Un conflitto esiste se la nuova attività inizia prima della fine di un’attività esistente
+  // e finisce dopo l’inizio di quella stessa attività
+  const conflict = data.some((activity) => {
+    const existingStart = new Date(activity.startDate);
+    const existingEnd = new Date(activity.endDate);
+    return start < existingEnd && end > existingStart;
+  });
+  return !conflict;
+};
+
+// Componente dedicato per ogni riga della tabella
+const ActivityRow = React.memo(({ row, index, errors, onRowChange, personnel }) => {
+  const handleFieldChange = useCallback(
+    (field, value) => {
+      onRowChange(index, field, value);
+    },
+    [index, onRowChange]
+  );
+
+  return (
+    <TableRow key={index}>
+      <TableCell>{row.name}</TableCell>
+      <TableCell>
+        <Switch
+          checked={row.inCalendar}
+          onChange={(e) => handleFieldChange("inCalendar", e.target.checked)}
+        />
+      </TableCell>
+      <TableCell>
+        {row.inCalendar ? (
+          <TwitterPicker
+            styles={{
+              default: {
+                card: {
+                  boxShadow: `0 0 10px ${row.color}`,
+                },
+              },
+            }}
+            color={row.color || "#000"}
+            onChangeComplete={(color) => handleFieldChange("color", color.hex)}
+          />
+        ) : (
+          <div style={{ visibility: "hidden" }}>
+            <TwitterPicker
+              styles={{
+                default: {
+                  card: {
+                    boxShadow: `0 0 10px ${row.color}`,
+                  },
+                },
+              }}
+              color={row.color || "#000"}
+              onChangeComplete={(color) => handleFieldChange("color", color.hex)}
+            />
+          </div>
+        )}
+      </TableCell>
+      <TableCell>
+        <Select
+          value={row.responsible}
+          onChange={(e) => handleFieldChange("responsible", e.target.value)}
+          displayEmpty
+          fullWidth
+          error={Boolean(errors?.responsible)}
+        >
+          <MenuItem disabled value="">
+            <em>Seleziona responsabile</em>
+          </MenuItem>
+          {personnel.map((person) => (
+            <MenuItem key={person.id} value={person.id}>
+              {person.workerName}
+            </MenuItem>
+          ))}
+        </Select>
+        {errors?.responsible && (
+          <p style={{ color: "red", fontSize: "0.8rem", margin: "5px 0 0 5px" }}>
+            {errors.responsible}
+          </p>
+        )}
+        {errors?.conflict && (
+          <p style={{ color: "red", fontSize: "0.8rem", margin: "5px 0 0 5px" }}>
+            {errors.conflict}
+          </p>
+        )}
+      </TableCell>
+      <TableCell>
+        <DateTimePicker
+          label="Data inizio"
+          skipDisabled
+          value={row.startDate}
+          onChange={(date) => handleFieldChange("startDate", date)}
+          minTime={dayjs().hour(6).minute(0)}
+          maxTime={dayjs().hour(20).minute(0)}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              fullWidth
+              required
+              error={!row.startDate}
+              helperText={!row.startDate ? "Campo obbligatorio" : ""}
+            />
+          )}
+        />
+      </TableCell>
+      <TableCell>
+        <DateTimePicker
+          label="Data scadenza"
+          skipDisabled
+          value={row.endDate}
+          onChange={(date) => handleFieldChange("endDate", date)}
+          minTime={dayjs().hour(6).minute(0)}
+          maxTime={dayjs().hour(20).minute(0)}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              fullWidth
+              required
+              error={!row.endDate}
+              helperText={!row.endDate ? "Campo obbligatorio" : ""}
+            />
+          )}
+        />
+      </TableCell>
+    </TableRow>
+  );
+});
+
+ActivityRow.propTypes = {
+  row: PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    inCalendar: PropTypes.bool,
+    color: PropTypes.string,
+    responsible: PropTypes.string,
+    startDate: PropTypes.any,
+    endDate: PropTypes.any,
+  }).isRequired,
+  index: PropTypes.number.isRequired,
+  errors: PropTypes.object,
+  onRowChange: PropTypes.func.isRequired,
+  personnel: PropTypes.array.isRequired,
+};
 
 const ActivityTable = ({ selectedSchema, personale, formikValues }) => {
   const navigate = useNavigate();
   const [rows, setRows] = useState([]);
-  const [isValid, setIsValid] = useState(false);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
-  const notifyWarn = (message) =>
+  // Funzione helper per mostrare messaggi di warning
+  const notifyWarn = useCallback((message) => {
     toast.warn(message, {
       position: "top-right",
       autoClose: 3000,
@@ -41,77 +198,102 @@ const ActivityTable = ({ selectedSchema, personale, formikValues }) => {
       theme: "light",
       transition: Zoom,
     });
+  }, []);
 
-  // Effetto per caricare i nomi delle attività da un'ipotetica chiamata esterna
+  // Carica le attività quando lo schema selezionato cambia
   useEffect(() => {
     const loadActivities = async () => {
       if (!selectedSchema) return;
-      const activityNames = await selectedSchema.activities;
-      const initialRows = activityNames.map((activityName) => ({
-        name: activityName,
-        inCalendar: false,
-        color: "#000",
-        responsible: "",
-        startDate: dayjs().add(5, "minute"),
-        endDate: dayjs().add(15, "minute"),
-      }));
-      setRows(initialRows);
+      try {
+        const activityNames = await selectedSchema.activities;
+        const initialRows = activityNames.map((activityName) => ({
+          name: activityName,
+          inCalendar: false,
+          color: "#000",
+          responsible: "",
+          startDate: dayjs().add(5, "minute"),
+          endDate: dayjs().add(15, "minute"),
+        }));
+        setRows(initialRows);
+      } catch (error) {
+        notifyWarn("Errore nel caricamento delle attività");
+      }
     };
 
     loadActivities();
-  }, [selectedSchema]);
+  }, [selectedSchema, notifyWarn]);
 
-  // Gestione del cambiamento dei dati in una riga
-  const handleChange = (index, field, value) => {
-    const updatedRows = [...rows];
-    updatedRows[index] = { ...updatedRows[index], [field]: value };
-    setRows(updatedRows);
-  };
-
-  // Funzione di validazione per verificare che i campi obbligatori siano compilati
+  // Effettua la validazione combinata (campi obbligatori e controllo conflitti)
   useEffect(() => {
-    const newErrors = {};
-    rows.forEach((row, index) => {
-      if (!row.responsible) {
-        newErrors[index] = { responsible: "Seleziona un responsabile" };
+    const validateRows = async () => {
+      const newErrors = {};
+      for (let index = 0; index < rows.length; index++) {
+        const row = rows[index];
+        // Validazione campo responsabile
+        if (!row.responsible) {
+          newErrors[index] = { ...newErrors[index], responsible: "Seleziona un responsabile" };
+        }
+        // Se tutti i campi necessari sono presenti, controlla la disponibilità
+        if (row.responsible && row.startDate && row.endDate) {
+          const start =
+            row.startDate.toDate ? row.startDate.toDate() : new Date(row.startDate);
+          const end =
+            row.endDate.toDate ? row.endDate.toDate() : new Date(row.endDate);
+          const available = await checkAvailability(row.responsible, start, end);
+          if (!available) {
+            newErrors[index] = {
+              ...newErrors[index],
+              conflict: "Responsabile già occupato in questo orario",
+            };
+          }
+        }
       }
-    });
-    setErrors(newErrors);
-    setIsValid(Object.keys(newErrors).length === 0);
+      setErrors(newErrors);
+    };
+
+    validateRows();
   }, [rows]);
 
-  const formatRows = (rowsToFormat) => {
-    if (rowsToFormat) {
-      const formattedRows = rowsToFormat.map((row) => ({
-        ...row,
-        startDate: row.startDate ? dayjs(row.startDate).toDate() : null, // Converte in formato ISO
-        endDate: row.endDate ? dayjs(row.endDate).toDate() : null,
-        status: "Standby",
-        completed: null,
-        note: [], // Converte in formato ISO
-      }));
-      return formattedRows;
-    }
-  };
+  const isValid = Object.keys(errors).length === 0;
 
-  const handleConfim = () => {
+  // Aggiorna una specifica riga in modo controllato
+  const handleRowChange = useCallback((index, field, value) => {
+    setRows((prevRows) => {
+      const updatedRows = [...prevRows];
+      updatedRows[index] = { ...updatedRows[index], [field]: value };
+      return updatedRows;
+    });
+  }, []);
+
+  // Format delle righe prima dell'invio
+  const formatRows = useCallback((rowsToFormat) => {
+    return rowsToFormat.map((row) => ({
+      ...row,
+      startDate: row.startDate ? dayjs(row.startDate).toDate() : null,
+      endDate: row.endDate ? dayjs(row.endDate).toDate() : null,
+      status: "Standby",
+      completed: null,
+      note: [],
+    }));
+  }, []);
+
+  const handleConfirm = async () => {
     const data = {
       ...formikValues,
       activities: formatRows(rows),
     };
     try {
-      createOrder(data).then((res) => {
-        console.log(res);
-      });
-      createBucket(formikValues.orderName);
-      console.log(data);
+      setLoading(true);
+      const orderRes = await createOrder(data);
+      console.log("Order created:", orderRes);
+      await createBucket(formikValues.orderName);
+      navigate("/");
     } catch (e) {
       console.error(e);
+      notifyWarn("Errore durante la conferma");
+    } finally {
+      setLoading(false);
     }
-    setLoading(true);
-    setTimeout(() => {
-      navigate("/");
-    }, 1000);
   };
 
   return (
@@ -129,122 +311,15 @@ const ActivityTable = ({ selectedSchema, personale, formikValues }) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {rows?.map((row, index) => (
-              <TableRow key={index}>
-                <TableCell>{row.name}</TableCell>
-                <TableCell>
-                  <Switch
-                    checked={row.inCalendar}
-                    onChange={(e) =>
-                      handleChange(index, "inCalendar", e.target.checked)
-                    }
-                  />
-                </TableCell>
-                <TableCell>
-                  {row.inCalendar ? (
-                    <TwitterPicker
-                      styles={{
-                        default: {
-                          card: {
-                            boxShadow: `0 0 10px ${row.color}`,
-                          },
-                        },
-                      }}
-                      color={row.color || "#000"}
-                      onChangeComplete={(color) =>
-                        handleChange(index, "color", color.hex)
-                      }
-                    />
-                  ) : (
-                    <div style={{ visibility: "hidden" }}>
-                      <TwitterPicker
-                        styles={{
-                          default: {
-                            card: {
-                              boxShadow: `0 0 10px ${row.color}`,
-                            },
-                          },
-                        }}
-                        color={row.color || "#000"}
-                        onChangeComplete={(color) =>
-                          handleChange(index, "color", color.hex)
-                        }
-                      />
-                    </div>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Select
-                    value={row.responsible}
-                    onChange={(e) =>
-                      handleChange(index, "responsible", e.target.value)
-                    }
-                    displayEmpty
-                    fullWidth
-                    error={errors[index]?.responsible !== undefined}
-                  >
-                    <MenuItem disabled value="">
-                      <em>Seleziona responsabile</em>
-                    </MenuItem>
-                    {personale.map((person, i) => (
-                      <MenuItem key={i} value={person.id}>
-                        {person.workerName}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  {errors[index]?.responsible && (
-                    <p
-                      style={{
-                        color: "red",
-                        fontSize: "0.8rem",
-                        margin: "5px 0 0 5px",
-                      }}
-                    >
-                      {errors[index]?.responsible}
-                    </p>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <DateTimePicker
-                    label="Data inizio"
-                    skipDisabled
-                    value={row.startDate}
-                    onChange={(date) => handleChange(index, "startDate", date)}
-                    minTime={dayjs().hour(6).minute(0)}
-                    maxTime={dayjs().hour(20).minute(0)}
-                    defaultValue={dayjs().add(5, "minute")}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        fullWidth
-                        required
-                        error={!row.startDate} // Mostra errore se il campo è vuoto
-                        helperText={!row.startDate ? "Campo obbligatorio" : ""}
-                      />
-                    )}
-                  />
-                </TableCell>
-                <TableCell>
-                  <DateTimePicker
-                    label="Data scadenza"
-                    skipDisabled
-                    value={row.endDate}
-                    onChange={(date) => handleChange(index, "endDate", date)}
-                    minTime={dayjs().hour(6).minute(0)}
-                    maxTime={dayjs().hour(20).minute(0)}
-                    defaultValue={dayjs().add(15, "minute")}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        fullWidth
-                        required
-                        error={!row.endDate} // Mostra errore se il campo è vuoto
-                        helperText={!row.endDate ? "Campo obbligatorio" : ""}
-                      />
-                    )}
-                  />
-                </TableCell>
-              </TableRow>
+            {rows.map((row, index) => (
+              <ActivityRow
+                key={index}
+                row={row}
+                index={index}
+                errors={errors[index]}
+                onRowChange={handleRowChange}
+                personnel={personale}
+              />
             ))}
           </TableBody>
         </Table>
@@ -252,18 +327,25 @@ const ActivityTable = ({ selectedSchema, personale, formikValues }) => {
       <Box sx={{ textAlign: "center", my: 2 }}>
         <Button
           type="button"
-          disabled={!isValid}
+          disabled={!isValid || loading}
           size="large"
           variant="contained"
           color="secondary"
-          onClick={() => handleConfim(rows)}
-          loading={loading}
+          onClick={handleConfirm}
         >
-          Conferma
+          {loading ? "Caricamento..." : "Conferma"}
         </Button>
       </Box>
     </Box>
   );
+};
+
+ActivityTable.propTypes = {
+  selectedSchema: PropTypes.shape({
+    activities: PropTypes.oneOfType([PropTypes.array, PropTypes.func, PropTypes.object]),
+  }),
+  personale: PropTypes.array.isRequired,
+  formikValues: PropTypes.object.isRequired,
 };
 
 export default ActivityTable;
