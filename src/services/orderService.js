@@ -33,6 +33,7 @@ export const fetchOrderById = async (orderId) => {
     `
     )
     .eq("id", orderId)
+    .order("id", { foreignTable: "activities" }) // Ordina le attività per id in ordine crescente
     .single(); // Restituisce un solo oggetto invece di un array
 
   if (error) {

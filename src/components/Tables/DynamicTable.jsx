@@ -13,6 +13,7 @@ import {
   Select,
   MenuItem,
   FormControlLabel,
+  Tooltip,
 } from "@mui/material";
 import { AnimatePresence, motion } from "framer-motion";
 import { RemoveCircle } from "@mui/icons-material";
@@ -24,14 +25,23 @@ import { activityOrderSchema } from "../../utils/validations/validationSchemes";
 import { createOrder, createSchema } from "../../services/activitiesService";
 import { createBucket } from "../../services/bucketServices";
 import { useNavigate } from "react-router-dom";
+import {
+  activitiesById,
+  isOperatorAvailable,
+} from "../../utils/functions/taskManager";
 
 const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
   const [isValid, setIsValid] = useState(false);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-
   const [saveNewSchema, setSaveNewSchema] = useState(false);
   const [newSchemaName, setNewSchemaName] = useState("");
+  const [selectedOperatorActivities, setSelectedOperatorActivities] = useState(
+    []
+  );
+
+  const [tooltipIsOpen, setTooltipIsOpen] = useState(false);
+  const [toolTipText, setToolTipText] = useState("");
 
   const getWorkerName = (id) =>
     personale.find((p) => p.id === id)?.workerName || "Sconosciuto";
@@ -159,6 +169,57 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
       navigate("/");
     }, 1000);
   };
+
+  useEffect(() => {
+    if (newRow.responsible) {
+      // Definisci una funzione asincrona interna
+      const fetchActivities = async () => {
+        try {
+          const data = await activitiesById(newRow.responsible);
+          setSelectedOperatorActivities(data);
+        } catch (err) {
+          console.log(err.message);
+        }
+      };
+      fetchActivities();
+    }
+  }, [newRow.responsible]);
+
+  useEffect(() => {
+    console.log(
+      isOperatorAvailable(
+        selectedOperatorActivities,
+        newRow.startDate,
+        newRow.endDate
+      )
+    );
+  }, [
+    selectedOperatorActivities,
+    newRow.responsible,
+    newRow.startDate,
+    newRow.endDate,
+  ]);
+
+  useEffect(() => {
+    if (
+      !isOperatorAvailable(
+        selectedOperatorActivities,
+        newRow.startDate,
+        newRow.endDate
+      )
+    ) {
+      setToolTipText("Operatore non disponibile");
+      setTooltipIsOpen(true);
+    } else {
+      setToolTipText("");
+      setTooltipIsOpen(false);
+    }
+  }, [
+    selectedOperatorActivities,
+    newRow.startDate,
+    newRow.endDate,
+    newRow.responsible,
+  ]);
 
   return (
     <Box sx={{ p: 2 }}>
@@ -340,6 +401,7 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
                   value={newRow.startDate || dayjs().add(5, "minute")}
                   defaultValue={dayjs().add(5, "minute")}
                   onChange={(date) => handleChange("startDate", date)}
+                  minDate={dayjs()}
                   minTime={dayjs().hour(6).minute(0)}
                   maxTime={dayjs().hour(20).minute(0)}
                   renderInput={(params) => <TextField {...params} fullWidth />}
@@ -352,20 +414,36 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
                   value={newRow.endDate || dayjs().add(15, "minute")}
                   defaultValue={dayjs().add(15, "minute")}
                   onChange={(date) => handleChange("endDate", date)}
+                  minDate={newRow.startDate}
                   minTime={dayjs().hour(6).minute(0)}
                   maxTime={dayjs().hour(20).minute(0)}
                   renderInput={(params) => <TextField {...params} fullWidth />}
                 />
               </TableCell>
               <TableCell>
-                <Button
-                  disabled={!isValid}
-                  onClick={handleAddRow}
-                  variant="contained"
-                  color="primary"
+                <Tooltip
+                  open={tooltipIsOpen}
+                  disableHoverListener
+                  onOpen={() => setTooltipIsOpen(true)}
+                  onClose={() => setTooltipIsOpen(false)}
+                  title={toolTipText}
                 >
-                  Aggiungi
-                </Button>
+                  <Button
+                    disabled={
+                      !isValid ||
+                      !isOperatorAvailable(
+                        selectedOperatorActivities,
+                        newRow.startDate,
+                        newRow.endDate
+                      )
+                    }
+                    onClick={handleAddRow}
+                    variant="contained"
+                    color="primary"
+                  >
+                    Aggiungi
+                  </Button>
+                </Tooltip>
               </TableCell>
             </TableRow>
           </TableBody>
