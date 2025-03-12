@@ -19,10 +19,11 @@ import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { TwitterPicker } from "react-color";
 import { toast, Zoom } from "react-toastify";
 import { createOrder } from "../../services/activitiesService";
-import { createBucket } from "../../services/bucketServices";
+import { createFolder } from "../../services/bucketServices";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import { supabase } from "../../supabase/supabaseClient";
+import useSession from "../../hooks/useSession";
 
 // Funzione helper per controllare la disponibilità del responsabile
 const checkAvailability = async (responsible, start, end) => {
@@ -180,6 +181,7 @@ ActivityRow.propTypes = {
 };
 
 const ActivityTable = ({ selectedSchema, personale, formikValues }) => {
+  const { session } = useSession();
   const navigate = useNavigate();
   const [rows, setRows] = useState([]);
   const [errors, setErrors] = useState({});
@@ -281,12 +283,13 @@ const ActivityTable = ({ selectedSchema, personale, formikValues }) => {
     const data = {
       ...formikValues,
       activities: formatRows(rows),
+      user_id: session.user.id
     };
     try {
       setLoading(true);
       const orderRes = await createOrder(data);
       console.log("Order created:", orderRes);
-      await createBucket(formikValues.orderName);
+      await createFolder(session.user.id, formikValues.orderName);
       navigate("/");
     } catch (e) {
       console.error(e);
