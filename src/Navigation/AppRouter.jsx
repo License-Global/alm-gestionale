@@ -20,6 +20,7 @@ import CustomerPage from "../pages/CustomerPage";
 import OperatorPage from "../pages/OperatorPage";
 import AddOperator from "../pages/AddOperator";
 import AddCustomer from "../pages/AddCustomer";
+import OperatorCalendar from "../pages/OperatorCalendar";
 const AppRouter = () => (
   <Routes>
     <Route
@@ -136,6 +137,14 @@ const AppRouter = () => (
       element={
         <ProtectedRoute>
           <OperatorPage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/operatore/calendario/:id"
+      element={
+        <ProtectedRoute>
+          <OperatorCalendar />
         </ProtectedRoute>
       }
     />

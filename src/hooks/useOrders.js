@@ -96,3 +96,36 @@ export const useAllOrders = () => {
 
   return { orders, loading, error };
 };
+
+export const useOrderIdByActivity = (activityId) => {
+  const [orderId, setOrderId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+      const fetchOrderId = async () => {
+          setLoading(true);
+          try {
+              let { data, error } = await supabase
+                  .from('activities')
+                  .select('order_id')
+                  .eq('id', activityId)
+                  .single();
+              
+              if (error) throw error;
+              setOrderId(data ? data.order_id : null);
+          } catch (err) {
+              setError(err);
+              console.error('Errore nel recupero dell ID ordine:', err);
+          } finally {
+              setLoading(false);
+          }
+      };
+
+      if (activityId) {
+          fetchOrderId();
+      }
+  }, [activityId]);
+
+  return { orderId, loading, error };
+};

@@ -6,10 +6,9 @@ import TableCell from "@mui/material/TableCell";
 import { statusList } from "../../utils/enums/miscEnums";
 import { supabase } from "../../supabase/supabaseClient";
 import { ToastContainer, toast, Slide } from "react-toastify";
-
 import dayjs from "dayjs";
 import "dayjs/locale/it";
-// Importa la localizzazione italiana
+
 const OrderEditRow = ({ activity, personale, activityId }) => {
   const [activityName, setActivityName] = useState("");
   const [activityResponsible, setActivityResponsible] = useState("");
@@ -53,6 +52,26 @@ const OrderEditRow = ({ activity, personale, activityId }) => {
     setInCalendar(activity.inCalendar);
   }, [activity]);
 
+  // Funzione per controllare la disponibilità del responsabile,
+  // escludendo l'attività corrente dal controllo
+  const checkAvailability = async (responsible, start, end, currentActivityId) => {
+    const { data, error } = await supabase
+      .from("activities")
+      .select("id, startDate, endDate")
+      .eq("responsible", responsible);
+    if (error) {
+      console.error("Errore nel controllo della disponibilità:", error);
+      return false;
+    }
+    const conflict = data.some((act) => {
+      if (act.id === currentActivityId) return false;
+      const existingStart = new Date(act.startDate);
+      const existingEnd = new Date(act.endDate);
+      return start < existingEnd && end > existingStart;
+    });
+    return !conflict;
+  };
+
   const updateActivity = async (activityId, updatedActivity) => {
     try {
       const {
@@ -65,9 +84,8 @@ const OrderEditRow = ({ activity, personale, activityId }) => {
         inCalendar,
         completed,
       } = updatedActivity;
-
       const { data, error } = await supabase
-        .from("activities") // Nome della tabella
+        .from("activities")
         .update({
           name,
           status,
@@ -77,16 +95,13 @@ const OrderEditRow = ({ activity, personale, activityId }) => {
           inCalendar,
           completed,
         })
-        .eq("id", id); // Filtra per ID attività
-      if (error) throw error; // Se c'è un errore, lo cattura il catch
+        .eq("id", id);
+      if (error) throw error;
 
       notifySuccess("Attività aggiornata con successo!");
       return { success: true, data };
     } catch (error) {
-      console.error(
-        "Errore durante l'aggiornamento dell'attività:",
-        error.message
-      );
+      console.error("Errore durante l'aggiornamento dell'attività:", error.message);
       notifyError("Errore durante l'aggiornamento dell'attività");
     }
   };
@@ -94,7 +109,7 @@ const OrderEditRow = ({ activity, personale, activityId }) => {
   const handleCompleted = () => {
     if (activityStatus === "Completato") {
       setCompleted(dayjs().toISOString());
-    } else if (activityStatus !== "Completato") {
+    } else {
       setCompleted(null);
     }
   };
@@ -103,7 +118,14 @@ const OrderEditRow = ({ activity, personale, activityId }) => {
     handleCompleted();
   }, [activityStatus]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    const start = activityStartDate.toDate ? activityStartDate.toDate() : new Date(activityStartDate);
+    const end = activityEndDate.toDate ? activityEndDate.toDate() : new Date(activityEndDate);
+    const available = await checkAvailability(activityResponsible, start, end, activityId);
+    if (!available) {
+      notifyError("Responsabile già occupato in questo orario");
+      return;
+    }
     const updatedActivity = {
       ...activity,
       name: activityName,
@@ -114,7 +136,6 @@ const OrderEditRow = ({ activity, personale, activityId }) => {
       inCalendar: inCalendar,
       completed: completed,
     };
-
     updateActivity(activityId, updatedActivity);
   };
 
@@ -133,10 +154,7 @@ const OrderEditRow = ({ activity, personale, activityId }) => {
         theme={"colored"}
         transition={Slide}
       />
-      <TableRow
-        key={activity.name}
-        sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-      >
+      <TableRow sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
         <TableCell component="th" scope="row">
           {activity.name}
         </TableCell>
@@ -176,9 +194,7 @@ const OrderEditRow = ({ activity, personale, activityId }) => {
           <DateTimePicker
             defaultValue={dayjs(activity.startDate)}
             value={activityStartDate || activity.startDate}
-            onChange={(date) => {
-              setActivityStartDate(dayjs(date));
-            }}
+            onChange={(date) => setActivityStartDate(dayjs(date))}
             skipDisabled
             disablePast
           />
@@ -187,9 +203,7 @@ const OrderEditRow = ({ activity, personale, activityId }) => {
           <DateTimePicker
             defaultValue={dayjs(activity.endDate)}
             value={activityEndDate || activity.endDate}
-            onChange={(date) => {
-              setActivityEndDate(dayjs(date));
-            }}
+            onChange={(date) => setActivityEndDate(dayjs(date))}
             skipDisabled
             disablePast
           />

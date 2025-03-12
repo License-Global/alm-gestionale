@@ -165,7 +165,14 @@ const OperatorPage = () => {
             <Grid item>
               <Box sx={{ display: "flex", gap: 2 }}>
                 <Button
-                  onClick={() => handleEdit(id, operatorData.workerName)}
+                  onClick={() => navigate(`/operatore/calendario/${(operatorData.id)}`)}
+                  color="info"
+                  variant="contained"
+                >
+                  <b>Calendario Operatore</b>
+                </Button>
+                <Button
+                  onClick={() => handleEdit(operatorData.workerName)}
                   color="secondary"
                   variant="contained"
                 >

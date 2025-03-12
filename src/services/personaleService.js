@@ -70,3 +70,19 @@ export async function deletePersonale(id) {
 
   return { data };
 }
+
+
+export const getActivitiesByStaffId = async (staffId) => {
+  try {
+      let { data, error } = await supabase
+          .from('activities')
+          .select('*')
+          .eq('responsible', staffId);
+
+      if (error) throw error;
+      return data;
+  } catch (err) {
+      console.error('Errore nel recupero delle attività:', err);
+      return [];
+  }
+};
