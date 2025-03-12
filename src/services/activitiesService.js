@@ -180,7 +180,8 @@ export async function createOrder(newOrder) {
     accessories,
     orderManager, // ID di un dipendente già esistente
     activities = [], // array di oggetti, ciascuno descrive un'attività
-    internal_id = 123456,
+    user_id,
+    internal_id
   } = newOrder;
 
   try {
@@ -198,6 +199,7 @@ export async function createOrder(newOrder) {
           accessories,
           // orderManager è un ID esistente di personale
           orderManager,
+          user_id,
           internal_id,
         },
       ])

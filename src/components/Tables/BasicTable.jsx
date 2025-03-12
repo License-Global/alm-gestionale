@@ -14,19 +14,21 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@mui/material";
 import { useDeleteOrder } from "../../hooks/useDeleteOrder";
 import NoOrders from "../Orders/NoOrders";
-import { deleteBucket } from "../../services/bucketServices";
+import { deleteFolder } from "../../services/bucketServices";
 import { usePersonale } from "../../hooks/usePersonale";
+import useSession from "../../hooks/useSession";
 
 export default function BasicTable({ orders }) {
   const navigate = useNavigate();
   const personale = usePersonale();
+  const session = useSession();
 
   const { deleteOrder, loading } = useDeleteOrder();
 
   const handleDelete = (orderId, orderName) => {
     deleteOrder(orderId).then(() => {
       if (loading === false) {
-        deleteBucket(orderName).then(() => {
+        deleteFolder(session.session.user.id, orderName).then(() => {
           window.location.reload();
         });
       }

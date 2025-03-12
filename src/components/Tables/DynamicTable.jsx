@@ -23,14 +23,16 @@ import { toast, Zoom } from "react-toastify";
 import dayjs from "dayjs";
 import { activityOrderSchema } from "../../utils/validations/validationSchemes";
 import { createOrder, createSchema } from "../../services/activitiesService";
-import { createBucket } from "../../services/bucketServices";
+import { createFolder } from "../../services/bucketServices";
 import { useNavigate } from "react-router-dom";
 import {
   activitiesById,
   isOperatorAvailable,
 } from "../../utils/functions/taskManager";
+import useSession from "../../hooks/useSession";
 
 const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
+    const { session } = useSession();
   const [isValid, setIsValid] = useState(false);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -156,10 +158,11 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
     const data = {
       ...formikValues,
       activities: formatRows(rows),
+      user_id: session.user.id
     };
     try {
       createOrder(data);
-      createBucket(formikValues.orderName);
+      createFolder(session.user.id, formikValues.orderName);
       console.log(data);
     } catch (e) {
       console.error(e);

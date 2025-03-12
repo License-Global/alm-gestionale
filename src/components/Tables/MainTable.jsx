@@ -52,15 +52,17 @@ import {
 import dayjs from "dayjs";
 
 import { updateActivityStatusInOrder } from "../../services/activitiesService";
-import { deleteBucket, getFileCount } from "../../services/bucketServices";
+import { deleteFolder, getFileCount } from "../../services/bucketServices";
 import { archiveOrder } from "../../services/orderService";
 import NoOrders from "../Orders/NoOrders";
 import Chatbox from "../Chat/Chatbox";
 import AdminDocsModal from "../misc/AdminDocsModal";
 import useActiveUser from "../../hooks/useActiveUser";
 import { usePersonale } from "../../hooks/usePersonale";
+import useSession from "../../hooks/useSession";
 
 const MainTable = ({ order }) => {
+  const session = useSession();
   const authorizedUser = useActiveUser();
   const { personale } = usePersonale();
   const [open, setOpen] = useState(false);
@@ -85,7 +87,7 @@ const MainTable = ({ order }) => {
     const result = await archiveOrder(order.id);
 
     if (result.success) {
-      deleteBucket(order.orderName);
+      deleteFolder(session.session.user.id, order.orderName);
       setSuccessArchivio(true);
     } else {
       setErrorArchivio(result.error);
@@ -591,12 +593,13 @@ const MainTable = ({ order }) => {
             onClose={handleCloseModalDoc}
           >
             <Box sx={StyledModal}>
+              <p onClick={() => console.log(session)}>asd</p>
               <Typography id={"modal-title"} sx={titleStyle}>
                 {selectedItemDocs?.name}
               </Typography>
               <AdminDocsModal
-                bucketName={order.orderName}
-                folderName={selectedItemDocs?.name}
+                bucketName={session.session.user.id}
+                folderName={order?.orderName + "/" + selectedItemDocs?.name}
               />
               <Box sx={{ m: 4 }}>
                 <Button
