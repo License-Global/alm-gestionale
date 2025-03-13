@@ -35,9 +35,9 @@ const OperatorPage = () => {
     }
   }, [operator]);
 
-  const handleEdit = async (id, workerName) => {
+  const handleEdit = async (id, operatorData) => {
     try {
-      await updatePersonale(id, workerName).then(() => {
+      await updatePersonale(id, operatorData).then(() => {
         navigate("/impostazioni");
       });
     } catch (error) {
@@ -172,7 +172,7 @@ const OperatorPage = () => {
                   <b>Calendario Operatore</b>
                 </Button>
                 <Button
-                  onClick={() => handleEdit(operatorData.workerName)}
+                  onClick={() => handleEdit(id, operatorData)}
                   color="secondary"
                   variant="contained"
                 >

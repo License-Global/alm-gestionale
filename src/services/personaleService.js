@@ -43,10 +43,14 @@ export async function insertPersonale(record) {
   }
 }
 
-export async function updatePersonale(id, workerName) {
+export async function updatePersonale(id, operatorData) {
   const { data, error } = await supabase
     .from("personale")
-    .update({ workerName })
+    .update({     workerName: operatorData.workerName,
+      operator_address: operatorData.operator_address,
+      operator_email: operatorData.operator_email,
+      operator_phone: operatorData.operator_phone,
+      operator_note: operatorData.operator_note, })
     .eq("id", id);
 
   if (error) {
