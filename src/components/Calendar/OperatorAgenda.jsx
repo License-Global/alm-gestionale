@@ -8,6 +8,7 @@ import { Box, styled } from "@mui/system";
 import { useStaffActivities } from "../../hooks/useStaffActivities";
 import { useOrderIdByActivity } from "../../hooks/useOrders";
 import { useNavigate } from "react-router-dom";
+import { useOrders } from "../../hooks/useOrders";
 import "../../styles/calendar.css";
 
 moment.locale("it");
@@ -50,6 +51,18 @@ export default function OperatorAgenda({operatorId}) {
     const { activities, loading, error } = useStaffActivities(operatorId);
     const { orderId, loadingAct, errorAct } = useOrderIdByActivity(selectedOrderId) 
     const navigate = useNavigate();
+    const {orders} = useOrders();
+
+    const CustomEvent = ({ event }) => (
+        <div style={{ whiteSpace: "normal", wordBreak: "break-word" }}>
+          <strong>{event.title}</strong>
+          {event.desc && <div>{event.desc}</div>}
+        </div>
+      );
+      
+
+    const getOrderName = (id) =>
+        orders.find((o) => o.id === id)?.orderName || "Sconosciuto";
 
     useEffect(() => {
         if (orderId) {
@@ -64,9 +77,10 @@ export default function OperatorAgenda({operatorId}) {
         }
         if (activities && Array.isArray(activities)) {
             const extractedEvents = [];
+            orders &&
             activities.forEach((activity) => {
                 extractedEvents.push({
-                    title: `${activity.name} ${" "} - ${activity.status}`,
+                    title: ` ${getOrderName(activity.order_id)} - ${activity.name} ${" "} - ${activity.status}`,
                     start: new Date(activity.startDate),
                     end: new Date(activity.endDate),
                     responsible: activity.responsible,
@@ -88,19 +102,19 @@ export default function OperatorAgenda({operatorId}) {
 
     // Event styling to apply the color from the event's color property
     const eventPropGetter = (event) => {
-        const backgroundColor = event.color || "#3174ad"; // Default color if none provided
+        const backgroundColor = event.color || "#3174ad";
         return {
-            style: {
-                backgroundColor,
-                borderRadius: "5px",
-                opacity: 0.9,
-                color: "white",
-                border: "0px",
-                padding: "2px",
-            },
+          style: {
+            backgroundColor,
+            borderRadius: "5px",
+            opacity: 0.9,
+            color: "white",
+            border: "0px",
+            padding: "2px",
+          },
         };
-    };
-
+      };
+      
     return (
             <StyledCalendar
                 localizer={localizer}
@@ -113,6 +127,9 @@ export default function OperatorAgenda({operatorId}) {
                 onSelectEvent={handleSelectEvent}
                 eventPropGetter={eventPropGetter}
                 style={{ height: "110vh" }}
+                components={{
+                    event: CustomEvent,
+                  }}
             />
     );
 }
