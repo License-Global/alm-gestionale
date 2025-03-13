@@ -97,7 +97,7 @@ const Appbar = () => {
                   style={{ paddingTop: "6px", cursor: "pointer" }} // Percorso del logo
                 />
               </Typography>
-              <Searchbar />
+              {role === btoa("admin") && <Searchbar />}
               <Button
                 onClick={() => navigate("/calendario")}
                 color="inherit"
