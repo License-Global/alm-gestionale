@@ -28,6 +28,7 @@ import BackButton from "../misc/BackButton";
 import { useRole } from "../../context/RoleContext";
 import Searchbar from "./Searchbar";
 import BasicMenu from "./BasicMenu";
+import OperatorSelectCalendar from "../Calendar/OperatorSelectCalendar";
 
 const StyledAppBar = styled(AppBar)`
   background: linear-gradient(
@@ -97,7 +98,7 @@ const Appbar = () => {
                   style={{ paddingTop: "6px", cursor: "pointer" }} // Percorso del logo
                 />
               </Typography>
-              {role === btoa("operator") ?  <Searchbar minisearch={true} type={'operator-orders'} /> : <Searchbar />}
+              {role === btoa("operator") ? <Searchbar minisearch={true} type={'operator-orders'} /> : <Searchbar />}
               <Button
                 onClick={() => navigate("/calendario")}
                 color="inherit"
@@ -117,9 +118,14 @@ const Appbar = () => {
               )}
             </Toolbar>
           </StyledAppBar>
-          {role === btoa("operator") && location.pathname !== "/" && (
-            <BackButton title={"Home"} direction={"/"} />
-          )}
+          <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', my:'16px'}}>
+            {role === btoa("operator") && location.pathname !== "/" && (
+              <BackButton title={"Home"} direction={"/"} />
+            )}
+            {role === btoa("operator") && location.pathname === "/calendario" && (
+              <OperatorSelectCalendar />
+            )}
+          </Box>
 
           {role === btoa("admin") && (
             <Tabs
