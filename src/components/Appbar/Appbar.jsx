@@ -97,7 +97,7 @@ const Appbar = () => {
                   style={{ paddingTop: "6px", cursor: "pointer" }} // Percorso del logo
                 />
               </Typography>
-              {role === btoa("admin") && <Searchbar />}
+              {role === btoa("operator") ?  <Searchbar minisearch={true} type={'operator-orders'} /> : <Searchbar />}
               <Button
                 onClick={() => navigate("/calendario")}
                 color="inherit"

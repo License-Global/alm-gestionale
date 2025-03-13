@@ -49,7 +49,21 @@ const Searchbar = ({ minisearch, type }) => {
           ),
         }));
         setSuggestions(suggestions);
-      } else if (type === "customers") {
+      } else if(type === "operator-orders"){
+        const filteredOrders = orders.filter(order => !order.isArchived);
+        const suggestions = filteredOrders.map((order, index) => ({
+          key: index + "order",
+          id: order.id,
+          isArchived: order.isArchived,
+          label: order.orderName,
+          isOrder: true,
+          icon: (
+            <AssignmentIcon color="secondary" />
+          ),
+        }));
+        setSuggestions(suggestions);
+      } 
+      else if (type === "customers") {
         const customersSuggestions = customers.map((customer, index) => ({
           key: index + "customer",
           id: customer.id,
