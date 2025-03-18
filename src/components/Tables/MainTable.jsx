@@ -637,7 +637,6 @@ const MainTable = ({ order }) => {
             onClose={handleCloseModalDoc}
           >
             <Box sx={StyledModal}>
-              <p onClick={() => console.log(session)}>asd</p>
               <Typography id={"modal-title"} sx={titleStyle}>
                 {selectedItemDocs?.name}
               </Typography>
