@@ -40,7 +40,10 @@ const Searchbar = ({ minisearch, type }) => {
           key: index + "order",
           id: order.id,
           isArchived: order.isArchived,
-          label: order.orderName,
+          label:
+            order.orderName +
+            " - " +
+            customers.find((c) => c.id === order.clientId).customer_name,
           isOrder: true,
           icon: order.isArchived ? (
             <Inventory2Icon color="primary" />
@@ -49,21 +52,21 @@ const Searchbar = ({ minisearch, type }) => {
           ),
         }));
         setSuggestions(suggestions);
-      } else if(type === "operator-orders"){
-        const filteredOrders = orders.filter(order => !order.isArchived);
+      } else if (type === "operator-orders") {
+        const filteredOrders = orders.filter((order) => !order.isArchived);
         const suggestions = filteredOrders.map((order, index) => ({
           key: index + "order",
           id: order.id,
           isArchived: order.isArchived,
-          label: order.orderName,
+          label:
+            order.orderName +
+            " - " +
+            customers.find((c) => c.id === order.clientId).customer_name,
           isOrder: true,
-          icon: (
-            <AssignmentIcon color="secondary" />
-          ),
+          icon: <AssignmentIcon color="secondary" />,
         }));
         setSuggestions(suggestions);
-      } 
-      else if (type === "customers") {
+      } else if (type === "customers") {
         const customersSuggestions = customers.map((customer, index) => ({
           key: index + "customer",
           id: customer.id,
@@ -88,7 +91,10 @@ const Searchbar = ({ minisearch, type }) => {
         key: index + "order",
         id: order.id,
         isArchived: order.isArchived,
-        label: order.orderName,
+        label:
+          order.orderName +
+          " - " +
+          customers.find((c) => c.id === order.clientId).customer_name,
         icon: order.isArchived ? (
           <Inventory2Icon color="primary" />
         ) : (

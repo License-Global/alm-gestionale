@@ -30,6 +30,7 @@ import {
   FindInPage,
   Check,
   Clear,
+  Construction,
 } from "@mui/icons-material";
 
 import Timer from "../misc/Timer";
@@ -60,18 +61,29 @@ import AdminDocsModal from "../misc/AdminDocsModal";
 import useActiveUser from "../../hooks/useActiveUser";
 import { usePersonale } from "../../hooks/usePersonale";
 import useSession from "../../hooks/useSession";
+import { fetchCustomers } from "../../services/customerService";
 
 const MainTable = ({ order }) => {
   const session = useSession();
   const authorizedUser = useActiveUser();
-  const { personale } = usePersonale();
+  const { personale, loading } = usePersonale();
   const [open, setOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedItemDocs, setSelectedItemDocs] = useState(null);
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("lg"));
   const messagesContainerRef = useRef(null);
+  const [customers, setCustomers] = useState([]);
   const getWorkerName = (id) =>
     personale.find((p) => p.id === id)?.workerName || "Sconosciuto";
+
+  useEffect(() => {
+    const fetchCustomersData = async () => {
+      const data = await fetchCustomers();
+      setCustomers(data);
+    };
+
+    fetchCustomersData();
+  }, []);
 
   //Archivio
   const [loadingArchivio, setLoadingArchivio] = useState(false);
@@ -87,7 +99,7 @@ const MainTable = ({ order }) => {
     const result = await archiveOrder(order.id);
 
     if (result.success) {
-      deleteFolder(session.session.user.id, order.orderName);
+      deleteFolder(session.session.user.id, order.orderName + order.clientId);
       setSuccessArchivio(true);
     } else {
       setErrorArchivio(result.error);
@@ -212,20 +224,39 @@ const MainTable = ({ order }) => {
   };
   useEffect(() => {
     const fetchFileCounts = async () => {
-      const counts = {}; // Oggetto per memorizzare i conteggi
-      const promises = order.activities.map(async (activity) => {
-        const count = await getFileCount(order.orderName, activity.name); // Ottieni il conteggio dei file per attività
-        counts[activity.name] = count; // Salva il conteggio per l'attività
-      });
+      if (!order || !order.activities || !session?.session?.user?.id) return;
 
-      await Promise.all(promises); // Attendi che tutte le promesse siano risolte
-      setFileCounts(counts); // Aggiorna lo stato con i conteggi finali
+      const counts = {}; // Oggetto per memorizzare i conteggi
+      await Promise.all(
+        order.activities.map(async (activity) => {
+          try {
+            const count = await getFileCount(
+              session.session.user.id,
+              order.orderName + order.clientId + "/" + activity.name
+            );
+            counts[activity.name] = count;
+          } catch (error) {
+            console.error(
+              `Errore nel recupero dei file per ${activity.name}:`,
+              error
+            );
+          }
+        })
+      );
+
+      // Solo se i conteggi sono cambiati, aggiorna lo stato
+      setFileCounts((prevCounts) => {
+        const isEqual = Object.keys(counts).every(
+          (key) => counts[key] === prevCounts[key]
+        );
+
+        return isEqual ? prevCounts : counts;
+      });
     };
 
-    if (order && order.activities) {
-      fetchFileCounts(); // Esegui la funzione quando l'ordine è disponibile
-    }
-  }, [order]); // Esegui l'effetto ogni volta che `order` cambia
+    fetchFileCounts();
+  }, [order, session]);
+
   if (order === false) return <NoOrders />;
   else
     return (
@@ -270,11 +301,24 @@ const MainTable = ({ order }) => {
                   <Clear fontSize="large" color="error" />
                 )}
               </div>
-              <div>
-                <i>
-                  <b>ID: </b>{" "}
-                </i>
-                <i> {order?.internal_id}</i>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "18px" }}
+              >
+                <div>
+                  <b>Cliente:</b>{" "}
+                  <i>
+                    {
+                      customers.find((c) => c.id === order.clientId)
+                        ?.customer_name
+                    }
+                  </i>{" "}
+                </div>
+                <div>
+                  <i>
+                    <b>ID: </b>{" "}
+                  </i>
+                  <i> {order?.internal_id}</i>
+                </div>
               </div>
             </Typography>
             <OrderInfoCard>
@@ -339,7 +383,7 @@ const MainTable = ({ order }) => {
                 </Grid>
                 <Grid item xs={12} sm={6} md={1.5}>
                   <OrderInfoItem>
-                    <DateRange fontSize="large" />
+                    <Construction fontSize="large" />
                     <Typography variant="body1">
                       <b>Accessori:</b> <br /> {order?.accessories}
                     </Typography>
@@ -599,7 +643,12 @@ const MainTable = ({ order }) => {
               </Typography>
               <AdminDocsModal
                 bucketName={session.session.user.id}
-                folderName={order?.orderName + "/" + selectedItemDocs?.name}
+                folderName={
+                  order?.orderName +
+                  order?.clientId +
+                  "/" +
+                  selectedItemDocs?.name
+                }
               />
               <Box sx={{ m: 4 }}>
                 <Button

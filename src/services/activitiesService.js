@@ -173,6 +173,7 @@ export const patchActivity = async (orderId, activityIndex, updatedFields) => {
 export async function createOrder(newOrder) {
   const {
     orderName,
+    clientId,
     startDate,
     endDate,
     materialShelf,
@@ -181,7 +182,7 @@ export async function createOrder(newOrder) {
     orderManager, // ID di un dipendente già esistente
     activities = [], // array di oggetti, ciascuno descrive un'attività
     user_id,
-    internal_id
+    internal_id,
   } = newOrder;
 
   try {
@@ -192,6 +193,7 @@ export async function createOrder(newOrder) {
       .insert([
         {
           orderName,
+          clientId,
           startDate,
           endDate,
           materialShelf,

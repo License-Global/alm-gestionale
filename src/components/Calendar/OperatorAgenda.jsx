@@ -3,12 +3,11 @@ import { Calendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment";
 import "moment/locale/it";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import { CircularProgress } from "@mui/material";
+import { CircularProgress, Typography } from "@mui/material";
 import { Box, styled } from "@mui/system";
 import { useStaffActivities } from "../../hooks/useStaffActivities";
-import { useOrderIdByActivity } from "../../hooks/useOrders";
+import { useOrderIdByActivity, useOrders } from "../../hooks/useOrders";
 import { useNavigate } from "react-router-dom";
-import { useOrders } from "../../hooks/useOrders";
 import "../../styles/calendar.css";
 
 moment.locale("it");
@@ -29,107 +28,143 @@ const StyledCalendar = styled(Calendar)`
 `;
 
 const messages = {
-    allDay: "Giornata",
-    previous: "Precedente",
-    next: "Successivo",
-    today: "Oggi",
-    month: "Mese",
-    week: "Settimana",
-    day: "Giorno",
-    agenda: "Agenda",
-    date: "Data",
-    time: "Ora",
-    event: "Evento",
-    showMore: (total) => `+ ${total}`,
-    noEventsInRange: "Nessun ordine in questo intervallo",
+  allDay: "Giornata",
+  previous: "Precedente",
+  next: "Successivo",
+  today: "Oggi",
+  month: "Mese",
+  week: "Settimana",
+  day: "Giorno",
+  agenda: "Agenda",
+  date: "Data",
+  time: "Ora",
+  event: "Evento",
+  showMore: (total) => `+ ${total}`,
+  noEventsInRange: "Nessun ordine in questo intervallo",
 };
 
-export default function OperatorAgenda({operatorId}) {
-    const [events, setEvents] = useState([]);
-    const [selectedEvent, setSelectedEvent] = useState(null);
-    const [selectedOrderId, setSelectedOrderId] = useState(null);
-    const { activities, loading, error } = useStaffActivities(operatorId);
-    const { orderId, loadingAct, errorAct } = useOrderIdByActivity(selectedOrderId) 
-    const navigate = useNavigate();
-    const {orders} = useOrders();
+export default function OperatorAgenda({ operatorId }) {
+  const [events, setEvents] = useState([]);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
 
-    const CustomEvent = ({ event }) => (
-        <div style={{ whiteSpace: "normal", wordBreak: "break-word" }}>
-          <strong>{event.title}</strong>
-          {event.desc && <div>{event.desc}</div>}
-        </div>
-      );
-      
+  const { activities, loading, error } = useStaffActivities(operatorId);
+  const { orderId, loadingAct, errorAct } =
+    useOrderIdByActivity(selectedOrderId);
+  const { orders, loading: loadingOrders, error: errorOrders } = useOrders();
+  const navigate = useNavigate();
 
-    const getOrderName = (id) =>
-        orders.find((o) => o.id === id)?.orderName || "Sconosciuto";
+  // Componente personalizzato per gli eventi nel calendario
+  const CustomEvent = ({ event }) => (
+    <div style={{ whiteSpace: "normal", wordBreak: "break-word" }}>
+      <strong>{event.title}</strong>
+      {event.desc && <div>{event.desc}</div>}
+    </div>
+  );
 
-    useEffect(() => {
-        if (orderId) {
-            navigate(`/order/${orderId}`);
-        }
-    }, [orderId, navigate]);
+  // Assicura che il nome dell'ordine venga sempre trovato
+  const getOrderName = (id) => {
+    if (!orders || orders.length === 0) return "Caricamento...";
+    const order = orders.find((o) => o.id === id);
+    return order ? order.orderName : "Ordine non trovato";
+  };
 
+  // Naviga all'ordine quando viene selezionato un evento
+  useEffect(() => {
+    if (orderId) {
+      navigate(`/order/${orderId}`);
+    }
+  }, [orderId, navigate]);
 
-    useEffect(() => {
-        if (loading){
-            <CircularProgress />
-        }
-        if (activities && Array.isArray(activities)) {
-            const extractedEvents = [];
-            orders &&
-            activities.forEach((activity) => {
-                extractedEvents.push({
-                    title: ` ${getOrderName(activity.order_id)} - ${activity.name} ${" "} - ${activity.status}`,
-                    start: new Date(activity.startDate),
-                    end: new Date(activity.endDate),
-                    responsible: activity.responsible,
-                    status: activity.status,
-                    color: activity.color,
-                    notes: activity.note,
-                    id: activity.id,
-                    activityName: activity.name,
-                });
-            });
-            setEvents(extractedEvents);
-        }
-    }, [activities]);
+  // Caricamento eventi nel calendario
+  useEffect(() => {
+    if (loading || loadingOrders) return; // Attendere che i dati siano caricati
 
-    const handleSelectEvent = (event) => {
-        setSelectedEvent(event);
-        setSelectedOrderId(event.id)
-    };
+    if (activities && Array.isArray(activities) && orders.length > 0) {
+      const extractedEvents = activities.map((activity) => ({
+        title: `${getOrderName(activity.order_id)} - ${activity.name} - ${
+          activity.status
+        }`,
+        start: new Date(activity.startDate),
+        end: new Date(activity.endDate),
+        responsible: activity.responsible,
+        status: activity.status,
+        color: activity.color,
+        notes: activity.note,
+        id: activity.id,
+        activityName: activity.name,
+      }));
 
-    // Event styling to apply the color from the event's color property
-    const eventPropGetter = (event) => {
-        const backgroundColor = event.color || "#3174ad";
-        return {
-          style: {
-            backgroundColor,
-            borderRadius: "5px",
-            opacity: 0.9,
-            color: "white",
-            border: "0px",
-            padding: "2px",
-          },
-        };
-      };
-      
+      // Evita aggiornamenti inutili dello stato
+      setEvents((prevEvents) => {
+        const isSame =
+          JSON.stringify(prevEvents) === JSON.stringify(extractedEvents);
+        return isSame ? prevEvents : extractedEvents;
+      });
+    }
+  }, [activities, orders, loading, loadingOrders]);
+
+  // Gestisce la selezione di un evento
+  const handleSelectEvent = (event) => {
+    setSelectedEvent(event);
+    setSelectedOrderId(event.id);
+  };
+
+  // Stile personalizzato per gli eventi nel calendario
+  const eventPropGetter = (event) => ({
+    style: {
+      backgroundColor: event.color || "#3174ad",
+      borderRadius: "5px",
+      opacity: 0.9,
+      color: "white",
+      border: "0px",
+      padding: "2px",
+    },
+  });
+
+  // Se i dati sono ancora in caricamento, mostra un loader
+  if (loading || loadingOrders) {
     return (
-            <StyledCalendar
-                localizer={localizer}
-                events={events}
-                views={["month", "week", "agenda"]}
-                startAccessor="start"
-                endAccessor="end"
-                messages={messages}
-                selectable
-                onSelectEvent={handleSelectEvent}
-                eventPropGetter={eventPropGetter}
-                style={{ height: "110vh" }}
-                components={{
-                    event: CustomEvent,
-                  }}
-            />
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        height="100vh"
+      >
+        <CircularProgress />
+      </Box>
     );
+  }
+
+  // Se c'è un errore, mostra un messaggio
+  if (error || errorOrders) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        height="100vh"
+      >
+        <Typography variant="h6" color="error">
+          Errore nel caricamento delle attività o degli ordini.
+        </Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <StyledCalendar
+      localizer={localizer}
+      events={events}
+      views={["month", "week", "agenda"]}
+      startAccessor="start"
+      endAccessor="end"
+      messages={messages}
+      selectable
+      onSelectEvent={handleSelectEvent}
+      eventPropGetter={eventPropGetter}
+      style={{ height: "110vh" }}
+      components={{ event: CustomEvent }}
+    />
+  );
 }

@@ -25,10 +25,10 @@ export default function BasicTable({ orders }) {
 
   const { deleteOrder, loading } = useDeleteOrder();
 
-  const handleDelete = (orderId, orderName) => {
+  const handleDelete = (orderId, orderName, clientId) => {
     deleteOrder(orderId).then(() => {
       if (loading === false) {
-        deleteFolder(session.session.user.id, orderName).then(() => {
+        deleteFolder(session.session.user.id, orderName + clientId).then(() => {
           window.location.reload();
         });
       }
@@ -100,7 +100,13 @@ export default function BasicTable({ orders }) {
                     <TableCell align="right">
                       <Button
                         variant="contained"
-                        onClick={() => handleDelete(order.id, order.orderName)}
+                        onClick={() =>
+                          handleDelete(
+                            order.id,
+                            order.orderName,
+                            order.clientId
+                          )
+                        }
                         color="error"
                       >
                         <DeleteIcon fontSize="medium" />

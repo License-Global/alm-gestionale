@@ -29,26 +29,64 @@ import { useFormik } from "formik";
 import ActivityTable from "../components/Tables/ActivityTable";
 import * as Yup from "yup";
 import { useAllOrders } from "../hooks/useOrders";
+import { fetchCustomers } from "../services/customerService";
 
 const NewOrder = () => {
   const [formStep, setFormStep] = useState(1);
   const [activitiesSchemes, setActivitiesSchemes] = useState([]);
   const [selectedSchema, setSelectedSchema] = useState(null);
+  const [customers, setCustomers] = useState([]);
+  const [customersList, setCustomersList] = useState([]);
   const { personale } = usePersonale();
   const { orders } = useAllOrders();
 
   const MotionCard = motion(Card);
   const MotionGrid = motion(Grid);
 
+  useEffect(() => {
+    const fetchCustomersData = async () => {
+      const data = await fetchCustomers();
+      setCustomers(data);
+    };
+
+    fetchCustomersData();
+  }, []);
+
+  useEffect(() => {
+    setCustomersList(
+      customers.map((customer) => ({
+        label: customer.customer_name,
+        id: customer.id,
+      }))
+    );
+  }, [customers]);
+
+  useEffect(() => {
+    console.log(customersList);
+  }, [customersList]);
+
   const mainOrderSchema = Yup.object({
     orderName: Yup.string()
       .matches(/^[a-zA-Z0-9À-ÿ ]+$/, "Sono ammessi solo lettere e numeri")
       .max(30, "Non deve superare i 30 caratteri")
-      .notOneOf(
-        orders.map((order) => order.orderName),
-        "Nome commessa già esistente"
+      .test(
+        "uniqueOrderNamePerClient",
+        "Nome commessa già esistente per questo cliente",
+        function (value) {
+          const clientId = this.parent.clientId;
+
+          // Confronta clientId come numero per gestire il caso in cui uno sia stringa e uno numero
+          const isDuplicate = orders.some(
+            (order) =>
+              order.orderName === value &&
+              Number(order.clientId) === Number(clientId)
+          );
+
+          return !isDuplicate;
+        }
       )
       .required("Campo obbligatorio"),
+    clientId: Yup.string().required("Campo obbligatorio"),
     startDate: Yup.date().required("Campo obbligatorio"),
     endDate: Yup.date().required("Campo obbligatorio"),
     materialShelf: Yup.string().required("Campo obbligatorio"),
@@ -60,6 +98,7 @@ const NewOrder = () => {
   const formik = useFormik({
     initialValues: {
       orderName: "",
+      clientId: "",
       startDate: dayjs().add(2, "minute"),
       endDate: dayjs().add(1, "day"),
       materialShelf: "",
@@ -83,6 +122,7 @@ const NewOrder = () => {
       formik.values.urgency &&
       formik.values.accessories &&
       formik.values.orderManager &&
+      formik.values.clientId &&
       formik.isValid
     ) {
       return true;
@@ -153,6 +193,33 @@ const NewOrder = () => {
                         formik.touched.orderName && formik.errors.orderName
                       }
                     />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <FormControl fullWidth>
+                      <InputLabel id="clientId">Cliente</InputLabel>
+                      <Select
+                        fullWidth
+                        id="clientId"
+                        name="clientId"
+                        label="Cliente"
+                        value={formik.values.clientId}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        error={
+                          formik.touched.clientId &&
+                          Boolean(formik.errors.clientId)
+                        }
+                        helperText={
+                          formik.touched.clientId && formik.errors.clientId
+                        }
+                      >
+                        {customersList.map((customer) => (
+                          <MenuItem key={customer.id} value={customer.id}>
+                            {customer.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
                   </Grid>
                   <Grid item xs={12} sm={4}>
                     <DatePicker

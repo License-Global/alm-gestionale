@@ -32,7 +32,7 @@ import {
 import useSession from "../../hooks/useSession";
 
 const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
-    const { session } = useSession();
+  const { session } = useSession();
   const [isValid, setIsValid] = useState(false);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -73,6 +73,19 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
     endDate: dayjs().add(15, "minute"),
   });
 
+  // --- UTILITY per controllare il conflitto con le attività nella stessa commessa
+  const isTimeConflict = (start, end, rows) => {
+    return rows.some((row) => {
+      // Verifichiamo solo le attività con lo stesso operatore
+      if (row.responsible !== newRow.responsible) return false;
+      // Sovrapposizione: start < row.endDate e end > row.startDate
+      return (
+        dayjs(start).isBefore(dayjs(row.endDate)) &&
+        dayjs(end).isAfter(dayjs(row.startDate))
+      );
+    });
+  };
+
   const handleChange = (field, value) => {
     setNewRow({ ...newRow, [field]: value });
   };
@@ -93,28 +106,25 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
         responsible: "",
         startDate: dayjs().add(5, "minute"),
         endDate: dayjs().add(15, "minute"),
-      }); // Resetta il campo dopo l'inserimento
+      });
     }
   };
 
   const formatRows = (rowsToFormat) => {
     if (rowsToFormat) {
-      const formattedRows = rowsToFormat.map((row) => ({
+      return rowsToFormat.map((row) => ({
         ...row,
-        startDate: row.startDate ? dayjs(row.startDate).toDate() : null, // Converte in formato ISO
+        startDate: row.startDate ? dayjs(row.startDate).toDate() : null,
         endDate: row.endDate ? dayjs(row.endDate).toDate() : null,
         status: "Standby",
         completed: null,
-        note: [], // Converte in formato ISO
+        note: [],
       }));
-      return formattedRows;
     }
   };
 
   const schemaActivities = () => {
-    const activities = rows.map((item) => item.name);
-
-    return activities;
+    return rows.map((item) => item.name);
   };
 
   useEffect(() => {
@@ -126,7 +136,6 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
       })
       .catch((err) => {
         setIsValid(false);
-        // Trasformiamo gli errori in un oggetto { campo: messaggio }
         const errorsObj = {};
         err.inner.forEach((error) => {
           errorsObj[error.path] = error.message;
@@ -158,11 +167,14 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
     const data = {
       ...formikValues,
       activities: formatRows(rows),
-      user_id: session.user.id
+      user_id: session.user.id,
     };
     try {
       createOrder(data);
-      createFolder(session.user.id, formikValues.orderName);
+      createFolder(
+        session.user.id,
+        formikValues.orderName + formikValues.clientId
+      );
       console.log(data);
     } catch (e) {
       console.error(e);
@@ -173,9 +185,9 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
     }, 1000);
   };
 
+  // Carichiamo le attività dell’operatore selezionato da DB, per controllare la disponibilità
   useEffect(() => {
     if (newRow.responsible) {
-      // Definisci una funzione asincrona interna
       const fetchActivities = async () => {
         try {
           const data = await activitiesById(newRow.responsible);
@@ -188,40 +200,39 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
     }
   }, [newRow.responsible]);
 
+  // Qui verifichiamo costantemente disponibilità + conflitto
   useEffect(() => {
-    console.log(
-      isOperatorAvailable(
-        selectedOperatorActivities,
-        newRow.startDate,
-        newRow.endDate
-      )
+    const operatorIsAvailable = isOperatorAvailable(
+      selectedOperatorActivities,
+      newRow.startDate,
+      newRow.endDate
     );
-  }, [
-    selectedOperatorActivities,
-    newRow.responsible,
-    newRow.startDate,
-    newRow.endDate,
-  ]);
 
-  useEffect(() => {
-    if (
-      !isOperatorAvailable(
-        selectedOperatorActivities,
-        newRow.startDate,
-        newRow.endDate
-      )
-    ) {
-      setToolTipText("Operatore non disponibile");
+    // Verifica conflitto con le attività create in questa stessa commessa
+    const conflictWithRows = isTimeConflict(
+      newRow.startDate,
+      newRow.endDate,
+      rows
+    );
+
+    if (!operatorIsAvailable) {
       setTooltipIsOpen(true);
+      setToolTipText("Operatore non disponibile");
+    } else if (conflictWithRows) {
+      setTooltipIsOpen(true);
+      setToolTipText(
+        "Attività in conflitto con un'altra già inserita per questo operatore"
+      );
     } else {
-      setToolTipText("");
       setTooltipIsOpen(false);
+      setToolTipText("");
     }
   }, [
     selectedOperatorActivities,
     newRow.startDate,
     newRow.endDate,
     newRow.responsible,
+    rows,
   ]);
 
   return (
@@ -272,11 +283,11 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
               <TableCell>Responsabile</TableCell>
               <TableCell>Data inizio</TableCell>
               <TableCell>Data scadenza</TableCell>
-              <TableCell></TableCell>
+              <TableCell />
             </TableRow>
           </TableHead>
           <TableBody>
-            {rows?.map((row, index) => (
+            {rows.map((row, index) => (
               <TableRow key={index}>
                 <TableCell>{row.name}</TableCell>
                 <TableCell>{row.inCalendar ? "Sì" : "No"}</TableCell>
@@ -308,8 +319,8 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
                       scale: 1.2,
                     }}
                     transition={{
-                      duration: 0.2, // Transizione rapida e fluida
-                      ease: "easeInOut", // Facilità sia all'entrata che all'uscita
+                      duration: 0.2,
+                      ease: "easeInOut",
                     }}
                   >
                     <RemoveCircle
@@ -323,6 +334,7 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
                 </TableCell>
               </TableRow>
             ))}
+
             {/* Riga per aggiungere nuovi dati */}
             <TableRow>
               <TableCell>
@@ -344,7 +356,7 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
                 />
               </TableCell>
               <TableCell>
-                {newRow.inCalendar && newRow.inCalendar ? (
+                {newRow.inCalendar ? (
                   <TwitterPicker
                     styles={{
                       default: {
@@ -359,23 +371,21 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
                     }
                   />
                 ) : (
-                  <>
-                    <div style={{ visibility: "hidden" }}>
-                      <TwitterPicker
-                        styles={{
-                          default: {
-                            card: {
-                              boxShadow: `0 0 10px ${newRow.color}`,
-                            },
+                  <div style={{ visibility: "hidden" }}>
+                    <TwitterPicker
+                      styles={{
+                        default: {
+                          card: {
+                            boxShadow: `0 0 10px ${newRow.color}`,
                           },
-                        }}
-                        color={newRow.color}
-                        onChangeComplete={(color) =>
-                          handleChange("color", color.hex)
-                        }
-                      />
-                    </div>
-                  </>
+                        },
+                      }}
+                      color={newRow.color}
+                      onChangeComplete={(color) =>
+                        handleChange("color", color.hex)
+                      }
+                    />
+                  </div>
                 )}
               </TableCell>
               <TableCell>
@@ -385,14 +395,13 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
                   displayEmpty
                   fullWidth
                   error={!!errors.responsible}
-                  helperText={errors.responsible}
                 >
                   <MenuItem disabled value="">
                     <em>Seleziona responsabile</em>
                   </MenuItem>
-                  {personale.map((personale) => (
-                    <MenuItem key={personale.workerName} value={personale.id}>
-                      {personale.workerName}
+                  {personale.map((p) => (
+                    <MenuItem key={p.workerName} value={p.id}>
+                      {p.workerName}
                     </MenuItem>
                   ))}
                 </Select>
@@ -401,7 +410,7 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
                 <DateTimePicker
                   label="Data inizio"
                   skipDisabled
-                  value={newRow.startDate || dayjs().add(5, "minute")}
+                  value={newRow.startDate}
                   defaultValue={dayjs().add(5, "minute")}
                   onChange={(date) => handleChange("startDate", date)}
                   minDate={dayjs()}
@@ -414,7 +423,7 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
                 <DateTimePicker
                   label="Data scadenza"
                   skipDisabled
-                  value={newRow.endDate || dayjs().add(15, "minute")}
+                  value={newRow.endDate}
                   defaultValue={dayjs().add(15, "minute")}
                   onChange={(date) => handleChange("endDate", date)}
                   minDate={newRow.startDate}
@@ -434,11 +443,9 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
                   <Button
                     disabled={
                       !isValid ||
-                      !isOperatorAvailable(
-                        selectedOperatorActivities,
-                        newRow.startDate,
-                        newRow.endDate
-                      )
+                      !newRow.responsible ||
+                      // Disabilitiamo se l’operatore è occupato o c’è conflitto interno
+                      !!toolTipText
                     }
                     onClick={handleAddRow}
                     variant="contained"
@@ -459,10 +466,9 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
           size="large"
           variant="contained"
           color="secondary"
-          onClick={() => handleConfirm()}
-          loading={loading}
+          onClick={handleConfirm}
         >
-          Conferma
+          {loading ? "Salvataggio..." : "Conferma"}
         </Button>
       </Box>
     </Box>

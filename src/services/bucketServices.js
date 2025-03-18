@@ -54,7 +54,10 @@ export const createFolder = async (bucketName, folderPath) => {
     const placeholderFilePath = `${folderPath}/.keep`;
     const { data, error } = await supabase.storage
       .from(bucketName)
-      .upload(placeholderFilePath, new Blob(["placeholder"], { type: "text/plain" }));
+      .upload(
+        placeholderFilePath,
+        new Blob(["placeholder"], { type: "text/plain" })
+      );
 
     if (error) {
       throw error;
@@ -68,44 +71,41 @@ export const createFolder = async (bucketName, folderPath) => {
   }
 };
 
-  export const deleteFolder = async (bucketName, folderPath) => {
-    try {
-      // Recupera lista completa (file e cartelle)
-      const { data: items, error: listError } = await supabase
-        .storage
-        .from(bucketName)
-        .list(folderPath, { limit: 1000 }); // aumenta se hai molte risorse
-  
-      if (listError) throw listError;
-  
-      if (!items.length) {
-        return { message: 'La cartella è vuota o inesistente.' };
-      }
-  
-      const filesToDelete = items
-        .filter(item => item.metadata) // metadata esiste solo per i file
-        .map(file => `${folderPath}/${file.name}`);
-  
-      // Se ci sono sottocartelle, eliminale ricorsivamente
-      const subfolders = items.filter(item => !item.metadata);
-      for (const subfolder of subfolders) {
-        await deleteFolder(bucketName, `${folderPath}/${subfolder.name}`);
-      }
-  
-      // Elimina i file nella cartella corrente
-      if (filesToDelete.length > 0) {
-        const { error: removeError } = await supabase
-          .storage
-          .from(bucketName)
-          .remove(filesToDelete);
-  
-        if (removeError) throw removeError;
-      }
-  
-      return { message: 'Cartella e contenuti eliminati correttamente.' };
-  
-    } catch (error) {
-      console.error('Errore durante eliminazione ricorsiva:', error);
-      return { error };
+export const deleteFolder = async (bucketName, folderPath) => {
+  try {
+    // Recupera lista completa (file e cartelle)
+    const { data: items, error: listError } = await supabase.storage
+      .from(bucketName)
+      .list(folderPath, { limit: 1000 }); // aumenta se hai molte risorse
+
+    if (listError) throw listError;
+
+    if (!items.length) {
+      return { message: "La cartella è vuota o inesistente." };
     }
-  };
+
+    const filesToDelete = items
+      .filter((item) => item.metadata) // metadata esiste solo per i file
+      .map((file) => `${folderPath}/${file.name}`);
+
+    // Se ci sono sottocartelle, eliminale ricorsivamente
+    const subfolders = items.filter((item) => !item.metadata);
+    for (const subfolder of subfolders) {
+      await deleteFolder(bucketName, `${folderPath}/${subfolder.name}`);
+    }
+
+    // Elimina i file nella cartella corrente
+    if (filesToDelete.length > 0) {
+      const { error: removeError } = await supabase.storage
+        .from(bucketName)
+        .remove(filesToDelete);
+
+      if (removeError) throw removeError;
+    }
+
+    return { message: "Cartella e contenuti eliminati correttamente." };
+  } catch (error) {
+    console.error("Errore durante eliminazione ricorsiva:", error);
+    return { error };
+  }
+};

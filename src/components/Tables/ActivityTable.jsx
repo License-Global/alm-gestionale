@@ -25,62 +25,83 @@ import dayjs from "dayjs";
 import { supabase } from "../../supabase/supabaseClient";
 import useSession from "../../hooks/useSession";
 
-// Funzione helper per controllare la disponibilità del responsabile
+// Funzione helper per controllare se ci sono conflitti nel DB
 const checkAvailability = async (responsible, start, end) => {
-  // Recupera le attività esistenti per il responsabile
-  const { data, error } = await supabase
-    .from("activities")
-    .select("startDate, endDate")
-    .eq("responsible", responsible);
-  if (error) {
-    console.error("Error checking availability:", error);
-    // In caso di errore, consideriamo il responsabile non disponibile per evitare conflitti
+  try {
+    // Recupera le attività esistenti per il responsabile
+    const { data, error } = await supabase
+      .from("activities")
+      .select("startDate, endDate")
+      .eq("responsible", responsible);
+
+    if (error) {
+      console.error("Error checking availability:", error);
+      // In caso di errore, consideriamo il responsabile non disponibile
+      return false;
+    }
+
+    // Verifica sovrapposizione
+    const conflict = data.some((activity) => {
+      const existingStart = dayjs(activity.startDate);
+      const existingEnd = dayjs(activity.endDate);
+
+      // Conflitto se: start < existingEnd && end > existingStart
+      return start.isBefore(existingEnd) && end.isAfter(existingStart);
+    });
+
+    return !conflict;
+  } catch (err) {
+    console.error("Error:", err);
     return false;
   }
-  // Verifica se esiste una sovrapposizione:
-  // Un conflitto esiste se la nuova attività inizia prima della fine di un’attività esistente
-  // e finisce dopo l’inizio di quella stessa attività
-  const conflict = data.some((activity) => {
-    const existingStart = new Date(activity.startDate);
-    const existingEnd = new Date(activity.endDate);
-    return start < existingEnd && end > existingStart;
-  });
-  return !conflict;
+};
+
+// Funzione helper per controllare se ci sono conflitti tra le attività inserite in `rows`
+const checkLocalConflict = (rowA, rowB) => {
+  // Ci interessa solo se hanno lo stesso responsabile e campi validi
+  if (
+    !rowA.responsible ||
+    !rowB.responsible ||
+    rowA.responsible !== rowB.responsible
+  ) {
+    return false;
+  }
+
+  const startA = dayjs(rowA.startDate);
+  const endA = dayjs(rowA.endDate);
+  const startB = dayjs(rowB.startDate);
+  const endB = dayjs(rowB.endDate);
+
+  // Sovrapposizione: A inizia prima che B finisca e A finisce dopo che B inizia
+  return startA.isBefore(endB) && endA.isAfter(startB);
 };
 
 // Componente dedicato per ogni riga della tabella
-const ActivityRow = React.memo(({ row, index, errors, onRowChange, personnel }) => {
-  const handleFieldChange = useCallback(
-    (field, value) => {
-      onRowChange(index, field, value);
-    },
-    [index, onRowChange]
-  );
+const ActivityRow = React.memo(
+  ({ row, index, errors, onRowChange, personnel }) => {
+    const handleFieldChange = useCallback(
+      (field, value) => {
+        onRowChange(index, field, value);
+      },
+      [index, onRowChange]
+    );
 
-  return (
-    <TableRow key={index}>
-      <TableCell>{row.name}</TableCell>
-      <TableCell>
-        <Switch
-          checked={row.inCalendar}
-          onChange={(e) => handleFieldChange("inCalendar", e.target.checked)}
-        />
-      </TableCell>
-      <TableCell>
-        {row.inCalendar ? (
-          <TwitterPicker
-            styles={{
-              default: {
-                card: {
-                  boxShadow: `0 0 10px ${row.color}`,
-                },
-              },
-            }}
-            color={row.color || "#000"}
-            onChangeComplete={(color) => handleFieldChange("color", color.hex)}
+    return (
+      <TableRow key={index}>
+        {/* Nome attività */}
+        <TableCell>{row.name}</TableCell>
+
+        {/* Calendario */}
+        <TableCell>
+          <Switch
+            checked={row.inCalendar}
+            onChange={(e) => handleFieldChange("inCalendar", e.target.checked)}
           />
-        ) : (
-          <div style={{ visibility: "hidden" }}>
+        </TableCell>
+
+        {/* Colore */}
+        <TableCell>
+          {row.inCalendar ? (
             <TwitterPicker
               styles={{
                 default: {
@@ -90,80 +111,136 @@ const ActivityRow = React.memo(({ row, index, errors, onRowChange, personnel }) 
                 },
               }}
               color={row.color || "#000"}
-              onChangeComplete={(color) => handleFieldChange("color", color.hex)}
+              onChangeComplete={(color) =>
+                handleFieldChange("color", color.hex)
+              }
             />
-          </div>
-        )}
-      </TableCell>
-      <TableCell>
-        <Select
-          value={row.responsible}
-          onChange={(e) => handleFieldChange("responsible", e.target.value)}
-          displayEmpty
-          fullWidth
-          error={Boolean(errors?.responsible)}
-        >
-          <MenuItem disabled value="">
-            <em>Seleziona responsabile</em>
-          </MenuItem>
-          {personnel.map((person) => (
-            <MenuItem key={person.id} value={person.id}>
-              {person.workerName}
+          ) : (
+            <div style={{ visibility: "hidden" }}>
+              <TwitterPicker
+                color={row.color || "#000"}
+                onChangeComplete={(color) =>
+                  handleFieldChange("color", color.hex)
+                }
+              />
+            </div>
+          )}
+        </TableCell>
+
+        {/* Responsabile */}
+        <TableCell>
+          <Select
+            value={row.responsible}
+            onChange={(e) => handleFieldChange("responsible", e.target.value)}
+            displayEmpty
+            fullWidth
+            error={Boolean(errors?.responsible)}
+          >
+            <MenuItem disabled value="">
+              <em>Seleziona responsabile</em>
             </MenuItem>
-          ))}
-        </Select>
-        {errors?.responsible && (
-          <p style={{ color: "red", fontSize: "0.8rem", margin: "5px 0 0 5px" }}>
-            {errors.responsible}
-          </p>
-        )}
-        {errors?.conflict && (
-          <p style={{ color: "red", fontSize: "0.8rem", margin: "5px 0 0 5px" }}>
-            {errors.conflict}
-          </p>
-        )}
-      </TableCell>
-      <TableCell>
-        <DateTimePicker
-          label="Data inizio"
-          skipDisabled
-          value={row.startDate}
-          onChange={(date) => handleFieldChange("startDate", date)}
-          minTime={dayjs().hour(6).minute(0)}
-          maxTime={dayjs().hour(20).minute(0)}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              fullWidth
-              required
-              error={!row.startDate}
-              helperText={!row.startDate ? "Campo obbligatorio" : ""}
-            />
+            {personnel.map((person) => (
+              <MenuItem key={person.id} value={person.id}>
+                {person.workerName}
+              </MenuItem>
+            ))}
+          </Select>
+          {errors?.responsible && (
+            <p
+              style={{
+                color: "red",
+                fontSize: "0.8rem",
+                margin: "5px 0 0 5px",
+              }}
+            >
+              {errors.responsible}
+            </p>
           )}
-        />
-      </TableCell>
-      <TableCell>
-        <DateTimePicker
-          label="Data scadenza"
-          skipDisabled
-          value={row.endDate}
-          onChange={(date) => handleFieldChange("endDate", date)}
-          minTime={dayjs().hour(6).minute(0)}
-          maxTime={dayjs().hour(20).minute(0)}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              fullWidth
-              required
-              error={!row.endDate}
-              helperText={!row.endDate ? "Campo obbligatorio" : ""}
-            />
+          {errors?.conflict && (
+            <p
+              style={{
+                color: "red",
+                fontSize: "0.8rem",
+                margin: "5px 0 0 5px",
+              }}
+            >
+              {errors.conflict}
+            </p>
           )}
-        />
-      </TableCell>
-    </TableRow>
-  );
-});
+          {errors?.internalConflict && (
+            <p
+              style={{
+                color: "red",
+                fontSize: "0.8rem",
+                margin: "5px 0 0 5px",
+              }}
+            >
+              {errors.internalConflict}
+            </p>
+          )}
+        </TableCell>
+
+        {/* Data inizio */}
+        <TableCell>
+          <DateTimePicker
+            label="Data inizio"
+            skipDisabled
+            value={row.startDate}
+            onChange={(date) => handleFieldChange("startDate", date)}
+            minDate={dayjs()}
+            // Evita di selezionare un orario già passato in giornata (se serve)
+            minTime={dayjs().hour() < 20 ? dayjs() : dayjs().hour(8).minute(0)}
+            maxTime={dayjs().hour(20).minute(0)}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                fullWidth
+                required
+                error={!row.startDate}
+                helperText={!row.startDate ? "Campo obbligatorio" : ""}
+              />
+            )}
+          />
+        </TableCell>
+
+        {/* Data fine */}
+        <TableCell>
+          <DateTimePicker
+            label="Data scadenza"
+            skipDisabled
+            value={row.endDate}
+            onChange={(date) => handleFieldChange("endDate", date)}
+            // Iniziamo dal valore di startDate o dall'ora attuale, se serve
+            minTime={row.startDate}
+            maxTime={dayjs().hour(20).minute(0)}
+            minDate={row.startDate}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                fullWidth
+                required
+                error={!row.endDate}
+                helperText={!row.endDate ? "Campo obbligatorio" : ""}
+              />
+            )}
+          />
+          {/* Mostriamo l’errore se la data di fine non è successiva a quella di inizio */}
+          {errors?.dateOrder && (
+            <p
+              style={{
+                color: "red",
+                fontSize: "0.8rem",
+                margin: "5px 0 0 5px",
+              }}
+            >
+              {errors.dateOrder}
+            </p>
+          )}
+        </TableCell>
+      </TableRow>
+    );
+  }
+);
 
 ActivityRow.propTypes = {
   row: PropTypes.shape({
@@ -180,14 +257,15 @@ ActivityRow.propTypes = {
   personnel: PropTypes.array.isRequired,
 };
 
+// Componente principale della tabella
 const ActivityTable = ({ selectedSchema, personale, formikValues }) => {
   const { session } = useSession();
   const navigate = useNavigate();
+
   const [rows, setRows] = useState([]);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
-  // Funzione helper per mostrare messaggi di warning
   const notifyWarn = useCallback((message) => {
     toast.warn(message, {
       position: "top-right",
@@ -225,40 +303,82 @@ const ActivityTable = ({ selectedSchema, personale, formikValues }) => {
     loadActivities();
   }, [selectedSchema, notifyWarn]);
 
-  // Effettua la validazione combinata (campi obbligatori e controllo conflitti)
+  // Validazione combinata: campi + conflitti DB + conflitti interni + ordine date
   useEffect(() => {
     const validateRows = async () => {
       const newErrors = {};
-      for (let index = 0; index < rows.length; index++) {
-        const row = rows[index];
-        // Validazione campo responsabile
-        if (!row.responsible) {
-          newErrors[index] = { ...newErrors[index], responsible: "Seleziona un responsabile" };
+
+      for (let i = 0; i < rows.length; i++) {
+        const rowI = rows[i];
+
+        // Se manca il responsabile
+        if (!rowI.responsible) {
+          newErrors[i] = {
+            ...newErrors[i],
+            responsible: "Seleziona un responsabile",
+          };
         }
-        // Se tutti i campi necessari sono presenti, controlla la disponibilità
-        if (row.responsible && row.startDate && row.endDate) {
-          const start =
-            row.startDate.toDate ? row.startDate.toDate() : new Date(row.startDate);
-          const end =
-            row.endDate.toDate ? row.endDate.toDate() : new Date(row.endDate);
-          const available = await checkAvailability(row.responsible, start, end);
+
+        // Verifica che startDate e endDate siano corretti (end > start)
+        if (rowI.startDate && rowI.endDate) {
+          // Se la differenza è >= 0, significa start >= end
+          if (dayjs(rowI.startDate).diff(dayjs(rowI.endDate)) >= 0) {
+            newErrors[i] = {
+              ...newErrors[i],
+              dateOrder:
+                "La data di fine deve essere successiva a quella di inizio",
+            };
+          }
+        }
+
+        // Se abbiamo dati completi (responsabile, startDate, endDate), controlliamo conflitti DB
+        if (rowI.responsible && rowI.startDate && rowI.endDate) {
+          const start = dayjs(rowI.startDate);
+          const end = dayjs(rowI.endDate);
+          const available = await checkAvailability(
+            rowI.responsible,
+            start,
+            end
+          );
           if (!available) {
-            newErrors[index] = {
-              ...newErrors[index],
+            newErrors[i] = {
+              ...newErrors[i],
               conflict: "Responsabile già occupato in questo orario",
             };
           }
         }
       }
+
+      // Controllo conflitti interni tra le righe
+      for (let i = 0; i < rows.length; i++) {
+        const rowI = rows[i];
+        for (let j = i + 1; j < rows.length; j++) {
+          const rowJ = rows[j];
+          if (checkLocalConflict(rowI, rowJ)) {
+            newErrors[i] = {
+              ...newErrors[i],
+              internalConflict:
+                "Attività in conflitto con un'altra già inserita per questo responsabile",
+            };
+            newErrors[j] = {
+              ...newErrors[j],
+              internalConflict:
+                "Attività in conflitto con un'altra già inserita per questo responsabile",
+            };
+          }
+        }
+      }
+
       setErrors(newErrors);
     };
 
     validateRows();
   }, [rows]);
 
+  // isValid: se `errors` è vuoto, nessuna riga ha errori
   const isValid = Object.keys(errors).length === 0;
 
-  // Aggiorna una specifica riga in modo controllato
+  // Funzione per gestire il cambio di campo in una riga
   const handleRowChange = useCallback((index, field, value) => {
     setRows((prevRows) => {
       const updatedRows = [...prevRows];
@@ -279,17 +399,24 @@ const ActivityTable = ({ selectedSchema, personale, formikValues }) => {
     }));
   }, []);
 
+  // Conferma finale: salviamo la commessa
   const handleConfirm = async () => {
     const data = {
       ...formikValues,
       activities: formatRows(rows),
-      user_id: session.user.id
+      user_id: session.user.id,
     };
+
     try {
       setLoading(true);
       const orderRes = await createOrder(data);
       console.log("Order created:", orderRes);
-      await createFolder(session.user.id, formikValues.orderName);
+
+      await createFolder(
+        session.user.id,
+        formikValues.orderName + formikValues.clientId
+      );
+
       navigate("/");
     } catch (e) {
       console.error(e);
@@ -327,6 +454,7 @@ const ActivityTable = ({ selectedSchema, personale, formikValues }) => {
           </TableBody>
         </Table>
       </TableContainer>
+
       <Box sx={{ textAlign: "center", my: 2 }}>
         <Button
           type="button"
@@ -345,7 +473,11 @@ const ActivityTable = ({ selectedSchema, personale, formikValues }) => {
 
 ActivityTable.propTypes = {
   selectedSchema: PropTypes.shape({
-    activities: PropTypes.oneOfType([PropTypes.array, PropTypes.func, PropTypes.object]),
+    activities: PropTypes.oneOfType([
+      PropTypes.array,
+      PropTypes.func,
+      PropTypes.object,
+    ]),
   }),
   personale: PropTypes.array.isRequired,
   formikValues: PropTypes.object.isRequired,
