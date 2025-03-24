@@ -189,7 +189,7 @@ const ActivityRow = React.memo(
             onChange={(date) => handleFieldChange("startDate", date)}
             minDate={dayjs()}
             // Evita di selezionare un orario già passato in giornata (se serve)
-            minTime={dayjs().hour() < 20 ? dayjs() : dayjs().hour(8).minute(0)}
+            minTime={dayjs().hour(6).minute(0)}
             maxTime={dayjs().hour(20).minute(0)}
             renderInput={(params) => (
               <TextField

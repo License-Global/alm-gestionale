@@ -39,7 +39,12 @@ const AddTable = ({ genericOrderData, personale, newOrderHandler }) => {
   // Funzione per aggiungere una nuova riga
   const handleAddRow = () => {
     // Verifica se i campi name, startDate, ed endDate sono popolati
-    if (newRow.name.trim() !== "" && newRow.startDate && newRow.endDate && newRow.responsible) {
+    if (
+      newRow.name.trim() !== "" &&
+      newRow.startDate &&
+      newRow.endDate &&
+      newRow.responsible
+    ) {
       setRows([...rows, { ...newRow }]);
       setNewRow({
         name: "",

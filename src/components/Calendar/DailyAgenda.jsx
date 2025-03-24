@@ -5,6 +5,7 @@ import { styled } from "@mui/system";
 import moment from "moment";
 import "../../styles/calendar.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
+import { fetchCustomers } from "../../services/customerService";
 
 const localizer = momentLocalizer(moment);
 
@@ -41,6 +42,16 @@ const StyledCalendar = styled(Calendar)`
 const DailyAgenda = ({ date }) => {
   const { orders } = useAllOrders();
   const [events, setEvents] = useState([]);
+  const [customers, setCustomers] = useState([]);
+
+  useEffect(() => {
+    const fetchCustomersData = async () => {
+      const data = await fetchCustomers();
+      setCustomers(data);
+    };
+
+    fetchCustomersData();
+  }, []);
 
   useEffect(() => {
     if (orders && Array.isArray(orders)) {
@@ -52,7 +63,13 @@ const DailyAgenda = ({ date }) => {
             .filter((activity) => activity.inCalendar)
             .forEach((activity) => {
               extractedEvents.push({
-                title: `${order.orderName} - ${activity.name}`,
+                title: `${
+                  customers.find((c) => c.id === order.clientId)
+                    ?.customer_name +
+                  " - " +
+                  order.orderName
+                } - 
+                ${activity.name}`,
                 start: new Date(activity.startDate),
                 end: new Date(activity.endDate),
                 orderName: order.orderName,

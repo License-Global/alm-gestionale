@@ -9,6 +9,7 @@ import { useStaffActivities } from "../../hooks/useStaffActivities";
 import { useOrderIdByActivity, useOrders } from "../../hooks/useOrders";
 import { useNavigate } from "react-router-dom";
 import "../../styles/calendar.css";
+import { fetchCustomers } from "../../services/customerService";
 
 moment.locale("it");
 const localizer = momentLocalizer(moment);
@@ -47,6 +48,7 @@ export default function OperatorAgenda({ operatorId }) {
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
+  const [customers, setCustomers] = useState([]);
 
   const { activities, loading, error } = useStaffActivities(operatorId);
   const { orderId, loadingAct, errorAct } =
@@ -66,7 +68,11 @@ export default function OperatorAgenda({ operatorId }) {
   const getOrderName = (id) => {
     if (!orders || orders.length === 0) return "Caricamento...";
     const order = orders.find((o) => o.id === id);
-    return order ? order.orderName : "Ordine non trovato";
+    return order
+      ? customers.find((c) => c.id === order.clientId)?.customer_name +
+          " - " +
+          order.orderName
+      : "Ordine non trovato";
   };
 
   // Naviga all'ordine quando viene selezionato un evento
@@ -75,6 +81,15 @@ export default function OperatorAgenda({ operatorId }) {
       navigate(`/order/${orderId}`);
     }
   }, [orderId, navigate]);
+
+  useEffect(() => {
+    const fetchCustomersData = async () => {
+      const data = await fetchCustomers();
+      setCustomers(data);
+    };
+
+    fetchCustomersData();
+  }, []);
 
   // Caricamento eventi nel calendario
   useEffect(() => {

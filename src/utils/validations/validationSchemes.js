@@ -18,7 +18,7 @@ export const activityOrderSchema = Yup.object({
 export const operatorAddSchema = Yup.object({
   workerName: Yup.string()
     .matches(/^[a-zA-Z0-9À-ÿ ]+$/, "Sono ammessi solo lettere e numeri")
-    .max(15, "Non deve superare i 15 caratteri")
+    .max(30, "Non deve superare i 30 caratteri")
     .required("Campo obbligatorio"),
 });
 export const customerAddSchema = Yup.object({

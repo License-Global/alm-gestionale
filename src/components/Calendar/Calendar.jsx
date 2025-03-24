@@ -17,6 +17,7 @@ import { useAllOrders } from "../../hooks/useOrders";
 import { useNavigate } from "react-router-dom";
 import { useReactToPrint } from "react-to-print";
 import "../../styles/calendar.css";
+import { fetchCustomers } from "../../services/customerService";
 
 moment.locale("it");
 const localizer = momentLocalizer(moment);
@@ -62,6 +63,17 @@ export default function CalendarComponent() {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
 
+  const [customers, setCustomers] = useState([]);
+
+  useEffect(() => {
+    const fetchCustomersData = async () => {
+      const data = await fetchCustomers();
+      setCustomers(data);
+    };
+
+    fetchCustomersData();
+  }, []);
+
   useEffect(() => {
     if (orders && Array.isArray(orders)) {
       const extractedEvents = [];
@@ -72,9 +84,15 @@ export default function CalendarComponent() {
             .filter((activity) => activity.inCalendar)
             .forEach((activity) => {
               extractedEvents.push({
-                title: `${order.orderName} - ${activity.name} ${" "}${
-                  order.isConfirmed ? "✓" : ""
-                } `,
+                title: ` 
+                ${
+                  customers.find((c) => c.id === order.clientId)
+                    ?.customer_name +
+                  " - " +
+                  order.orderName
+                } 
+                  ${activity.name} + ${"-"} 
+                  ${order.isConfirmed ? "✓" : ""} `,
                 start: new Date(activity.startDate),
                 end: new Date(activity.endDate),
                 orderName: order.orderName,

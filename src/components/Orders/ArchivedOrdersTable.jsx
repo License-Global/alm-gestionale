@@ -12,6 +12,7 @@ import { TableSortLabel } from "@mui/material";
 import { IconButton } from "@mui/material";
 import NoOrders from "../Orders/NoOrders";
 import { supabase } from "../../supabase/supabaseClient";
+import { fetchCustomers } from "../../services/customerService";
 
 const ArchivedOrdersTable = () => {
   const navigate = useNavigate();
@@ -19,6 +20,8 @@ const ArchivedOrdersTable = () => {
   const [loading, setLoading] = useState(false);
   const [orderBy, setOrderBy] = useState("startDate");
   const [order, setOrder] = useState("desc");
+
+  const [customers, setCustomers] = useState([]);
 
   // Recupera gli ordini da Supabase
   const fetchOrders = async (column, direction) => {
@@ -42,6 +45,15 @@ const ArchivedOrdersTable = () => {
   useEffect(() => {
     fetchOrders(orderBy, order);
   }, [orderBy, order]);
+
+  useEffect(() => {
+    const fetchCustomersData = async () => {
+      const data = await fetchCustomers();
+      setCustomers(data);
+    };
+
+    fetchCustomersData();
+  }, []);
 
   // Gestisce l'ordinamento
   const handleRequestSort = (property) => {
@@ -102,7 +114,10 @@ const ArchivedOrdersTable = () => {
               orders.map((order) => (
                 <TableRow key={order.id}>
                   <TableCell onClick={() => navigate(`/archivio/${order.id}`)}>
-                    {order.orderName}
+                    {order.orderName +
+                      " - " +
+                      customers.find((c) => c.id === order.clientId)
+                        ?.customer_name}
                   </TableCell>
                   <TableCell onClick={() => navigate(`/archivio/${order.id}`)}>
                     {new Date(order.startDate).toLocaleDateString("it-IT")}

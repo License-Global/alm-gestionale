@@ -1,4 +1,4 @@
-import * as React from "react";
+import { useState, useEffect } from "react";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -17,11 +17,14 @@ import NoOrders from "../Orders/NoOrders";
 import { deleteFolder } from "../../services/bucketServices";
 import { usePersonale } from "../../hooks/usePersonale";
 import useSession from "../../hooks/useSession";
+import { fetchCustomers } from "../../services/customerService";
 
 export default function BasicTable({ orders }) {
   const navigate = useNavigate();
   const personale = usePersonale();
   const session = useSession();
+
+  const [customers, setCustomers] = useState([]);
 
   const { deleteOrder, loading } = useDeleteOrder();
 
@@ -34,6 +37,16 @@ export default function BasicTable({ orders }) {
       }
     });
   };
+
+  useEffect(() => {
+    const fetchCustomersData = async () => {
+      const data = await fetchCustomers();
+      setCustomers(data);
+    };
+
+    fetchCustomersData();
+  }, []);
+
   return (
     <>
       {orders.length === 0 ? (
@@ -63,7 +76,12 @@ export default function BasicTable({ orders }) {
                       component="th"
                       scope="row"
                     >
-                      <b>{order.orderName}</b>
+                      <b>
+                        {order.orderName +
+                          " - " +
+                          customers.find((c) => c.id === order.clientId)
+                            ?.customer_name}
+                      </b>
                     </TableCell>
                     <TableCell
                       onClick={() => navigate(order.id.toString())}
