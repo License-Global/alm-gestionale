@@ -24,6 +24,7 @@ import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import { supabase } from "../../supabase/supabaseClient";
 import useSession from "../../hooks/useSession";
+import CalendarTool from "../Calendar/CalendarTool";
 
 // Funzione helper per controllare se ci sono conflitti nel DB
 const checkAvailability = async (responsible, start, end) => {
@@ -180,6 +181,11 @@ const ActivityRow = React.memo(
           )}
         </TableCell>
 
+        {/* Agenda */}
+        <TableCell>
+          <CalendarTool operatorId={row.responsible} />
+        </TableCell>
+
         {/* Data inizio */}
         <TableCell>
           <DateTimePicker
@@ -265,6 +271,8 @@ const ActivityTable = ({ selectedSchema, personale, formikValues }) => {
   const [rows, setRows] = useState([]);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+
+  const [selectedOperator, setSelectedOperator] = useState(null);
 
   const notifyWarn = useCallback((message) => {
     toast.warn(message, {
@@ -383,6 +391,7 @@ const ActivityTable = ({ selectedSchema, personale, formikValues }) => {
     setRows((prevRows) => {
       const updatedRows = [...prevRows];
       updatedRows[index] = { ...updatedRows[index], [field]: value };
+      if (field === "responsible") setSelectedOperator(value);
       return updatedRows;
     });
   }, []);
@@ -436,6 +445,7 @@ const ActivityTable = ({ selectedSchema, personale, formikValues }) => {
               <TableCell>Calendario</TableCell>
               <TableCell>Colore</TableCell>
               <TableCell>Responsabile</TableCell>
+              <TableCell>Agenda</TableCell>
               <TableCell>Data inizio</TableCell>
               <TableCell>Data scadenza</TableCell>
             </TableRow>

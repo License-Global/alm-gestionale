@@ -30,6 +30,7 @@ import {
   isOperatorAvailable,
 } from "../../utils/functions/taskManager";
 import useSession from "../../hooks/useSession";
+import CalendarTool from "../Calendar/CalendarTool";
 
 const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
   const { session } = useSession();
@@ -41,6 +42,7 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
   const [selectedOperatorActivities, setSelectedOperatorActivities] = useState(
     []
   );
+  const [selectedOperator, setSelectedOperator] = useState(null);
 
   const [tooltipIsOpen, setTooltipIsOpen] = useState(false);
   const [toolTipText, setToolTipText] = useState("");
@@ -88,6 +90,9 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
 
   const handleChange = (field, value) => {
     setNewRow({ ...newRow, [field]: value });
+    if (field === "responsible") {
+      setSelectedOperator(value);
+    }
   };
 
   const handleAddRow = () => {
@@ -281,6 +286,7 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
               <TableCell>Calendario</TableCell>
               <TableCell>Colore</TableCell>
               <TableCell>Responsabile</TableCell>
+              <TableCell>Agenda</TableCell>
               <TableCell>Data inizio</TableCell>
               <TableCell>Data scadenza</TableCell>
               <TableCell />
@@ -405,6 +411,9 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
                     </MenuItem>
                   ))}
                 </Select>
+              </TableCell>
+              <TableCell>
+                <CalendarTool operatorId={selectedOperator} />
               </TableCell>
               <TableCell>
                 <DateTimePicker
