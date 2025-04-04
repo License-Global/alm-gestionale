@@ -217,7 +217,7 @@ const ActivityRow = React.memo(
             value={row.endDate}
             onChange={(date) => handleFieldChange("endDate", date)}
             // Iniziamo dal valore di startDate o dall'ora attuale, se serve
-            minTime={row.startDate}
+            minTime={dayjs().hour(6).minute(0)}
             maxTime={dayjs().hour(20).minute(0)}
             minDate={row.startDate}
             renderInput={(params) => (
