@@ -7,7 +7,6 @@ import { CircularProgress, Typography } from "@mui/material";
 import { Box, styled } from "@mui/system";
 import { useStaffActivities } from "../../hooks/useStaffActivities";
 import { useOrderIdByActivity, useOrders } from "../../hooks/useOrders";
-import { useNavigate } from "react-router-dom";
 import "../../styles/calendar.css";
 import { fetchCustomers } from "../../services/customerService";
 
@@ -46,24 +45,31 @@ const messages = {
 
 export default function OperatorAgenda({ operatorId }) {
   const [events, setEvents] = useState([]);
-  const [selectedEvent, setSelectedEvent] = useState(null);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
   const [customers, setCustomers] = useState([]);
+  const [fakeLoading, setFakeLoading] = useState(true); // <-- add fake loading state
+
+  // Finto caricamento iniziale
+  useEffect(() => {
+    const timer = setTimeout(() => setFakeLoading(false), 500); // 500ms delay
+    return () => clearTimeout(timer);
+  }, []);
 
   const { activities, loading, error } = useStaffActivities(operatorId);
-  const { orderId, loadingAct, errorAct } =
-    useOrderIdByActivity(selectedOrderId);
   const { orders, loading: loadingOrders, error: errorOrders } = useOrders();
+  // const { orderId, loadingAct, errorAct } = useOrderIdByActivity(selectedOrderId); // Non usato
 
-  // Componente personalizzato per gli eventi nel calendario
-  const CustomEvent = ({ event }) => (
-    <div style={{ whiteSpace: "normal", wordBreak: "break-word" }}>
-      <strong>{event.title}</strong>
-      {event.desc && <div>{event.desc}</div>}
-    </div>
-  );
+  // Carica i clienti
+  useEffect(() => {
+    const fetchCustomersData = async () => {
+      const data = await fetchCustomers();
+      setCustomers(data);
+    };
 
-  // Assicura che il nome dell'ordine venga sempre trovato
+    fetchCustomersData();
+  }, []);
+
+  // Restituisce il nome dell'ordine
   const getOrderName = (id) => {
     if (!orders || orders.length === 0) return "Caricamento...";
     const order = orders.find((o) => o.id === id);
@@ -74,16 +80,7 @@ export default function OperatorAgenda({ operatorId }) {
       : "Ordine non trovato";
   };
 
-  useEffect(() => {
-    const fetchCustomersData = async () => {
-      const data = await fetchCustomers();
-      setCustomers(data);
-    };
-
-    fetchCustomersData();
-  }, []);
-
-  // Caricamento eventi nel calendario
+  // Carica gli eventi nel calendario
   useEffect(() => {
     if (loading || loadingOrders) return; // Attendere che i dati siano caricati
 
@@ -109,13 +106,20 @@ export default function OperatorAgenda({ operatorId }) {
         return isSame ? prevEvents : extractedEvents;
       });
     }
-  }, [activities, orders, loading, loadingOrders]);
+  }, [activities, orders, loading, loadingOrders, customers]);
 
   // Gestisce la selezione di un evento
   const handleSelectEvent = (event) => {
-    setSelectedEvent(event);
     setSelectedOrderId(event.id);
   };
+
+  // Componente personalizzato per gli eventi nel calendario
+  const CustomEvent = ({ event }) => (
+    <div style={{ whiteSpace: "normal", wordBreak: "break-word" }}>
+      <strong>{event.title}</strong>
+      {event.desc && <div>{event.desc}</div>}
+    </div>
+  );
 
   // Stile personalizzato per gli eventi nel calendario
   const eventPropGetter = (event) => ({
@@ -128,6 +132,23 @@ export default function OperatorAgenda({ operatorId }) {
       padding: "2px",
     },
   });
+
+  // Show fake loading before anything else
+  if (fakeLoading) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        height="100vh"
+      >
+        <CircularProgress />
+        <Typography variant="body1" color="textSecondary" ml={2}>
+          Caricamento...
+        </Typography>
+      </Box>
+    );
+  }
 
   // Se i dati sono ancora in caricamento, mostra un loader
   if (loading || loadingOrders) {
@@ -174,7 +195,12 @@ export default function OperatorAgenda({ operatorId }) {
       selectable
       onSelectEvent={handleSelectEvent}
       eventPropGetter={eventPropGetter}
-      style={{ height: "110vh" }}
+      style={{
+        height: "60vh",
+        minHeight: 400,
+        maxHeight: 600,
+        fontSize: "0.95rem",
+      }}
       components={{ event: CustomEvent }}
     />
   );

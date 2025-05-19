@@ -98,7 +98,11 @@ const Appbar = () => {
                   style={{ paddingTop: "6px", cursor: "pointer" }} // Percorso del logo
                 />
               </Typography>
-              {role === btoa("operator") ? <Searchbar minisearch={true} type={'operator-orders'} /> : <Searchbar />}
+              {role === btoa("operator") ? (
+                <Searchbar minisearch={true} type={"operator-orders"} />
+              ) : (
+                <Searchbar />
+              )}
               <Button
                 onClick={() => navigate("/calendario")}
                 color="inherit"
@@ -118,13 +122,19 @@ const Appbar = () => {
               )}
             </Toolbar>
           </StyledAppBar>
-          <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', my:'16px'}}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              my: "16px",
+            }}
+          >
             {role === btoa("operator") && location.pathname !== "/" && (
               <BackButton title={"Home"} direction={"/"} />
             )}
-            {role === btoa("operator") && location.pathname === "/calendario" && (
-              <OperatorSelectCalendar />
-            )}
+            {role === btoa("operator") &&
+              location.pathname === "/calendario" && <OperatorSelectCalendar />}
           </Box>
 
           {role === btoa("admin") && (

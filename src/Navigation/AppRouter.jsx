@@ -21,6 +21,8 @@ import OperatorPage from "../pages/OperatorPage";
 import AddOperator from "../pages/AddOperator";
 import AddCustomer from "../pages/AddCustomer";
 import OperatorCalendar from "../pages/OperatorCalendar";
+import Dashboard from "../pages/Dashboard";
+import OperatorsPage from "../pages/impostazioni/Operators";
 const AppRouter = () => (
   <Routes>
     <Route
@@ -29,6 +31,15 @@ const AppRouter = () => (
       element={
         <ProtectedRoute>
           <Home />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      exact
+      path="/dashboard"
+      element={
+        <ProtectedRoute>
+          <Dashboard />
         </ProtectedRoute>
       }
     />
@@ -93,6 +104,14 @@ const AppRouter = () => (
       }
     />
     <Route
+      path="/operatori"
+      element={
+        <ProtectedRoute>
+          <OperatorsPage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
       path="/calendario"
       element={
         <ProtectedRoute>
@@ -133,7 +152,7 @@ const AppRouter = () => (
       }
     />
     <Route
-      path="/operatore/:id"
+      path="/operatori/:id"
       element={
         <ProtectedRoute>
           <OperatorPage />

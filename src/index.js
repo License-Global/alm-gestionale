@@ -10,12 +10,11 @@ import { RoleProvider } from "./context/RoleContext";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
-  
   <ThemeProvider theme={theme}>
     <RoleProvider>
-    <CssBaseline />
-    <App />
-  </RoleProvider>
+      <CssBaseline />
+      <App />
+    </RoleProvider>
   </ThemeProvider>
 );
 

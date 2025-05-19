@@ -4,8 +4,10 @@ import { DateTimePicker } from "@mui/x-date-pickers";
 import TableRow from "@mui/material/TableRow";
 import TableCell from "@mui/material/TableCell";
 import { statusList } from "../../utils/enums/miscEnums";
+import CalendarTool from "../Calendar/CalendarTool";
 import { supabase } from "../../supabase/supabaseClient";
 import { ToastContainer, toast, Slide } from "react-toastify";
+import { TwitterPicker } from "react-color";
 import dayjs from "dayjs";
 import "dayjs/locale/it";
 
@@ -16,6 +18,7 @@ const OrderEditRow = ({ activity, personale, activityId }) => {
   const [activityStartDate, setActivityStartDate] = useState(dayjs());
   const [activityEndDate, setActivityEndDate] = useState(dayjs());
   const [inCalendar, setInCalendar] = useState(false);
+  const [activityColor, setActivityColor] = useState("#fff");
   const [completed, setCompleted] = useState(null);
 
   const notifySuccess = (message) =>
@@ -50,11 +53,17 @@ const OrderEditRow = ({ activity, personale, activityId }) => {
     setActivityStartDate(dayjs(activity.startDate));
     setActivityEndDate(dayjs(activity.endDate));
     setInCalendar(activity.inCalendar);
+    setActivityColor(activity.color);
   }, [activity]);
 
   // Funzione per controllare la disponibilità del responsabile,
   // escludendo l'attività corrente dal controllo
-  const checkAvailability = async (responsible, start, end, currentActivityId) => {
+  const checkAvailability = async (
+    responsible,
+    start,
+    end,
+    currentActivityId
+  ) => {
     const { data, error } = await supabase
       .from("activities")
       .select("id, startDate, endDate")
@@ -82,6 +91,7 @@ const OrderEditRow = ({ activity, personale, activityId }) => {
         startDate,
         responsible,
         inCalendar,
+        color,
         completed,
       } = updatedActivity;
       const { data, error } = await supabase
@@ -93,6 +103,7 @@ const OrderEditRow = ({ activity, personale, activityId }) => {
           startDate,
           responsible,
           inCalendar,
+          color,
           completed,
         })
         .eq("id", id);
@@ -101,7 +112,10 @@ const OrderEditRow = ({ activity, personale, activityId }) => {
       notifySuccess("Attività aggiornata con successo!");
       return { success: true, data };
     } catch (error) {
-      console.error("Errore durante l'aggiornamento dell'attività:", error.message);
+      console.error(
+        "Errore durante l'aggiornamento dell'attività:",
+        error.message
+      );
       notifyError("Errore durante l'aggiornamento dell'attività");
     }
   };
@@ -119,9 +133,18 @@ const OrderEditRow = ({ activity, personale, activityId }) => {
   }, [activityStatus]);
 
   const handleSave = async () => {
-    const start = activityStartDate.toDate ? activityStartDate.toDate() : new Date(activityStartDate);
-    const end = activityEndDate.toDate ? activityEndDate.toDate() : new Date(activityEndDate);
-    const available = await checkAvailability(activityResponsible, start, end, activityId);
+    const start = activityStartDate.toDate
+      ? activityStartDate.toDate()
+      : new Date(activityStartDate);
+    const end = activityEndDate.toDate
+      ? activityEndDate.toDate()
+      : new Date(activityEndDate);
+    const available = await checkAvailability(
+      activityResponsible,
+      start,
+      end,
+      activityId
+    );
     if (!available) {
       notifyError("Responsabile già occupato in questo orario");
       return;
@@ -134,6 +157,7 @@ const OrderEditRow = ({ activity, personale, activityId }) => {
       startDate: activityStartDate,
       responsible: activityResponsible,
       inCalendar: inCalendar,
+      color: activityColor,
       completed: completed,
     };
     updateActivity(activityId, updatedActivity);
@@ -176,6 +200,13 @@ const OrderEditRow = ({ activity, personale, activityId }) => {
         </TableCell>
         <TableCell>
           <FormControl>
+            <CalendarTool
+              operatorId={activityResponsible || activity.responsible}
+            />
+          </FormControl>
+        </TableCell>
+        <TableCell>
+          <FormControl>
             <Select
               name="status"
               variant="outlined"
@@ -214,6 +245,35 @@ const OrderEditRow = ({ activity, personale, activityId }) => {
             onChange={(e) => setInCalendar(e.target.checked)}
             inputProps={{ "aria-label": "controlled" }}
           />
+        </TableCell>
+        <TableCell>
+          {inCalendar ? (
+            <TwitterPicker
+              styles={{
+                default: {
+                  card: {
+                    boxShadow: `0 0 10px ${activityColor}`,
+                  },
+                },
+              }}
+              color={activityColor}
+              onChangeComplete={(color) => setActivityColor(color.hex)}
+            />
+          ) : (
+            <div style={{ visibility: "hidden" }}>
+              <TwitterPicker
+                styles={{
+                  default: {
+                    card: {
+                      boxShadow: `0 0 10px ${activityColor}`,
+                    },
+                  },
+                }}
+                color={activityColor}
+                onChangeComplete={(color) => setActivityColor(color.hex)}
+              />
+            </div>
+          )}
         </TableCell>
         <TableCell>
           <Button onClick={handleSave} variant="contained" color="secondary">

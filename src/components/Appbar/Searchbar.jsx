@@ -133,7 +133,7 @@ const Searchbar = ({ minisearch, type }) => {
             if (newValue.isArchived) {
               navigate(`/archivio/${newValue.id}`);
             } else if (newValue.key.includes("order") && !newValue.isArchived) {
-              navigate(`/order/${newValue.id}`);
+              navigate(`/${newValue.id}`);
             } else if (newValue.isCustomer) {
               navigate(`/cliente/${newValue.id}`);
             } else if (newValue.isOperator) {
