@@ -32,6 +32,7 @@ import {
 } from "@mui/icons-material";
 import { motion } from "framer-motion";
 import { supabase } from "../../supabase/supabaseClient";
+import { toast, ToastContainer } from "react-toastify";
 
 const MotionPaper = motion(Paper);
 
@@ -45,26 +46,77 @@ export default function OperatorsPage() {
 
   const [confirmDelete, setConfirmDelete] = useState(null);
 
+  const notifySuccess = (message) => toast.success(message);
+  const notifyError = (message) => toast.error(message);
+
   const filteredEmployees = employees.filter((e) =>
     e.workerName.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleSave = () => {
-    if (!current?.workerName || !current?.role || !current?.operator_phone)
+  // Salva (inserisci o aggiorna) operatore su Supabase
+  const handleSave = async () => {
+    if (
+      !current?.workerName ||
+      !current?.operator_note ||
+      !current?.operator_phone
+    )
       return;
+
     if (current.id) {
-      setEmployees((prev) =>
-        prev.map((emp) => (emp.id === current.id ? current : emp))
-      );
+      // Update
+      const { data, error } = await supabase
+        .from("personale")
+        .update({
+          workerName: current.workerName,
+          operator_note: current.operator_note,
+          operator_phone: current.operator_phone,
+        })
+        .eq("id", current.id)
+        .select()
+        .single();
+
+      if (error) {
+        notifyError("Errore durante la modifica.");
+      } else {
+        setEmployees((prev) =>
+          prev.map((emp) => (emp.id === current.id ? data : emp))
+        );
+        notifySuccess("Operatore modificato!");
+      }
     } else {
-      setEmployees((prev) => [...prev, { ...current, id: 123456 }]);
+      // Insert
+      const { data, error } = await supabase
+        .from("personale")
+        .insert([
+          {
+            workerName: current.workerName,
+            operator_note: current.operator_note,
+            operator_phone: current.operator_phone,
+          },
+        ])
+        .select()
+        .single();
+
+      if (error) {
+        notifyError("Errore durante l'inserimento.");
+      } else {
+        setEmployees((prev) => [...prev, data]);
+        notifySuccess("Operatore aggiunto!");
+      }
     }
     setDialogOpen(false);
     setCurrent(null);
   };
 
-  const handleDelete = (id) => {
-    setEmployees((prev) => prev.filter((e) => e.id !== id));
+  // Elimina operatore da Supabase
+  const handleDelete = async (id) => {
+    const { error } = await supabase.from("personale").delete().eq("id", id);
+    if (error) {
+      notifyError("Errore durante l'eliminazione.");
+    } else {
+      setEmployees((prev) => prev.filter((e) => e.id !== id));
+      notifySuccess("Operatore eliminato!");
+    }
     setConfirmDelete(null);
   };
 
@@ -105,15 +157,36 @@ export default function OperatorsPage() {
     };
   }, []);
 
+  const handleSubmitNewOperator = async (newOperator) => {
+    const { data, error } = await supabase
+      .from("personale")
+      .insert([newOperator])
+      .single();
+
+    if (error) {
+      console.error("Error adding new operator:", error);
+    } else {
+      setEmployees((prev) => [...prev, data]);
+    }
+  };
+
   return (
     <Box>
+      <ToastContainer />
       <Typography variant="h4" fontWeight={700} gutterBottom>
         Gestione Operatori
       </Typography>
-      <Box sx={{ mb: 3 }}>
+      <Box
+        sx={{
+          mb: 3,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 2,
+        }}
+      >
         <TextField
           placeholder="Cerca Operatore..."
-          fullWidth
           variant="outlined"
           size="small"
           value={search}
@@ -140,6 +213,19 @@ export default function OperatorsPage() {
             },
           }}
         />
+        <Fab
+          color="primary"
+          onClick={() => {
+            setCurrent({
+              workerName: "",
+              operator_note: "",
+              operator_phone: "",
+            });
+            setDialogOpen(true);
+          }}
+        >
+          <AddIcon />
+        </Fab>
       </Box>
       <MotionPaper
         elevation={3}
@@ -153,8 +239,8 @@ export default function OperatorsPage() {
             <TableHead sx={{ backgroundColor: theme.palette.grey[100] }}>
               <TableRow>
                 <TableCell sx={{ fontWeight: 600 }}>Operatore</TableCell>
-                <TableCell>Ruolo</TableCell>
-                <TableCell>Email</TableCell>
+                <TableCell>Note</TableCell>
+                <TableCell>Telefono</TableCell>
                 <TableCell align="right">Azioni</TableCell>
               </TableRow>
             </TableHead>
@@ -169,7 +255,7 @@ export default function OperatorsPage() {
                       </Typography>
                     </Stack>
                   </TableCell>
-                  <TableCell>{emp.role}</TableCell>
+                  <TableCell>{emp.operator_note}</TableCell>
                   <TableCell>
                     <Typography variant="body2" color="text.secondary">
                       {emp.operator_phone}
@@ -181,11 +267,6 @@ export default function OperatorsPage() {
                       spacing={1}
                       justifyContent="flex-end"
                     >
-                      <Tooltip title="Vedi dettagli">
-                        <IconButton size="small" color="info">
-                          <ViewIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
                       <Tooltip title="Modifica">
                         <IconButton
                           size="small"
@@ -224,17 +305,6 @@ export default function OperatorsPage() {
           </Table>
         </TableContainer>
       </MotionPaper>
-      {/* FAB Aggiungi */}
-      <Fab
-        color="primary"
-        onClick={() => {
-          setCurrent({ workerName: "", role: "", operator_phone: "" });
-          setDialogOpen(true);
-        }}
-        sx={{ position: "fixed", bottom: 32, right: 32 }}
-      >
-        <AddIcon />
-      </Fab>
       {/* Dialog: Aggiungi/Modifica */}
       <Dialog
         open={dialogOpen}
@@ -256,15 +326,18 @@ export default function OperatorsPage() {
               fullWidth
             />
             <TextField
-              label="Ruolo"
-              value={current?.role || ""}
+              label="Note"
+              value={current?.operator_note || ""}
               onChange={(e) =>
-                setCurrent((prev) => ({ ...prev, role: e.target.value }))
+                setCurrent((prev) => ({
+                  ...prev,
+                  operator_note: e.target.value,
+                }))
               }
               fullWidth
             />
             <TextField
-              label="Email"
+              label="Telefono"
               type="operator_phone"
               value={current?.operator_phone || ""}
               onChange={(e) =>
