@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import GridViewIcon from "@mui/icons-material/GridView";
 import ViewHeadlineIcon from "@mui/icons-material/ViewHeadline";
 import ViewComfyIcon from "@mui/icons-material/ViewComfy";
@@ -19,6 +19,7 @@ import NoOrders from "../components/Orders/NoOrders";
 import useRealtimeOrderWithActivities from "../hooks/useRealTime";
 import { fetchCustomers } from "../services/customerService";
 import SortIcon from "@mui/icons-material/Sort";
+import CheckIcon from '@mui/icons-material/Check';
 
 const views = [
   { key: "list", icon: <ViewHeadlineIcon />, label: "List" },
@@ -43,11 +44,62 @@ const variants = {
 };
 
 const Home = () => {
-  let orders = useRealtimeOrderWithActivities("orders", "activities");
+  let ordersData = useRealtimeOrderWithActivities("orders", "activities");
   const [customers, setCustomers] = useState([]);
-  const [sort, setSort] = useState("date_desc"); // stato ordinamento
+  const [sort, setSort] = useState("name_asc"); // Cambiato il valore predefinito a nome ascendente
+
+  // Funzione che applica l'ordinamento agli ordini
+  const orders = useMemo(() => {
+    if (!ordersData || !ordersData.length) return [];
+
+    return [...ordersData].sort((a, b) => {
+      switch (sort) {
+        // Ordinamento per nome
+        case "name_asc":
+          return a.orderName.localeCompare(b.orderName);
+        case "name_desc":
+          return b.orderName.localeCompare(a.orderName);
+
+        // Ordinamento per cliente
+        case "client_asc": {
+          const clientA =
+            customers.find((c) => c.id === a.clientId)?.customer_name || "";
+          const clientB =
+            customers.find((c) => c.id === b.clientId)?.customer_name || "";
+          return clientA.localeCompare(clientB);
+        }
+        case "client_desc": {
+          const clientA =
+            customers.find((c) => c.id === a.clientId)?.customer_name || "";
+          const clientB =
+            customers.find((c) => c.id === b.clientId)?.customer_name || "";
+          return clientB.localeCompare(clientA);
+        }
+
+        // Ordinamento per urgenza
+        case "urgency_asc": {
+          const urgencyOrder = { Bassa: 1, Media: 2, Alta: 3, Urgente: 4 };
+          return (urgencyOrder[a.urgency] || 0) - (urgencyOrder[b.urgency] || 0);
+        }
+        case "urgency_desc": {
+          const urgencyOrder = { Bassa: 1, Media: 2, Alta: 3, Urgente: 4 };
+          return (urgencyOrder[b.urgency] || 0) - (urgencyOrder[a.urgency] || 0);
+        }
+
+        // Ordinamento per data di scadenza
+        case "date_asc":
+          return new Date(a.endDate) - new Date(b.endDate);
+        case "date_desc":
+          return new Date(b.endDate) - new Date(a.endDate);
+
+        default:
+          return 0;
+      }
+    });
+  }, [ordersData, sort, customers]);
+
   const commesseViews = {
-    list: <CommesseList />,
+    list: <CommesseList orders={orders} customers={customers} />,
     default: (
       <CommesseCards orders={orders} customers={customers} sort={sort} />
     ),
@@ -140,14 +192,54 @@ const Home = () => {
                   },
                 }}
               >
-                <MenuItem value="date_desc">Data più recente</MenuItem>
-                <MenuItem value="date_asc">Data meno recente</MenuItem>
-                <MenuItem value="name_asc">Nome commessa A-Z</MenuItem>
-                <MenuItem value="name_desc">Nome commessa Z-A</MenuItem>
-                <MenuItem value="progress_desc">
-                  Avanzamento decrescente
+                <MenuItem value="name_asc" sx={{ display: 'flex', alignItems: 'center' }}>
+                  Nome (A-Z)
+                  {sort === "name_asc" && (
+                    <CheckIcon sx={{ ml: 1, fontSize: 18, color: "#1565c0", verticalAlign: 'middle' }} />
+                  )}
                 </MenuItem>
-                <MenuItem value="progress_asc">Avanzamento crescente</MenuItem>
+                <MenuItem value="name_desc" sx={{ display: 'flex', alignItems: 'center' }}>
+                  Nome (Z-A)
+                  {sort === "name_desc" && (
+                    <CheckIcon sx={{ ml: 1, fontSize: 18, color: "#1565c0", verticalAlign: 'middle' }} />
+                  )}
+                </MenuItem>
+                <MenuItem value="client_asc" sx={{ display: 'flex', alignItems: 'center' }}>
+                  Cliente (A-Z)
+                  {sort === "client_asc" && (
+                    <CheckIcon sx={{ ml: 1, fontSize: 18, color: "#1565c0", verticalAlign: 'middle' }} />
+                  )}
+                </MenuItem>
+                <MenuItem value="client_desc" sx={{ display: 'flex', alignItems: 'center' }}>
+                  Cliente (Z-A)
+                  {sort === "client_desc" && (
+                    <CheckIcon sx={{ ml: 1, fontSize: 18, color: "#1565c0", verticalAlign: 'middle' }} />
+                  )}
+                </MenuItem>
+                <MenuItem value="urgency_asc" sx={{ display: 'flex', alignItems: 'center' }}>
+                  Urgenza (Bassa-Alta)
+                  {sort === "urgency_asc" && (
+                    <CheckIcon sx={{ ml: 1, fontSize: 18, color: "#1565c0", verticalAlign: 'middle' }} />
+                  )}
+                </MenuItem>
+                <MenuItem value="urgency_desc" sx={{ display: 'flex', alignItems: 'center' }}>
+                  Urgenza (Alta-Bassa)
+                  {sort === "urgency_desc" && (
+                    <CheckIcon sx={{ ml: 1, fontSize: 18, color: "#1565c0", verticalAlign: 'middle' }} />
+                  )}
+                </MenuItem>
+                <MenuItem value="date_asc" sx={{ display: 'flex', alignItems: 'center' }}>
+                  Scadenza (Prima-Dopo)
+                  {sort === "date_asc" && (
+                    <CheckIcon sx={{ ml: 1, fontSize: 18, color: "#1565c0", verticalAlign: 'middle' }} />
+                  )}
+                </MenuItem>
+                <MenuItem value="date_desc" sx={{ display: 'flex', alignItems: 'center' }}>
+                  Scadenza (Dopo-Prima)
+                  {sort === "date_desc" && (
+                    <CheckIcon sx={{ ml: 1, fontSize: 18, color: "#1565c0", verticalAlign: 'middle' }} />
+                  )}
+                </MenuItem>
               </Select>
             </FormControl>
           </Box>

@@ -1,6 +1,4 @@
-import React from "react";
 import { Grid } from "@mui/system";
-import WidgetCard from "../Widgets/WidgetCard";
 import CommessaCard from "../Widgets/components/CommessaCard";
 
 const CommesseCards = ({ orders, customers }) => {
