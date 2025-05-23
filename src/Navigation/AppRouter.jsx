@@ -23,6 +23,7 @@ import AddCustomer from "../pages/AddCustomer";
 import OperatorCalendar from "../pages/OperatorCalendar";
 import Dashboard from "../pages/Dashboard";
 import OperatorsPage from "../pages/impostazioni/Operators";
+import ClientsPage from "../pages/impostazioni/Clients";
 const AppRouter = () => (
   <Routes>
     <Route
@@ -136,7 +137,15 @@ const AppRouter = () => (
       }
     />
     <Route
-      path="/cliente/:id"
+      path="/clienti"
+      element={
+        <ProtectedRoute>
+          <ClientsPage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/clienti/:id"
       element={
         <ProtectedRoute>
           <CustomerPage />

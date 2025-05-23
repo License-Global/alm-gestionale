@@ -170,26 +170,35 @@ const NotificationTool = ({ userId }) => {
                     </button>
                   )}
                 </div>
-                <List dense sx={{ py: 0 }}>
-                  {notifications.length === 0 && (
-                    <ListItem>
-                      <ListItemText
-                        primary="Nessuna notifica"
-                        primaryTypographyProps={{
-                          style: { color: "#888", fontStyle: "italic" },
-                        }}
+                {/* Scrollable notifications list */}
+                <div
+                  style={{
+                    maxHeight: 320,
+                    overflowY: "auto",
+                    overflowX: "hidden",
+                  }}
+                >
+                  <List dense sx={{ py: 0 }}>
+                    {notifications.length === 0 && (
+                      <ListItem>
+                        <ListItemText
+                          primary="Nessuna notifica"
+                          primaryTypographyProps={{
+                            style: { color: "#888", fontStyle: "italic" },
+                          }}
+                        />
+                      </ListItem>
+                    )}
+                    {notifications.map((notif, idx) => (
+                      <NotificationItem
+                        key={notif.id || idx}
+                        notif={notif}
+                        idx={idx}
+                        isLast={idx === notifications.length - 1}
                       />
-                    </ListItem>
-                  )}
-                  {notifications.map((notif, idx) => (
-                    <NotificationItem
-                      key={notif.id || idx}
-                      notif={notif}
-                      idx={idx}
-                      isLast={idx === notifications.length - 1}
-                    />
-                  ))}
-                </List>
+                    ))}
+                  </List>
+                </div>
               </Paper>
             </motion.div>
           </ClickAwayListener>

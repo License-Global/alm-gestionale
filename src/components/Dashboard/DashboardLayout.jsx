@@ -32,6 +32,7 @@ import {
   Timeline as TimelineIcon,
   Badge as BadgeIcon,
   Group as GroupIcon,
+  Groups as GroupsIcon,
 } from "@mui/icons-material";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import { useLocation, Link, useNavigate } from "react-router-dom";
@@ -52,11 +53,6 @@ const navItems = [
     text: "Commesse",
     icon: <AssignmentIcon />,
     children: [
-      {
-        text: "Mostra",
-        childIcon: <FormatListBulletedIcon />,
-        path: "/",
-      },
       { text: "Nuova", childIcon: <AddIcon />, path: "/aggiungi" },
       {
         text: "Gestisci",
@@ -72,25 +68,30 @@ const navItems = [
     path: "/operatori",
   },
   {
-    text: "Profilo",
-    icon: <PersonIcon />,
-    children: [
-      { text: "Impostazioni Profilo", path: "/profilo/impostazioni" },
-      { text: "Sicurezza", path: "/profilo/sicurezza" },
-    ],
+    text: "Clienti",
+    icon: <GroupsIcon />,
+    path: "/Clienti",
   },
-  {
-    text: "Impostazioni",
-    icon: <SettingsIcon />,
-    children: [
-      { text: "Preferenze", path: "/impostazioni/preferenze" },
-      {
-        text: "Operatori",
-        childIcon: <BadgeIcon />,
-        path: "/impostazioni/operatori",
-      },
-    ],
-  },
+  // {
+  //   text: "Profilo",
+  //   icon: <PersonIcon />,
+  //   children: [
+  //     { text: "Impostazioni Profilo", path: "/profilo/impostazioni" },
+  //     { text: "Sicurezza", path: "/profilo/sicurezza" },
+  //   ],
+  // },
+  // {
+  //   text: "Impostazioni",
+  //   icon: <SettingsIcon />,
+  //   children: [
+  //     { text: "Preferenze", path: "/impostazioni/preferenze" },
+  //     {
+  //       text: "Operatori",
+  //       childIcon: <BadgeIcon />,
+  //       path: "/impostazioni/operatori",
+  //     },
+  //   ],
+  // },
   { text: "Logout", icon: <LogoutIcon />, path: "/login" },
 ];
 
