@@ -128,7 +128,7 @@ const AppRouter = () => (
       }
     />
     <Route
-      path="/order/:id"
+      path="/:id"
       element={
         <ProtectedRoute>
           <OrderPage />
@@ -153,14 +153,6 @@ const AppRouter = () => (
     />
     <Route
       path="/operatori/:id"
-      element={
-        <ProtectedRoute>
-          <OperatorPage />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/operatore/calendario/:id"
       element={
         <ProtectedRoute>
           <OperatorCalendar />

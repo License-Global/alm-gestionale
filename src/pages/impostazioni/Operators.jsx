@@ -33,13 +33,15 @@ import {
 import { motion } from "framer-motion";
 import { supabase } from "../../supabase/supabaseClient";
 import { toast, ToastContainer } from "react-toastify";
-
+import { useNavigate } from "react-router-dom";
 const MotionPaper = motion(Paper);
 
 export default function OperatorsPage() {
   const theme = useTheme();
   const [search, setSearch] = useState("");
   const [employees, setEmployees] = useState([]);
+
+  const navigate = useNavigate();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [current, setCurrent] = useState(null); // null = nuovo, obj = modifica
@@ -267,6 +269,19 @@ export default function OperatorsPage() {
                       spacing={1}
                       justifyContent="flex-end"
                     >
+                      <Tooltip title="Visualizza">
+                        <IconButton
+                          size="small"
+                          color="info"
+                          // Puoi aggiungere qui una funzione onClick per la visualizzazione dettagliata
+                          onClick={() => {
+                            // Esempio: mostrare un alert o aprire un dialog di dettaglio
+                            navigate(`/operatori/${emp.id}`);
+                          }}
+                        >
+                          <ViewIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                       <Tooltip title="Modifica">
                         <IconButton
                           size="small"

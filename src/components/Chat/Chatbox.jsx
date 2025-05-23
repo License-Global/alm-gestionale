@@ -10,10 +10,42 @@ import {
 } from "@mui/material";
 import { addNote } from "../../services/notesServices";
 import dayjs from "dayjs";
+import useUser from "../../hooks/useUser";
+import { sendNotification } from "../../utils/sendNotification";
 
-const Chatbox = ({ authorizedUser, selectedItem, closeModal }) => {
+const Chatbox = ({ authorizedUser, selectedItem, order, closeModal }) => {
   const [newMessage, setNewMessage] = useState("");
+  const { userId } = useUser();
   const endOfMessagesRef = useRef(null);
+
+  const handleInviaNotifica = async () => {
+    try {
+      await sendNotification({
+        tenant_id: userId, // destinatario
+        type: "message",
+        payload: {
+          icon: "message-circle",
+          tags: ["messages", "chat"],
+          type: "message",
+          title: `Messaggio in: ${order.orderName} - ${selectedItem.name}`,
+          message: newMessage,
+          priority: "normal",
+          action_url: `/${order.id}`,
+          expires_at: null,
+          action_label: "MOSTRA",
+          reference_id: selectedItem.id,
+          reference_type: "chat",
+        },
+        read: false,
+        created_at: new Date().toISOString(),
+        read_at: null,
+      });
+    } catch (e) {
+      console.log("Errore nell'invio della notifica.", e);
+    } finally {
+      closeModal();
+    }
+  };
 
   const sendMessage = async (activityId, noteContent, sender) => {
     try {
@@ -22,6 +54,7 @@ const Chatbox = ({ authorizedUser, selectedItem, closeModal }) => {
     } catch (error) {
       console.error("Error sending message:", error);
     } finally {
+      handleInviaNotifica();
       closeModal();
     }
   };

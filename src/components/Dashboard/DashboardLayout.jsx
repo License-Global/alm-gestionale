@@ -40,6 +40,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRole } from "../../context/RoleContext";
 import Searchbar from "../Appbar/Searchbar";
 import { CalendarMonth } from "@mui/icons-material";
+import { useNotifications } from "../../hooks/useNotification";
+import useUser from "../../hooks/useUser";
+import NotificationTool from "./NotificationTool";
 
 const drawerWidth = 240;
 const navItems = [
@@ -94,6 +97,7 @@ const navItems = [
 export default function DashboardLayout({ children }) {
   const [drawerOpen, setDrawerOpen] = React.useState(false);
   const [openSubmenu, setOpenSubmenu] = React.useState(null);
+  const { userId } = useUser();
 
   const theme = useTheme();
   const location = useLocation();
@@ -286,6 +290,7 @@ export default function DashboardLayout({ children }) {
               <b>Calendario</b>
             </Button>
           </Box>
+          <NotificationTool userId={userId} />
         </Toolbar>
       </AppBar>
 

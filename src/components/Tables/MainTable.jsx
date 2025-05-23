@@ -612,6 +612,7 @@ const MainTable = ({ order }) => {
               <Chatbox
                 authorizedUser={atob(authorizedUser)}
                 selectedItem={selectedItem}
+                order={order}
                 closeModal={handleCloseModal}
               />
               <Box sx={{ m: 2 }}>
