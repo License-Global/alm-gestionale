@@ -17,6 +17,7 @@ import NotificationsIcon from "@mui/icons-material/Notifications";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { useRole } from "../../../context/RoleContext";
 
 const CommessaCard = ({ order, customers }) => {
   const handleProgressPercentage = (activities) => {
@@ -64,6 +65,8 @@ const CommessaCard = ({ order, customers }) => {
   };
 
   const ledStatus = getLedStatus(order);
+  const { role } = useRole();
+  const decodedRole = role ? atob(role) : null;
 
   return (
     <motion.div
@@ -121,7 +124,17 @@ const CommessaCard = ({ order, customers }) => {
               fontWeight="bold"
               sx={{ letterSpacing: 1 }}
             >
-              {order.orderName}
+              <Link
+                to={`/${order.id}`}
+                style={{
+                  color: "inherit",
+                  textDecoration: "none",
+                  cursor: "pointer",
+                  transition: "color 0.2s",
+                }}
+              >
+                {order.orderName}
+              </Link>
               <br />
               <span style={{ fontWeight: 500, opacity: 0.8 }}>
                 # {order.internal_id}
@@ -175,27 +188,41 @@ const CommessaCard = ({ order, customers }) => {
                   <Typography variant="caption" color="text.secondary">
                     Cliente
                   </Typography>
-                  <Link
-                    style={{ textDecoration: "none" }}
-                    to={`/clienti/${order.clientId}`}
-                  >
+                  {decodedRole === "admin" ? (
+                    <Link
+                      style={{ textDecoration: "none" }}
+                      to={`/clienti/${order.clientId}`}
+                    >
+                      <Typography
+                        variant="body1"
+                        fontWeight={500}
+                        color="#4f8cff"
+                        sx={{
+                          "&:hover": {
+                            textDecoration: "underline",
+                            cursor: "pointer",
+                          },
+                        }}
+                      >
+                        {
+                          customers.find((c) => c.id === order.clientId)
+                            ?.customer_name
+                        }
+                      </Typography>
+                    </Link>
+                  ) : (
                     <Typography
                       variant="body1"
                       fontWeight={500}
                       color="#4f8cff"
-                      sx={{
-                        "&:hover": {
-                          textDecoration: "underline",
-                          cursor: "pointer",
-                        },
-                      }}
+                      sx={{ opacity: 0.7, cursor: "default" }}
                     >
                       {
                         customers.find((c) => c.id === order.clientId)
                           ?.customer_name
                       }
                     </Typography>
-                  </Link>
+                  )}
                 </Box>
                 <Box>
                   <Typography variant="caption" color="text.secondary">

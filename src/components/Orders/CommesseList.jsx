@@ -12,6 +12,8 @@ import {
 } from "@mui/material";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import { Link } from "react-router-dom";
+import autoAnimate from "@formkit/auto-animate";
+import { useRole } from "../../context/RoleContext";
 
 const getProgress = (activities) => {
   if (!Array.isArray(activities) || activities.length === 0) return 0;
@@ -29,6 +31,13 @@ const getPriorityColor = (priority) => {
 
 const CommesseList = ({ orders, customers }) => {
   const isMobile = useMediaQuery((theme) => theme.breakpoints.down("sm"));
+  const listRef = React.useRef(null);
+
+  const { role } = useRole();
+  const decodedRole = role ? atob(role) : null;
+  React.useEffect(() => {
+    if (listRef.current) autoAnimate(listRef.current);
+  }, [listRef]);
 
   return (
     <Box
@@ -40,7 +49,7 @@ const CommesseList = ({ orders, customers }) => {
         p: 1,
       }}
     >
-      <List disablePadding>
+      <List disablePadding ref={listRef}>
         {orders &&
           orders.map((order) => {
             const customer = customers?.find((c) => c.id === order.clientId);
@@ -50,7 +59,6 @@ const CommesseList = ({ orders, customers }) => {
                 key={order.id}
                 sx={{
                   display: "flex",
-                  alignItems: "flex-start",
                   minHeight: 38,
                   py: 0.5,
                   px: 1,
@@ -110,19 +118,35 @@ const CommesseList = ({ orders, customers }) => {
                       <Box sx={{ flex: 2, minWidth: 0, mr: 1 }}>
                         <Typography variant="caption" color="text.secondary">
                           Cliente:{" "}
-                          <Link
-                            to={`/clienti/${order.clientId}`}
-                            style={{
-                              color: "#4f8cff",
-                              textDecoration: "none",
-                              fontSize: 12,
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                            }}
-                          >
-                            {customer?.customer_name || "—"}
-                          </Link>
+                          {decodedRole === "admin" ? (
+                            <Link
+                              to={`/clienti/${order.clientId}`}
+                              style={{
+                                color: "#4f8cff",
+                                textDecoration: "none",
+                                fontSize: 12,
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              {customer?.customer_name || "—"}
+                            </Link>
+                          ) : (
+                            <span
+                              style={{
+                                color: "#4f8cff",
+                                fontSize: 12,
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                cursor: "default",
+                                opacity: 0.7,
+                              }}
+                            >
+                              {customer?.customer_name || "—"}
+                            </span>
+                          )}
                         </Typography>
                       </Box>
                       <Box sx={{ flex: 1, minWidth: 0, mr: 1 }}>
@@ -193,19 +217,35 @@ const CommesseList = ({ orders, customers }) => {
                     <Box>
                       <Typography variant="caption" color="text.secondary">
                         Cliente:{" "}
-                        <Link
-                          to={`/clienti/${order.clientId}`}
-                          style={{
-                            color: "#4f8cff",
-                            textDecoration: "none",
-                            fontSize: 12,
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                          }}
-                        >
-                          {customer?.customer_name || "—"}
-                        </Link>
+                        {decodedRole === "admin" ? (
+                          <Link
+                            to={`/clienti/${order.clientId}`}
+                            style={{
+                              color: "#4f8cff",
+                              textDecoration: "none",
+                              fontSize: 12,
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {customer?.customer_name || "—"}
+                          </Link>
+                        ) : (
+                          <span
+                            style={{
+                              color: "#4f8cff",
+                              fontSize: 12,
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              cursor: "default",
+                              opacity: 0.7,
+                            }}
+                          >
+                            {customer?.customer_name || "—"}
+                          </span>
+                        )}
                       </Typography>
                     </Box>
                     <Box>

@@ -81,7 +81,7 @@ const OperatorPage = () => {
             >
               Dettaglio Operatore
             </Typography>
-            <BackButton title="Indietro" direction="/impostazioni" />
+            <BackButton title="Indietro" direction="/operatori" />
           </Box>
           <Grid container spacing={3}>
             <Grid item xs={12} sm={6}>
@@ -165,7 +165,9 @@ const OperatorPage = () => {
             <Grid item>
               <Box sx={{ display: "flex", gap: 2 }}>
                 <Button
-                  onClick={() => navigate(`/operatore/calendario/${(operatorData.id)}`)}
+                  onClick={() =>
+                    navigate(`/operatore/calendario/${operatorData.id}`)
+                  }
                   color="info"
                   variant="contained"
                 >

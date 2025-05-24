@@ -81,7 +81,7 @@ const CustomerPage = () => {
             >
               Dettaglio Cliente
             </Typography>
-            <BackButton title="Indietro" direction="/impostazioni" />
+            <BackButton title="Indietro" direction="/clienti" />
           </Box>
           <Grid container spacing={3}>
             <Grid item xs={12} sm={6}>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   AppBar,
   Toolbar,
@@ -44,6 +44,7 @@ import { CalendarMonth } from "@mui/icons-material";
 import { useNotifications } from "../../hooks/useNotification";
 import useUser from "../../hooks/useUser";
 import NotificationTool from "./NotificationTool";
+import { getCookie, setCookie } from "../../utils/cookies";
 
 const drawerWidth = 240;
 const navItems = [
@@ -97,7 +98,10 @@ const navItems = [
 
 export default function DashboardLayout({ children }) {
   const [drawerOpen, setDrawerOpen] = React.useState(false);
-  const [openSubmenu, setOpenSubmenu] = React.useState(null);
+  // Leggi la sezione aperta dai cookie all'avvio
+  const [openSubmenu, setOpenSubmenu] = React.useState(
+    () => getCookie("openSubmenu") || null
+  );
   const { userId } = useUser();
 
   const theme = useTheme();
@@ -127,8 +131,12 @@ export default function DashboardLayout({ children }) {
     );
   });
 
+  // Blocca la visualizzazione del menu se il ruolo non è admin
+  const decodedRole = role ? atob(role) : null;
+  const canShowMenu = decodedRole === "admin";
+
   // Drawer content
-  const drawerContent = (
+  const drawerContent = canShowMenu ? (
     <Box sx={{ width: drawerWidth }}>
       <Toolbar
         sx={{
@@ -244,7 +252,12 @@ export default function DashboardLayout({ children }) {
         })}
       </List>
     </Box>
-  );
+  ) : null;
+
+  useEffect(() => {
+    // Quando cambia la sezione aperta, aggiorna il cookie
+    setCookie("openSubmenu", openSubmenu || "", 30); // 30 giorni
+  }, [openSubmenu]);
 
   if (location.pathname === "/login" || location.pathname === "/role") {
     return children;
@@ -262,14 +275,16 @@ export default function DashboardLayout({ children }) {
         }}
       >
         <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
-          <IconButton
-            color="inherit"
-            edge="start"
-            onClick={toggleDrawer}
-            sx={{ mr: 2 }}
-          >
-            <MenuIcon />
-          </IconButton>
+          {canShowMenu && (
+            <IconButton
+              color="inherit"
+              edge="start"
+              onClick={toggleDrawer}
+              sx={{ mr: 2 }}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
           <Box
             sx={{
               display: "flex",
@@ -291,26 +306,41 @@ export default function DashboardLayout({ children }) {
               <b>Calendario</b>
             </Button>
           </Box>
-          <NotificationTool userId={userId} />
+          {canShowMenu && <NotificationTool userId={userId} />}
+          {!canShowMenu && (
+            <Button
+              color="inherit"
+              onClick={() => {
+                removeRole();
+                navigate("/login");
+              }}
+              startIcon={<LogoutIcon />}
+              sx={{ ml: 2, fontWeight: 600 }}
+            >
+              Esci
+            </Button>
+          )}
         </Toolbar>
       </AppBar>
 
       {/* Drawer sovrapposto */}
-      <Drawer
-        variant="temporary"
-        anchor="left"
-        open={drawerOpen}
-        onClose={closeDrawer}
-        ModalProps={{ keepMounted: true }}
-        sx={{
-          "& .MuiDrawer-paper": {
-            width: drawerWidth,
-            boxShadow: "4px 0 16px rgba(0,0,0,0.2)",
-          },
-        }}
-      >
-        {drawerContent}
-      </Drawer>
+      {canShowMenu && (
+        <Drawer
+          variant="temporary"
+          anchor="left"
+          open={drawerOpen}
+          onClose={closeDrawer}
+          ModalProps={{ keepMounted: true }}
+          sx={{
+            "& .MuiDrawer-paper": {
+              width: drawerWidth,
+              boxShadow: "4px 0 16px rgba(0,0,0,0.2)",
+            },
+          }}
+        >
+          {drawerContent}
+        </Drawer>
+      )}
 
       {/* Overlay */}
       <AnimatePresence>
