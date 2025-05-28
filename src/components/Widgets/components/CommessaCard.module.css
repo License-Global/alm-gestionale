@@ -1,0 +1,66 @@
+/* CSS Module per CommessaCard Responsive */
+
+.pulse-badge {
+  animation: pulseBadge 1.2s infinite alternate;
+}
+
+@keyframes pulseBadge {
+  0% { 
+    transform: scale(1);
+  }
+  100% { 
+    transform: scale(1.18);
+  }
+}
+
+/* Responsive hover effects */
+@media (max-width: 768px) {
+  .cardContainer {
+    transition: transform 0.2s ease !important;
+  }
+  
+  .cardContainer:hover {
+    transform: scale(1.01) !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .cardContainer {
+    transition: transform 0.25s ease !important;
+  }
+  
+  .cardContainer:hover {
+    transform: scale(1.025) !important;
+  }
+}
+
+/* Miglioramenti per testo su mobile */
+@media (max-width: 600px) {
+  .responsiveText {
+    line-height: 1.3 !important;
+    word-break: break-word !important;
+  }
+  
+  .priorityChip {
+    min-width: auto !important;
+    padding: 0 8px !important;
+  }
+  
+  .ledIndicator {
+    box-shadow: none !important;
+  }
+}
+
+/* Stack spacing responsive */
+@media (max-width: 480px) {
+  .mobileStack {
+    gap: 8px !important;
+  }
+}
+
+/* Animation ottimizzazioni per mobile */
+@media (prefers-reduced-motion: reduce) {
+  .pulse-badge {
+    animation: none;
+  }
+}

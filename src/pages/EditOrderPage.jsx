@@ -1,7 +1,7 @@
 import React from "react";
 import { useParams } from "react-router-dom";
 import { useOrder } from "../hooks/useOrders";
-import { Typography, Box, Paper, Container } from "@mui/material";
+import { Box } from "@mui/material";
 import { PageContainer } from "../styles/ArchiveDashboardStyles";
 import { SectionTitle } from "../styles/ArchiveDashboardStyles";
 import { CircularProgress } from "@mui/material";

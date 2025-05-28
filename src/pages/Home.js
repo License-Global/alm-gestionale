@@ -10,12 +10,10 @@ import {
   Select,
   MenuItem,
   FormControl,
-  InputLabel,
 } from "@mui/material";
 import CommesseList from "../components/Orders/CommesseList";
 import CommesseCards from "../components/Orders/CommesseCards";
 import Commesse from "../components/Orders/Commesse";
-import NoOrders from "../components/Orders/NoOrders";
 import useRealtimeOrderWithActivities from "../hooks/useRealTime";
 import { fetchCustomers } from "../services/customerService";
 import SortIcon from "@mui/icons-material/Sort";

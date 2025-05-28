@@ -43,6 +43,10 @@ import {
   titleStyle,
   OrderInfoCard,
   OrderInfoItem,
+  HeaderContainer,
+  HeaderLeftSection,
+  HeaderRightSection,
+  ClientInfo,
 } from "./Styles";
 
 import {
@@ -71,6 +75,7 @@ const MainTable = ({ order }) => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedItemDocs, setSelectedItemDocs] = useState(null);
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("lg"));
+  const isVerySmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const messagesContainerRef = useRef(null);
   const [customers, setCustomers] = useState([]);
   const getWorkerName = (id) =>
@@ -261,11 +266,12 @@ const MainTable = ({ order }) => {
   else
     return (
       <>
+        {" "}
         <Paper
           sx={{
             backgroundColor: theme.palette.grey[100],
-            padding: 2,
-            m: 3,
+            padding: { xs: 1, sm: 2 },
+            m: { xs: 1, sm: 2, md: 3 },
             boxShadow: 4,
             border: "2px solid ",
             borderRadius: "16px",
@@ -277,54 +283,76 @@ const MainTable = ({ order }) => {
               mx: "16px",
             }}
           >
-            <Typography
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignContent: "center",
-                alignItems: "center",
-                mb: "2px",
-              }}
-              variant="h5"
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  textDecoration: "underline",
-                }}
-              >
-                <i>Confermato: </i>
-                {order.isConfirmed ? (
-                  <Check fontSize="large" color="success" />
-                ) : (
-                  <Clear fontSize="large" color="error" />
-                )}
-              </div>
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "18px" }}
-              >
-                <div>
-                  <b>Cliente:</b>{" "}
-                  <i>
-                    {
-                      customers.find((c) => c.id === order.clientId)
-                        ?.customer_name
-                    }
-                  </i>{" "}
+            {" "}
+            <HeaderContainer>
+              <HeaderLeftSection>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    textDecoration: "underline",
+                    gap: "8px",
+                  }}
+                >
+                  <Typography
+                    variant="h6"
+                    component="span"
+                    sx={{
+                      fontSize: { xs: "1rem", sm: "1.25rem", md: "1.5rem" },
+                    }}
+                  >
+                    <i>Confermato: </i>
+                  </Typography>
+                  {order.isConfirmed ? (
+                    <Check
+                      fontSize={isVerySmallScreen ? "medium" : "large"}
+                      color="success"
+                    />
+                  ) : (
+                    <Clear
+                      fontSize={isVerySmallScreen ? "medium" : "large"}
+                      color="error"
+                    />
+                  )}
                 </div>
-                <div>
-                  <i>
-                    <b>ID: </b>{" "}
-                  </i>
-                  <i> {order?.internal_id}</i>
-                </div>
-              </div>
-            </Typography>
+              </HeaderLeftSection>
+
+              <HeaderRightSection>
+                <ClientInfo>
+                  <Typography
+                    variant="h6"
+                    component="div"
+                    sx={{
+                      fontSize: { xs: "0.9rem", sm: "1.1rem", md: "1.25rem" },
+                    }}
+                  >
+                    <b>Cliente:</b>{" "}
+                    <i>
+                      {
+                        customers.find((c) => c.id === order.clientId)
+                          ?.customer_name
+                      }
+                    </i>
+                  </Typography>
+                </ClientInfo>
+                <ClientInfo>
+                  <Typography
+                    variant="h6"
+                    component="div"
+                    sx={{
+                      fontSize: { xs: "0.9rem", sm: "1.1rem", md: "1.25rem" },
+                    }}
+                  >
+                    <b>ID: </b>
+                    <i>{order?.internal_id}</i>
+                  </Typography>
+                </ClientInfo>
+              </HeaderRightSection>
+            </HeaderContainer>
             <OrderInfoCard>
               <Grid
                 container
-                spacing={2}
+                spacing={{ xs: 1, sm: 2, md: 3 }}
                 sx={{
                   textAlign: "center",
                   justifyContent: "space-between",
@@ -332,15 +360,8 @@ const MainTable = ({ order }) => {
                 }}
               >
                 {/* Griglia per i dettagli dell'ordine */}
-                <Grid item xs={12} sm={6} md={1.5}>
-                  <OrderInfoItem
-                    sx={{
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "center",
-                      alignItems: "center",
-                    }}
-                  >
+                <Grid item xs={12} sm={6} md={4} lg={1.5}>
+                  <OrderInfoItem>
                     <Assignment fontSize="large" />
                     <Typography variant="subtitle1">
                       <b>Ordine:</b> <br /> {order?.orderName}
@@ -348,7 +369,7 @@ const MainTable = ({ order }) => {
                   </OrderInfoItem>
                 </Grid>
                 {/* Altri campi dell'ordine */}
-                <Grid item xs={12} sm={6} md={1.5}>
+                <Grid item xs={12} sm={6} md={4} lg={1.5}>
                   <OrderInfoItem>
                     <Inventory2 fontSize="large" />
                     <Typography variant="body1">
@@ -356,7 +377,7 @@ const MainTable = ({ order }) => {
                     </Typography>
                   </OrderInfoItem>
                 </Grid>
-                <Grid item xs={12} sm={6} md={1.5}>
+                <Grid item xs={12} sm={6} md={4} lg={1.5}>
                   <OrderInfoItem>
                     <PriorityHigh fontSize="large" />
                     <Typography variant="body1">
@@ -366,13 +387,15 @@ const MainTable = ({ order }) => {
                           backgroundColor: handleOrderPriorityHighlight(
                             order?.urgency
                           ),
+                          fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                          height: { xs: 24, sm: 32 },
                         }}
                         label={order?.urgency}
                       />
                     </Typography>
                   </OrderInfoItem>
                 </Grid>
-                <Grid item xs={12} sm={6} md={1.5}>
+                <Grid item xs={12} sm={6} md={4} lg={1.5}>
                   <OrderInfoItem>
                     <Person fontSize="large" />
                     <Typography variant="body1">
@@ -381,7 +404,7 @@ const MainTable = ({ order }) => {
                     </Typography>
                   </OrderInfoItem>
                 </Grid>
-                <Grid item xs={12} sm={6} md={1.5}>
+                <Grid item xs={12} sm={6} md={4} lg={1.5}>
                   <OrderInfoItem>
                     <Construction fontSize="large" />
                     <Typography variant="body1">
@@ -389,7 +412,7 @@ const MainTable = ({ order }) => {
                     </Typography>
                   </OrderInfoItem>
                 </Grid>
-                <Grid item xs={12} sm={6} md={1.5}>
+                <Grid item xs={12} sm={6} md={4} lg={1.5}>
                   <OrderInfoItem>
                     <DateRange fontSize="large" />
                     <Typography variant="body1">
@@ -398,7 +421,7 @@ const MainTable = ({ order }) => {
                     </Typography>
                   </OrderInfoItem>
                 </Grid>
-                <Grid item xs={12} sm={6} md={1.5}>
+                <Grid item xs={12} sm={6} md={4} lg={1.5}>
                   <OrderInfoItem>
                     <DateRange fontSize="large" />
                     <Typography variant="body1">
@@ -408,10 +431,12 @@ const MainTable = ({ order }) => {
                   </OrderInfoItem>
                 </Grid>
               </Grid>
-            </OrderInfoCard>
-
+            </OrderInfoCard>{" "}
             <StyledTableContainer component={Paper}>
-              <Table sx={{ minWidth: 650 }} aria-label="tabella attività">
+              <Table
+                sx={{ minWidth: { xs: 300, sm: 650 } }}
+                aria-label="tabella attività"
+              >
                 {/* Header tabella dell'ordine */}
                 <StyledTableHead>
                   <TableRow>
@@ -452,13 +477,42 @@ const MainTable = ({ order }) => {
                       }
                       key={index}
                     >
+                      {" "}
                       <StyledTableCell component="th" scope="row">
-                        <Typography variant="subtitle1" fontWeight="medium">
+                        <Typography
+                          variant={isSmallScreen ? "body2" : "subtitle1"}
+                          fontWeight="medium"
+                          sx={{
+                            wordBreak: "break-word",
+                            fontSize: {
+                              xs: "0.75rem",
+                              sm: "0.875rem",
+                              md: "1rem",
+                            },
+                          }}
+                        >
                           {activity.name}
                         </Typography>
                       </StyledTableCell>
                       <StyledTableCell align="right">
-                        {new Date(activity.endDate).toLocaleString("it-IT")}
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontSize: {
+                              xs: "0.7rem",
+                              sm: "0.8rem",
+                              md: "0.875rem",
+                            },
+                          }}
+                        >
+                          {new Date(activity.endDate).toLocaleString("it-IT", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: isSmallScreen ? "2-digit" : "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </Typography>
                       </StyledTableCell>
                       {!isSmallScreen && (
                         <StyledTableCell align="right">
@@ -479,9 +533,21 @@ const MainTable = ({ order }) => {
                               : "//"}
                           </Typography>
                         </StyledTableCell>
-                      )}
+                      )}{" "}
                       <StyledTableCell align="right">
-                        {getWorkerName(activity.responsible)}
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontSize: {
+                              xs: "0.7rem",
+                              sm: "0.8rem",
+                              md: "0.875rem",
+                            },
+                            wordBreak: "break-word",
+                          }}
+                        >
+                          {getWorkerName(activity.responsible)}
+                        </Typography>
                       </StyledTableCell>
                       {!isSmallScreen && (
                         <StyledTableCell align="right">
@@ -499,7 +565,7 @@ const MainTable = ({ order }) => {
                             )}
                           </Box>
                         </StyledTableCell>
-                      )}
+                      )}{" "}
                       <StyledTableCell align="right">
                         <Badge
                           key={activity.name}
@@ -510,14 +576,14 @@ const MainTable = ({ order }) => {
                             sx={{
                               color: theme.palette.secondary.main,
                               cursor: "pointer",
+                              fontSize: { xs: "1.5rem", sm: "2rem" },
                             }}
-                            fontSize="large"
                             onClick={() =>
                               handleOpenModalDocs(activity, order.id)
                             }
                           />
                         </Badge>
-                      </StyledTableCell>
+                      </StyledTableCell>{" "}
                       <StyledTableCell align="right">
                         <Select
                           disabled={activity.completed ? true : false}
@@ -530,7 +596,10 @@ const MainTable = ({ order }) => {
                               e.target.value
                             )
                           }
-                          sx={{ minWidth: 120 }}
+                          sx={{
+                            minWidth: { xs: 100, sm: 120 },
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                          }}
                         >
                           <MenuItem disabled value="Standby">
                             Standby
@@ -541,7 +610,7 @@ const MainTable = ({ order }) => {
                             <b>Completato</b>
                           </MenuItem>
                         </Select>
-                      </StyledTableCell>
+                      </StyledTableCell>{" "}
                       <StyledTableCell align="right">
                         <Badge
                           key={activity.name + "note"}
@@ -552,7 +621,12 @@ const MainTable = ({ order }) => {
                             onClick={() => handleOpenModal(activity, order.id)}
                             size="small"
                           >
-                            <Email color="primary" />
+                            <Email
+                              color="primary"
+                              sx={{
+                                fontSize: { xs: "1.25rem", sm: "1.5rem" },
+                              }}
+                            />
                           </IconButton>
                         </Badge>
                       </StyledTableCell>
@@ -561,15 +635,17 @@ const MainTable = ({ order }) => {
                 </TableBody>
               </Table>
             </StyledTableContainer>
-          </Box>
+          </Box>{" "}
           <Box
             sx={{
               display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
               justifyContent: "space-between",
-              alignItems: "center",
+              alignItems: { xs: "stretch", sm: "center" },
+              gap: { xs: 2, sm: 0 },
             }}
           >
-            <Box sx={{ mt: "15px", width: "50%" }}>
+            <Box sx={{ mt: "15px", width: { xs: "100%", sm: "50%" } }}>
               <LinearProgress
                 variant="determinate"
                 value={handleProgressPercentage(order?.activities)}
@@ -586,7 +662,11 @@ const MainTable = ({ order }) => {
               sx={
                 authorizedUser !== btoa("admin")
                   ? { display: "none" }
-                  : { mt: "15px", fontWeight: "bold" }
+                  : {
+                      mt: "15px",
+                      fontWeight: "bold",
+                      minWidth: { xs: "100%", sm: "auto" },
+                    }
               }
               onClick={handleArchive}
               disabled={loadingArchivio}
@@ -596,7 +676,6 @@ const MainTable = ({ order }) => {
           </Box>
         </Paper>
         <Divider sx={{ my: "15px", borderBottomWidth: 5 }} />
-
         {/* Modal note */}
         {selectedItem && (
           <Modal

@@ -2,48 +2,56 @@ import React from "react";
 import {
   Card,
   CardContent,
-  Badge,
-  Divider,
+  Typography,
   IconButton,
   Stack,
-  Typography,
+  Divider,
 } from "@mui/material";
 import MoreIcon from "@mui/icons-material/MoreVert";
 import { motion } from "framer-motion";
 
 const MotionCard = motion(Card);
 
-const WidgetCard = ({ title, icon, badgeContent, children }) => {
+const DashboardCard = ({
+  title,
+  icon,
+  children,
+  showMoreButton = true,
+  onMoreClick,
+  ...props
+}) => {
   return (
     <MotionCard
       elevation={3}
-      sx={{ borderRadius: 4, height: "100%", width: "100%" }}
+      sx={{ borderRadius: 4, height: "100%" }}
+      whileHover={{ y: -2 }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      {...props}
     >
       <CardContent>
         <Stack
           direction="row"
           justifyContent="space-between"
           alignItems="center"
+          mb={1}
         >
           <Stack direction="row" spacing={1} alignItems="center">
-            {icon && (
-              <Badge badgeContent={badgeContent} color="primary">
-                {icon}
-              </Badge>
-            )}
+            {icon}
             <Typography variant="subtitle1" fontWeight={600}>
               {title}
             </Typography>
           </Stack>
-          <IconButton size="small">
-            <MoreIcon fontSize="small" />
-          </IconButton>
+          {showMoreButton && (
+            <IconButton size="small" onClick={onMoreClick}>
+              <MoreIcon fontSize="small" />
+            </IconButton>
+          )}
         </Stack>
-        <Divider sx={{ my: 1.5 }} />
+        <Divider sx={{ mb: 1.5 }} />
         {children}
       </CardContent>
     </MotionCard>
   );
 };
 
-export default WidgetCard;
+export default DashboardCard;

@@ -21,18 +21,15 @@ import {
 import {
   Menu as MenuIcon,
   Home as HomeIcon,
-  Settings as SettingsIcon,
-  Person as PersonIcon,
   Logout as LogoutIcon,
   ChevronLeft as ChevronLeftIcon,
   Add as AddIcon,
-  FormatListBulleted as FormatListBulletedIcon,
   Edit as EditDocumentIcon,
   Archive as ArchiveIcon,
   Timeline as TimelineIcon,
-  Badge as BadgeIcon,
   Group as GroupIcon,
   Groups as GroupsIcon,
+  LocalOffer as LocalOfferIcon,
 } from "@mui/icons-material";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import { useLocation, Link, useNavigate } from "react-router-dom";
@@ -41,7 +38,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRole } from "../../context/RoleContext";
 import Searchbar from "../Appbar/Searchbar";
 import { CalendarMonth } from "@mui/icons-material";
-import { useNotifications } from "../../hooks/useNotification";
 import useUser from "../../hooks/useUser";
 import NotificationTool from "./NotificationTool";
 import { getCookie, setCookie } from "../../utils/cookies";
@@ -72,6 +68,19 @@ const navItems = [
     text: "Clienti",
     icon: <GroupsIcon />,
     path: "/Clienti",
+  },
+  {
+    text: "Ordini",
+    icon: <LocalOfferIcon />,
+    children: [
+      { text: "Visualizza", childIcon: <AssignmentIcon />, path: "/ordini" },
+      {
+        text: "Invia",
+        childIcon: <EditDocumentIcon />,
+        path: "/ordini",
+      },
+      { text: "Ricevi", childIcon: <ArchiveIcon />, path: "/ordini" },
+    ],
   },
   // {
   //   text: "Profilo",

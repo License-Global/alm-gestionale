@@ -24,6 +24,8 @@ import OperatorCalendar from "../pages/OperatorCalendar";
 import Dashboard from "../pages/Dashboard";
 import OperatorsPage from "../pages/impostazioni/Operators";
 import ClientsPage from "../pages/impostazioni/Clients";
+import WorkInProgress from "../pages/WorkInProgress";
+
 const AppRouter = () => (
   <Routes>
     <Route
@@ -173,6 +175,14 @@ const AppRouter = () => (
       element={
         <ProtectedRoute>
           <AddOperator />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/ordini"
+      element={
+        <ProtectedRoute>
+          <WorkInProgress />
         </ProtectedRoute>
       }
     />

@@ -205,6 +205,7 @@ const ModificaOrdine = ({ order, personale }) => {
                 <TableRow>
                   <TableCell>Nome</TableCell>
                   <TableCell>Responsabile</TableCell>
+                  <TableCell>Agenda</TableCell>
                   <TableCell>Stato</TableCell>
                   <TableCell>Inizio</TableCell>
                   <TableCell>Fine</TableCell>

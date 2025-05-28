@@ -2,14 +2,10 @@ import React from "react";
 import { useOrders } from "../hooks/useOrders";
 import BasicTable from "../components/Tables/BasicTable";
 import { Box, Paper } from "@mui/material";
-import {
-  PageContainer,
-  SectionPaper,
-  SectionTitle,
-} from "../styles/ArchiveDashboardStyles";
+import { PageContainer, SectionTitle } from "../styles/ArchiveDashboardStyles";
 
 const Gestisci = () => {
-  const { orders, isLoading } = useOrders();
+  const { orders } = useOrders();
   return (
     <div>
       <PageContainer>
