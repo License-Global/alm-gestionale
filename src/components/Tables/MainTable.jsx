@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import theme from "../../theme";
 import {
   Typography,
@@ -59,16 +59,19 @@ import dayjs from "dayjs";
 import { updateActivityStatusInOrder } from "../../services/activitiesService";
 import { deleteFolder, getFileCount } from "../../services/bucketServices";
 import { archiveOrder } from "../../services/orderService";
-import NoOrders from "../Orders/NoOrders";
+import { subscribeToOrderUpdates, unsubscribeFromOrderUpdates } from "../../services/supabaseRealtimeService";
 import Chatbox from "../Chat/Chatbox";
 import AdminDocsModal from "../misc/AdminDocsModal";
 import useActiveUser from "../../hooks/useActiveUser";
 import { usePersonale } from "../../hooks/usePersonale";
 import useSession from "../../hooks/useSession";
 import { fetchCustomers } from "../../services/customerService";
+import { sendNotification } from "../../utils/sendNotification";
+import useUser from "../../hooks/useUser";
 
 const MainTable = ({ order }) => {
   const session = useSession();
+  const { userId } = useUser();
   const authorizedUser = useActiveUser();
   const { personale, loading } = usePersonale();
   const [open, setOpen] = useState(false);
@@ -78,13 +81,104 @@ const MainTable = ({ order }) => {
   const isVerySmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const messagesContainerRef = useRef(null);
   const [customers, setCustomers] = useState([]);
-  const getWorkerName = (id) =>
-    personale.find((p) => p.id === id)?.workerName || "Sconosciuto";
+  
+  // Stato per gestire l'ordine con protezione dai cambiamenti live
+  const [currentOrder, setCurrentOrder] = useState(null);
+  const [isOrderLoading, setIsOrderLoading] = useState(false);
+  
+  // Ref per evitare race conditions
+  const updateTimeoutRef = useRef(null);
+  const realtimeChannelRef = useRef(null);
+
+  const getWorkerName = useCallback((id) => {
+    if (!personale || !Array.isArray(personale)) return "Sconosciuto";
+    return personale.find((p) => p.id === id)?.workerName || "Sconosciuto";
+  }, [personale]);
+
+  // Memoizza il cliente per evitare ricalcoli non necessari
+  const currentCustomer = useMemo(() => {
+    if (!customers || !Array.isArray(customers) || !currentOrder?.clientId) {
+      return null;
+    }
+    return customers.find((c) => c.id === currentOrder.clientId);
+  }, [customers, currentOrder?.clientId]);
+
+  // Gestione sicura dell'aggiornamento dell'ordine
+  const updateCurrentOrder = useCallback((newOrder) => {
+    if (!newOrder) {
+      setCurrentOrder(null);
+      return;
+    }
+
+    // Validazione dei dati dell'ordine
+    const validatedOrder = {
+      ...newOrder,
+      activities: Array.isArray(newOrder.activities) ? newOrder.activities : [],
+      orderName: newOrder.orderName || '',
+      clientId: newOrder.clientId || null,
+      urgency: newOrder.urgency || 'Bassa',
+      isConfirmed: Boolean(newOrder.isConfirmed),
+      internal_id: newOrder.internal_id || '',
+      materialShelf: newOrder.materialShelf || '',
+      accessories: newOrder.accessories || '',
+      startDate: newOrder.startDate || new Date().toISOString(),
+      endDate: newOrder.endDate || new Date().toISOString(),
+    };
+
+    setCurrentOrder(validatedOrder);
+  }, []);
+
+  // Gestione dei cambiamenti dell'ordine prop
+  useEffect(() => {
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
+    }
+
+    // Debounce per evitare aggiornamenti troppo frequenti
+    updateTimeoutRef.current = setTimeout(() => {
+      updateCurrentOrder(order);
+    }, 100);
+
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+    };
+  }, [order, updateCurrentOrder]);
+
+  // Gestione realtime per l'ordine specifico
+  useEffect(() => {
+    if (!currentOrder?.id || !session?.session?.user?.id) return;
+
+    const handleOrderUpdate = (updatedOrder) => {
+      if (updatedOrder && updatedOrder.id === currentOrder.id) {
+        updateCurrentOrder(updatedOrder);
+      }
+    };
+
+    // Sottoscrizione agli aggiornamenti realtime
+    realtimeChannelRef.current = subscribeToOrderUpdates(
+      currentOrder.id,
+      handleOrderUpdate
+    );
+
+    return () => {
+      if (realtimeChannelRef.current) {
+        unsubscribeFromOrderUpdates(realtimeChannelRef.current);
+        realtimeChannelRef.current = null;
+      }
+    };
+  }, [currentOrder?.id, session?.session?.user?.id, updateCurrentOrder]);
 
   useEffect(() => {
     const fetchCustomersData = async () => {
-      const data = await fetchCustomers();
-      setCustomers(data);
+      try {
+        const data = await fetchCustomers();
+        setCustomers(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Errore nel caricamento clienti:', error);
+        setCustomers([]);
+      }
     };
 
     fetchCustomersData();
@@ -97,20 +191,29 @@ const MainTable = ({ order }) => {
   const [fileCounts, setFileCounts] = useState({}); // Stato per memorizzare i conteggi dei file per ogni attività
 
   const handleArchive = async () => {
+    if (!currentOrder?.id) return;
+    
     setLoadingArchivio(true);
     setSuccessArchivio(false);
     setErrorArchivio(null);
 
-    const result = await archiveOrder(order.id);
+    try {
+      const result = await archiveOrder(currentOrder.id);
 
-    if (result.success) {
-      deleteFolder(session.session.user.id, order.orderName + order.clientId);
-      setSuccessArchivio(true);
-    } else {
-      setErrorArchivio(result.error);
+      if (result.success) {
+        if (session?.session?.user?.id && currentOrder.orderName && currentOrder.clientId) {
+          deleteFolder(session.session.user.id, currentOrder.orderName + currentOrder.clientId);
+        }
+        setSuccessArchivio(true);
+      } else {
+        setErrorArchivio(result.error);
+      }
+    } catch (error) {
+      console.error('Errore durante l\'archiviazione:', error);
+      setErrorArchivio('Errore durante l\'archiviazione');
+    } finally {
+      setLoadingArchivio(false);
     }
-
-    setLoadingArchivio(false);
   };
 
   const handleOpenModal = (item, orderId) => {
@@ -215,56 +318,111 @@ const MainTable = ({ order }) => {
     }
   };
 
-  const handleProgressPercentage = (activities) => {
+  const handleProgressPercentage = useCallback((activities) => {
     if (!Array.isArray(activities) || activities.length === 0) {
-      return 0; // Restituisce 0 se non ci sono attività
+      return 0;
     }
 
     const completedCount = activities.filter(
-      (activity) => activity.status === "Completato"
+      (activity) => activity?.status === "Completato"
     ).length;
     const percentage = (completedCount / activities.length) * 100;
 
-    return Math.round(percentage); // Arrotonda la percentuale
-  };
+    return Math.round(percentage);
+  }, []);
+
+  const handleInviaNotifica = useCallback(async (activity, newStatus) => {
+    if (!activity || !currentOrder || !userId) return;
+    
+    try {
+      await sendNotification({
+        tenant_id: userId,
+        type: "change",
+        payload: {
+          icon: "change",
+          tags: [],
+          type: "change",
+          title: `${activity.name} in ${currentOrder.orderName} adesso è ${newStatus}.`,
+          message: "",
+          priority: "normal",
+          action_url: `/${currentOrder.id}`,
+          expires_at: null,
+          action_label: "MOSTRA",
+          reference_id: currentOrder.id,
+          reference_type: "mainTable",
+        },
+        read: false,
+        created_at: new Date().toISOString(),
+        read_at: null,
+      });
+    } catch (e) {
+      console.log("Errore nell'invio della notifica.", e);
+    }
+  }, [userId, currentOrder]);
+
+
   useEffect(() => {
     const fetchFileCounts = async () => {
-      if (!order || !order.activities || !session?.session?.user?.id) return;
+      if (!currentOrder?.activities || !Array.isArray(currentOrder.activities) || !session?.session?.user?.id) {
+        return;
+      }
 
-      const counts = {}; // Oggetto per memorizzare i conteggi
-      await Promise.all(
-        order.activities.map(async (activity) => {
-          try {
-            const count = await getFileCount(
-              session.session.user.id,
-              order.orderName + order.clientId + "/" + activity.name
-            );
-            counts[activity.name] = count;
-          } catch (error) {
-            console.error(
-              `Errore nel recupero dei file per ${activity.name}:`,
-              error
-            );
-          }
-        })
-      );
-
-      // Solo se i conteggi sono cambiati, aggiorna lo stato
-      setFileCounts((prevCounts) => {
-        const isEqual = Object.keys(counts).every(
-          (key) => counts[key] === prevCounts[key]
+      try {
+        const counts = {};
+        await Promise.all(
+          currentOrder.activities.map(async (activity) => {
+            if (!activity?.name) return;
+            
+            try {
+              const count = await getFileCount(
+                session.session.user.id,
+                `${currentOrder.orderName}${currentOrder.clientId}/${activity.name}`
+              );
+              counts[activity.name] = count || 0;
+            } catch (error) {
+              console.error(
+                `Errore nel recupero dei file per ${activity.name}:`,
+                error
+              );
+              counts[activity.name] = 0;
+            }
+          })
         );
 
-        return isEqual ? prevCounts : counts;
-      });
+        setFileCounts((prevCounts) => {
+          const isEqual = Object.keys(counts).every(
+            (key) => counts[key] === prevCounts[key]
+          );
+          return isEqual ? prevCounts : counts;
+        });
+      } catch (error) {
+        console.error('Errore generale nel caricamento file counts:', error);
+      }
     };
 
     fetchFileCounts();
-  }, [order, session]);
+  }, [currentOrder?.activities, currentOrder?.orderName, currentOrder?.clientId, session?.session?.user?.id]);
 
-  if (order === false) return <NoOrders />;
-  else
-    return (
+  // Cleanup effect per la pulizia delle sottoscrizioni e timeout
+  useEffect(() => {
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+      if (realtimeChannelRef.current) {
+        unsubscribeFromOrderUpdates(realtimeChannelRef.current);
+      }
+    };
+  }, []);
+
+  // Early return con gestione sicura degli stati di caricamento
+  if (order === false || !currentOrder) return null;
+  if (isOrderLoading) return <div>Caricamento ordine...</div>;
+  
+  // Validazione sicura delle activities
+  const safeActivities = Array.isArray(currentOrder.activities) ? currentOrder.activities : [];
+  
+  return (
       <>
         {" "}
         <Paper
@@ -275,7 +433,7 @@ const MainTable = ({ order }) => {
             boxShadow: 4,
             border: "2px solid ",
             borderRadius: "16px",
-            borderColor: handleOrderPriorityHighlight(order?.urgency),
+            borderColor: handleOrderPriorityHighlight(currentOrder?.urgency),
           }}
         >
           <Box
@@ -303,7 +461,7 @@ const MainTable = ({ order }) => {
                   >
                     <i>Confermato: </i>
                   </Typography>
-                  {order.isConfirmed ? (
+                  {currentOrder.isConfirmed ? (
                     <Check
                       fontSize={isVerySmallScreen ? "medium" : "large"}
                       color="success"
@@ -328,10 +486,7 @@ const MainTable = ({ order }) => {
                   >
                     <b>Cliente:</b>{" "}
                     <i>
-                      {
-                        customers.find((c) => c.id === order.clientId)
-                          ?.customer_name
-                      }
+                      {currentCustomer?.customer_name || 'Cliente non trovato'}
                     </i>
                   </Typography>
                 </ClientInfo>
@@ -344,7 +499,7 @@ const MainTable = ({ order }) => {
                     }}
                   >
                     <b>ID: </b>
-                    <i>{order?.internal_id}</i>
+                    <i>{currentOrder?.internal_id || 'N/A'}</i>
                   </Typography>
                 </ClientInfo>
               </HeaderRightSection>
@@ -364,7 +519,7 @@ const MainTable = ({ order }) => {
                   <OrderInfoItem>
                     <Assignment fontSize="large" />
                     <Typography variant="subtitle1">
-                      <b>Ordine:</b> <br /> {order?.orderName}
+                      <b>Ordine:</b> <br /> {currentOrder?.orderName || 'N/A'}
                     </Typography>
                   </OrderInfoItem>
                 </Grid>
@@ -373,7 +528,7 @@ const MainTable = ({ order }) => {
                   <OrderInfoItem>
                     <Inventory2 fontSize="large" />
                     <Typography variant="body1">
-                      <b>Scaffale: </b> <br /> {order?.materialShelf}
+                      <b>Scaffale: </b> <br /> {currentOrder?.materialShelf || 'N/A'}
                     </Typography>
                   </OrderInfoItem>
                 </Grid>
@@ -385,12 +540,12 @@ const MainTable = ({ order }) => {
                       <Chip
                         sx={{
                           backgroundColor: handleOrderPriorityHighlight(
-                            order?.urgency
+                            currentOrder?.urgency
                           ),
                           fontSize: { xs: "0.75rem", sm: "0.875rem" },
                           height: { xs: 24, sm: 32 },
                         }}
-                        label={order?.urgency}
+                        label={currentOrder?.urgency || 'N/A'}
                       />
                     </Typography>
                   </OrderInfoItem>
@@ -400,7 +555,7 @@ const MainTable = ({ order }) => {
                     <Person fontSize="large" />
                     <Typography variant="body1">
                       <b>Responsabile:</b> <br />{" "}
-                      {getWorkerName(order?.orderManager)}
+                      {getWorkerName(currentOrder?.orderManager)}
                     </Typography>
                   </OrderInfoItem>
                 </Grid>
@@ -408,7 +563,7 @@ const MainTable = ({ order }) => {
                   <OrderInfoItem>
                     <Construction fontSize="large" />
                     <Typography variant="body1">
-                      <b>Accessori:</b> <br /> {order?.accessories}
+                      <b>Accessori:</b> <br /> {currentOrder?.accessories || 'Nessuno'}
                     </Typography>
                   </OrderInfoItem>
                 </Grid>
@@ -417,7 +572,7 @@ const MainTable = ({ order }) => {
                     <DateRange fontSize="large" />
                     <Typography variant="body1">
                       <b>Data inizio:</b> <br />{" "}
-                      {new Date(order?.startDate).toLocaleDateString("it-IT")}
+                      {currentOrder?.startDate ? new Date(currentOrder.startDate).toLocaleDateString("it-IT") : 'N/A'}
                     </Typography>
                   </OrderInfoItem>
                 </Grid>
@@ -426,7 +581,7 @@ const MainTable = ({ order }) => {
                     <DateRange fontSize="large" />
                     <Typography variant="body1">
                       <b>Data fine:</b> <br />{" "}
-                      {new Date(order?.endDate).toLocaleDateString("it-IT")}
+                      {currentOrder?.endDate ? new Date(currentOrder.endDate).toLocaleDateString("it-IT") : 'N/A'}
                     </Typography>
                   </OrderInfoItem>
                 </Grid>
@@ -465,17 +620,28 @@ const MainTable = ({ order }) => {
                 {/* Body tabella dell'ordine */}
 
                 <TableBody>
-                  {order?.activities.map((activity, index) => (
+                  {safeActivities.map((activity, index) => {
+                    // Controllo di sicurezza per ogni attività
+                    if (!activity) return null;
+                    
+                    const activityName = activity.name || `Attività ${index + 1}`;
+                    const activityStatus = activity.status || 'Standby';
+                    const activityEndDate = activity.endDate;
+                    const activityCompleted = activity.completed;
+                    const activityResponsible = activity.responsible;
+                    const activityNote = Array.isArray(activity.note) ? activity.note : [];
+                    
+                    return (
                     <TableRow
                       sx={
-                        activity.status === "Bloccato"
+                        activityStatus === "Bloccato"
                           ? {
                               bgcolor: theme.palette.error.light,
                               ":hover": { bgcolor: theme.palette.error.main },
                             }
-                          : {} // Oggetto vuoto se la condizione non è soddisfatta
+                          : {}
                       }
-                      key={index}
+                      key={activity.id || index}
                     >
                       {" "}
                       <StyledTableCell component="th" scope="row">
@@ -491,7 +657,7 @@ const MainTable = ({ order }) => {
                             },
                           }}
                         >
-                          {activity.name}
+                          {activityName}
                         </Typography>
                       </StyledTableCell>
                       <StyledTableCell align="right">
@@ -505,20 +671,20 @@ const MainTable = ({ order }) => {
                             },
                           }}
                         >
-                          {new Date(activity.endDate).toLocaleString("it-IT", {
+                          {activityEndDate ? new Date(activityEndDate).toLocaleString("it-IT", {
                             day: "2-digit",
                             month: "2-digit",
                             year: isSmallScreen ? "2-digit" : "numeric",
                             hour: "2-digit",
                             minute: "2-digit",
-                          })}
+                          }) : 'N/A'}
                         </Typography>
                       </StyledTableCell>
                       {!isSmallScreen && (
                         <StyledTableCell align="right">
                           <Chip
-                            label={activity.status}
-                            color={getStatusColor(activity.status)}
+                            label={activityStatus}
+                            color={getStatusColor(activityStatus)}
                             size="small"
                           />
                         </StyledTableCell>
@@ -526,8 +692,8 @@ const MainTable = ({ order }) => {
                       {!isSmallScreen && (
                         <StyledTableCell align="right">
                           <Typography variant="body2" fontWeight="medium">
-                            {activity.completed
-                              ? dayjs(activity.completed).format(
+                            {activityCompleted
+                              ? dayjs(activityCompleted).format(
                                   "DD/MM/YYYY HH:mm"
                                 )
                               : "//"}
@@ -546,7 +712,7 @@ const MainTable = ({ order }) => {
                             wordBreak: "break-word",
                           }}
                         >
-                          {getWorkerName(activity.responsible)}
+                          {getWorkerName(activityResponsible)}
                         </Typography>
                       </StyledTableCell>
                       {!isSmallScreen && (
@@ -560,16 +726,16 @@ const MainTable = ({ order }) => {
                             }}
                           >
                             {handleTargetLabel(
-                              activity.endDate,
-                              activity.completed
+                              activityEndDate,
+                              activityCompleted
                             )}
                           </Box>
                         </StyledTableCell>
                       )}{" "}
                       <StyledTableCell align="right">
                         <Badge
-                          key={activity.name}
-                          badgeContent={fileCounts[activity.name] || 0} // Usa il conteggio dei file per l'attività
+                          key={activityName}
+                          badgeContent={fileCounts[activityName] || 0}
                           color="primary"
                         >
                           <FindInPage
@@ -579,15 +745,15 @@ const MainTable = ({ order }) => {
                               fontSize: { xs: "1.5rem", sm: "2rem" },
                             }}
                             onClick={() =>
-                              handleOpenModalDocs(activity, order.id)
+                              handleOpenModalDocs(activity, currentOrder.id)
                             }
                           />
                         </Badge>
                       </StyledTableCell>{" "}
                       <StyledTableCell align="right">
                         <Select
-                          disabled={activity.completed ? true : false}
-                          defaultValue={activity.status}
+                          disabled={activityCompleted ? true : false}
+                          value={activityStatus}
                           displayEmpty
                           size="small"
                           onChange={(e) =>
@@ -595,6 +761,15 @@ const MainTable = ({ order }) => {
                               activity.id,
                               e.target.value
                             )
+                              .then(() => {
+                                handleInviaNotifica(activity, e.target.value);
+                              })
+                              .catch((error) => {
+                                console.error(
+                                  "Errore nell'aggiornamento dello stato dell'attività:",
+                                  error
+                                );
+                              })
                           }
                           sx={{
                             minWidth: { xs: 100, sm: 120 },
@@ -613,12 +788,12 @@ const MainTable = ({ order }) => {
                       </StyledTableCell>{" "}
                       <StyledTableCell align="right">
                         <Badge
-                          key={activity.name + "note"}
-                          badgeContent={activity.note.length} // Usa il conteggio dei file per l'attività
+                          key={activityName + "note"}
+                          badgeContent={activityNote.length}
                           color="secondary"
                         >
                           <IconButton
-                            onClick={() => handleOpenModal(activity, order.id)}
+                            onClick={() => handleOpenModal(activity, currentOrder.id)}
                             size="small"
                           >
                             <Email
@@ -631,7 +806,8 @@ const MainTable = ({ order }) => {
                         </Badge>
                       </StyledTableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
             </StyledTableContainer>
@@ -648,9 +824,9 @@ const MainTable = ({ order }) => {
             <Box sx={{ mt: "15px", width: { xs: "100%", sm: "50%" } }}>
               <LinearProgress
                 variant="determinate"
-                value={handleProgressPercentage(order?.activities)}
+                value={handleProgressPercentage(safeActivities)}
                 color={
-                  order?.activities.every((act) => act.status === "Completato")
+                  safeActivities.every((act) => act?.status === "Completato")
                     ? "secondary"
                     : "primary"
                 }
@@ -691,7 +867,7 @@ const MainTable = ({ order }) => {
               <Chatbox
                 authorizedUser={atob(authorizedUser)}
                 selectedItem={selectedItem}
-                order={order}
+                order={currentOrder}
                 closeModal={handleCloseModal}
               />
               <Box sx={{ m: 2 }}>
@@ -721,12 +897,13 @@ const MainTable = ({ order }) => {
                 {selectedItemDocs?.name}
               </Typography>
               <AdminDocsModal
-                bucketName={session.session.user.id}
+                bucketName={session?.session?.user?.id}
                 folderName={
-                  order?.orderName +
-                  order?.clientId +
-                  "/" +
+                  currentOrder?.orderName &&
+                  currentOrder?.clientId &&
                   selectedItemDocs?.name
+                    ? `${currentOrder.orderName}${currentOrder.clientId}/${selectedItemDocs.name}`
+                    : ""
                 }
               />
               <Box sx={{ m: 4 }}>

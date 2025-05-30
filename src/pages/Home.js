@@ -26,17 +26,15 @@ const views = [
 ];
 
 const variants = {
-  initial: { opacity: 0, x: 40, filter: "blur(4px)" },
+  initial: { opacity: 0, x: 40 },
   animate: {
     opacity: 1,
     x: 0,
-    filter: "blur(0px)",
     transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] },
   },
   exit: {
     opacity: 0,
     x: -40,
-    filter: "blur(4px)",
     transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] },
   },
 };

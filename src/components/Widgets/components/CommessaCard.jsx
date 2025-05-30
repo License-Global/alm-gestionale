@@ -16,9 +16,11 @@ import {
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const CommessaCard = ({ order, customers }) => {
+  const navigate = useNavigate();
+
   const handleProgressPercentage = (activities) => {
     if (!Array.isArray(activities) || activities.length === 0) {
       return 0; // Restituisce 0 se non ci sono attività
@@ -104,6 +106,7 @@ const CommessaCard = ({ order, customers }) => {
           }}
         >
           <Avatar
+            onClick={() => navigate("/" + order.id)}
             sx={{
               bgcolor: "#fff",
               color: "#4f8cff",
@@ -111,15 +114,24 @@ const CommessaCard = ({ order, customers }) => {
               boxShadow: 2,
               width: 40,
               height: 40,
+              cursor: "pointer",
+              ":hover": {
+                transform: "scale(1.1)",
+                transition: "transform 0.2s",
+              },
             }}
           >
             <AssignmentIcon fontSize="medium" />
           </Avatar>
           <Box flexGrow={1}>
             <Typography
+              onClick={() => navigate("/" + order.id)}
               variant="h6"
               fontWeight="bold"
-              sx={{ letterSpacing: 1 }}
+              sx={{
+                letterSpacing: 1,
+                ":hover": { cursor: "pointer", textDecoration: "underline" },
+              }}
             >
               {order.orderName}
               <br />
@@ -197,14 +209,7 @@ const CommessaCard = ({ order, customers }) => {
                     </Typography>
                   </Link>
                 </Box>
-                <Box>
-                  <Typography variant="caption" color="text.secondary">
-                    Comm.
-                  </Typography>
-                  <Typography variant="body1" fontWeight={500} color="#4f8cff">
-                    ---
-                  </Typography>
-                </Box>
+
                 <Box>
                   <Typography variant="caption" color="text.secondary">
                     Data fine

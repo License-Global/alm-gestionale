@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import Badge from "@mui/material/Badge";
 import Paper from "@mui/material/Paper";
@@ -12,25 +12,21 @@ import { markAllAsRead } from "../../utils/notificationUtils";
 import NotificationItem from "./components/NotificationItem";
 
 const NotificationTool = ({ userId }) => {
-  const notificationsFromHook = useNotifications(userId);
-  const [notifications, setNotifications] = useState([]);
+  const notifications = useNotifications(userId) || [];
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const anchorRef = useRef(null);
 
-  // Sincronizza stato locale con hook realtime
-  useEffect(() => {
-    setNotifications(notificationsFromHook);
-  }, [notificationsFromHook]);
+  // Conteggio delle notifiche non lette
+  const unreadCount = useMemo(() => {
+    return notifications.filter(n => !n.read_at && !n.read).length;
+  }, [notifications]);
 
   // Close dropdown on click outside
-  const handleClickAway = () => setOpen(false);
+  const handleClickAway = useCallback(() => setOpen(false), []);
 
-  // Unread count (solo notifiche non lette)
-  const unreadCount = notifications.filter((n) => !n.read_at).length;
-
-  // Toggle dropdown
-  const handleToggle = () => setOpen((prev) => !prev);
+  // Toggle dropdown with callback optimization
+  const handleToggle = useCallback(() => setOpen((prev) => !prev), []);
 
   // Keyboard navigation (esc to close)
   useEffect(() => {
@@ -42,33 +38,38 @@ const NotificationTool = ({ userId }) => {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
-  // Pulse animation for bell if there are notifications
-  const bellPulse = unreadCount
-    ? {
-        animate: {
-          scale: [1, 1.08, 0.97, 1.05, 1],
-          transition: { duration: 1.2, repeat: 2, repeatDelay: 2 },
-        },
-      }
-    : {};
+  // Pulse animation for bell if there are notifications - memoizzata per performance
+  const bellPulse = useMemo(() => {
+    return unreadCount > 0
+      ? {
+          animate: {
+            scale: [1, 1.08, 0.97, 1.05, 1],
+            transition: { duration: 1.2, repeat: 2, repeatDelay: 2 },
+          },
+        }
+      : {};
+  }, [unreadCount]);
 
   // Segna tutte come lette
-  const handleMarkAllAsRead = async () => {
+  const handleMarkAllAsRead = useCallback(async () => {
+    if (!userId || notifications.length === 0) return;
+    
     setLoading(true);
     try {
+      const unreadNotifications = notifications.filter(n => !n.read_at && !n.read);
+      
+      if (unreadNotifications.length === 0) {
+        setLoading(false);
+        return;
+      }
+
       await markAllAsRead(userId);
-      // Aggiorna stato locale per riflettere subito il cambiamento
-      setNotifications((prev) =>
-        prev.map((n) =>
-          n.read_at ? n : { ...n, read_at: new Date().toISOString() }
-        )
-      );
-    } catch (e) {
-      console.error(e);
+    } catch (error) {
+      console.error('Errore nel segnare le notifiche come lette:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId, notifications]);
 
   return (
     <div

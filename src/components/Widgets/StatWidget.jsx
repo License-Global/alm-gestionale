@@ -46,7 +46,6 @@ export default function StatWidget({
         overflow: "hidden",
         position: "relative",
         border: `1.5px solid ${alpha(textColor, 0.08)}`,
-        backdropFilter: "blur(2.5px)",
         transition: "box-shadow 0.3s, border 0.3s",
       }}
     >

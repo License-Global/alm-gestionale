@@ -315,7 +315,7 @@ export default function DashboardLayout({ children }) {
               <b>Calendario</b>
             </Button>
           </Box>
-          {canShowMenu && <NotificationTool userId={userId} />}
+          {canShowMenu && <NotificationTool key={location.pathname} userId={userId} />}
           {!canShowMenu && (
             <Button
               color="inherit"

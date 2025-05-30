@@ -49,6 +49,12 @@ const AttivitaRecenti = () => {
                   minute: "2-digit",
                 }
               )}
+              displayMode={
+                getNotificationType(notification?.type)
+              }
+              message={notification.payload?.message || ""}
+              action_url={notification.payload?.action_url}
+              action_label={notification.payload?.action_label}
             />
           ))
         ) : (

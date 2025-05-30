@@ -12,7 +12,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Tooltip,
   Typography,
 } from "@mui/material";
 
@@ -182,14 +181,9 @@ export default function Timeline({ orders = [] }) {
                   INSERITE
                 </TableCell>
                 {timelineData.inserite.map((val, idx) => (
-                  <Tooltip
-                    key={idx}
-                    title={val > 0 ? `${val} commesse inserite` : ""}
-                    arrow
-                    placement="top"
-                    disableHoverListener={val === 0}
-                  >
+
                     <TableCell
+                      key={idx}
                       align="center"
                       sx={{
                         color: "#e6b800",
@@ -203,7 +197,6 @@ export default function Timeline({ orders = [] }) {
                     >
                       {val || ""}
                     </TableCell>
-                  </Tooltip>
                 ))}
               </TableRow>
               <TableRow>
@@ -211,14 +204,8 @@ export default function Timeline({ orders = [] }) {
                   COMPLETATE
                 </TableCell>
                 {timelineData.completate.map((val, idx) => (
-                  <Tooltip
-                    key={idx}
-                    title={val > 0 ? `${val} commesse completate` : ""}
-                    arrow
-                    placement="top"
-                    disableHoverListener={val === 0}
-                  >
                     <TableCell
+                      key={idx}
                       align="center"
                       sx={{
                         color: "green",
@@ -232,7 +219,6 @@ export default function Timeline({ orders = [] }) {
                     >
                       {val || ""}
                     </TableCell>
-                  </Tooltip>
                 ))}
               </TableRow>
             </TableBody>

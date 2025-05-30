@@ -35,7 +35,7 @@ const WidgetCard = ({ title, icon, badgeContent, children }) => {
               {title}
             </Typography>
           </Stack>
-          <IconButton size="small">
+          <IconButton sx={{ display: "none" }} size="small">
             <MoreIcon fontSize="small" />
           </IconButton>
         </Stack>
