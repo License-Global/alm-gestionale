@@ -247,9 +247,25 @@ const Documenti = () => {
 
   return (
     <WidgetCard title={"Gestione Documenti"}>
-      <Box sx={{ p: 3 }}>
+      <Box
+        sx={{
+          p: 3,
+          background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
+          minHeight: "100vh",
+          borderRadius: 2,
+        }}
+      >
         {error && (
-          <Alert severity="error" onClose={() => setError("")} sx={{ mb: 2 }}>
+          <Alert
+            severity="error"
+            onClose={() => setError("")}
+            sx={{
+              mb: 2,
+              backdropFilter: "blur(10px)",
+              backgroundColor: "rgba(244, 67, 54, 0.1)",
+              border: "1px solid rgba(244, 67, 54, 0.3)",
+            }}
+          >
             {error}
           </Alert>
         )}
@@ -258,19 +274,44 @@ const Documenti = () => {
           <Alert
             severity="success"
             onClose={() => setSuccess("")}
-            sx={{ mb: 2 }}
+            sx={{
+              mb: 2,
+              backdropFilter: "blur(10px)",
+              backgroundColor: "rgba(76, 175, 80, 0.1)",
+              border: "1px solid rgba(76, 175, 80, 0.3)",
+            }}
           >
             {success}
           </Alert>
         )}
 
         {/* Breadcrumbs */}
-        <Breadcrumbs sx={{ mb: 3 }}>
+        <Breadcrumbs
+          sx={{
+            mb: 3,
+            p: 2,
+            backgroundColor: "rgba(255, 255, 255, 0.7)",
+            borderRadius: 2,
+            backdropFilter: "blur(10px)",
+            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
+          }}
+        >
           <Link
             component="button"
             variant="body1"
             onClick={() => setCurrentPath("")}
-            sx={{ display: "flex", alignItems: "center" }}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              color: "#2E8B57",
+              fontWeight: 600,
+              textDecoration: "none",
+              "&:hover": {
+                color: "#1F5F3F",
+                transform: "scale(1.05)",
+              },
+              transition: "all 0.3s ease",
+            }}
           >
             <HomeIcon sx={{ mr: 0.5 }} fontSize="inherit" />
             Home
@@ -281,6 +322,16 @@ const Documenti = () => {
               component="button"
               variant="body1"
               onClick={() => navigateToPath(index)}
+              sx={{
+                color: "#87CEEB",
+                fontWeight: 500,
+                textDecoration: "none",
+                "&:hover": {
+                  color: "#4682B4",
+                  transform: "scale(1.05)",
+                },
+                transition: "all 0.3s ease",
+              }}
             >
               {part}
             </Link>
@@ -288,11 +339,34 @@ const Documenti = () => {
         </Breadcrumbs>
 
         {/* Action Buttons */}
-        <Box sx={{ mb: 3, display: "flex", gap: 2 }}>
+        <Box
+          sx={{
+            mb: 4,
+            display: "flex",
+            gap: 3,
+            justifyContent: "center",
+          }}
+        >
           <Button
             variant="contained"
             startIcon={<CreateNewFolderIcon />}
             onClick={() => setCreateFolderDialog(true)}
+            sx={{
+              background: "linear-gradient(45deg, #2E8B57 30%, #32CD32 90%)",
+              borderRadius: 3,
+              boxShadow: "0 6px 20px rgba(46, 139, 87, 0.4)",
+              px: 4,
+              py: 1.5,
+              fontSize: "1.1rem",
+              fontWeight: 600,
+              textTransform: "none",
+              "&:hover": {
+                background: "linear-gradient(45deg, #1F5F3F 30%, #228B22 90%)",
+                transform: "translateY(-2px)",
+                boxShadow: "0 8px 25px rgba(46, 139, 87, 0.6)",
+              },
+              transition: "all 0.3s ease",
+            }}
           >
             Nuova Cartella
           </Button>
@@ -300,6 +374,24 @@ const Documenti = () => {
             variant="outlined"
             startIcon={<UploadIcon />}
             onClick={() => setUploadDialog(true)}
+            sx={{
+              borderColor: "#87CEEB",
+              color: "#4682B4",
+              borderWidth: 2,
+              borderRadius: 3,
+              px: 4,
+              py: 1.5,
+              fontSize: "1.1rem",
+              fontWeight: 600,
+              textTransform: "none",
+              "&:hover": {
+                borderColor: "#4682B4",
+                backgroundColor: "rgba(135, 206, 235, 0.1)",
+                transform: "translateY(-2px)",
+                boxShadow: "0 6px 20px rgba(70, 130, 180, 0.3)",
+              },
+              transition: "all 0.3s ease",
+            }}
           >
             Carica PDF
           </Button>
@@ -307,24 +399,52 @@ const Documenti = () => {
 
         {/* Content Grid */}
         {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
-            <CircularProgress />
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              p: 8,
+              background: "rgba(255, 255, 255, 0.7)",
+              borderRadius: 3,
+              backdropFilter: "blur(10px)",
+            }}
+          >
+            <CircularProgress size={60} sx={{ color: "#2E8B57" }} />
           </Box>
         ) : (
-          <Grid container spacing={2}>
+          <Grid container spacing={3}>
             <AnimatePresence>
               {items.map((item, index) => (
                 <Grid item xs={12} sm={6} md={4} lg={3} key={item.name}>
                   <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ delay: index * 0.1 }}
+                    initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -20, scale: 0.9 }}
+                    transition={{
+                      delay: index * 0.1,
+                      type: "spring",
+                      stiffness: 100,
+                    }}
+                    whileHover={{
+                      scale: 1.05,
+                      transition: { duration: 0.2 },
+                    }}
+                    whileTap={{ scale: 0.95 }}
                   >
                     <Card
                       sx={{
                         cursor: "pointer",
-                        "&:hover": { elevation: 8 },
+                        background: "rgba(255, 255, 255, 0.9)",
+                        backdropFilter: "blur(10px)",
+                        borderRadius: 3,
+                        border: "1px solid rgba(255, 255, 255, 0.3)",
+                        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
+                        transition: "all 0.3s ease",
+                        "&:hover": {
+                          boxShadow: "0 12px 40px rgba(0, 0, 0, 0.2)",
+                          transform: "translateY(-4px)",
+                        },
                       }}
                       onClick={() => {
                         if (!item.metadata?.mimetype) {
@@ -334,32 +454,82 @@ const Documenti = () => {
                         }
                       }}
                     >
-                      <CardContent sx={{ textAlign: "center" }}>
+                      <CardContent
+                        sx={{
+                          textAlign: "center",
+                          p: 3,
+                        }}
+                      >
                         {item.metadata?.mimetype ? (
                           <PdfIcon
-                            sx={{ fontSize: 48, color: "error.main", mb: 1 }}
+                            sx={{
+                              fontSize: 64,
+                              color: "#87CEEB",
+                              mb: 2,
+                              filter:
+                                "drop-shadow(0 4px 8px rgba(135, 206, 235, 0.3))",
+                            }}
                           />
                         ) : (
                           <FolderIcon
-                            sx={{ fontSize: 48, color: "primary.main", mb: 1 }}
+                            sx={{
+                              fontSize: 64,
+                              color: "#2E8B57",
+                              mb: 2,
+                              filter:
+                                "drop-shadow(0 4px 8px rgba(46, 139, 87, 0.3))",
+                            }}
                           />
                         )}
-                        <Typography variant="body2" noWrap>
+                        <Typography
+                          variant="body1"
+                          noWrap
+                          sx={{
+                            fontWeight: 600,
+                            color: "#333",
+                            mb: 1,
+                          }}
+                        >
                           {item.name}
                         </Typography>
                         {item.metadata?.size && (
-                          <Typography variant="caption" color="textSecondary">
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: "#666",
+                              backgroundColor: "rgba(135, 206, 235, 0.2)",
+                              px: 1.5,
+                              py: 0.5,
+                              borderRadius: 2,
+                              fontWeight: 500,
+                            }}
+                          >
                             {(item.metadata.size / 1024 / 1024).toFixed(2)} MB
                           </Typography>
                         )}
                       </CardContent>
-                      <CardActions sx={{ justifyContent: "flex-end" }}>
+                      <CardActions
+                        sx={{
+                          justifyContent: "flex-end",
+                          p: 2,
+                          pt: 0,
+                        }}
+                      >
                         <IconButton
                           size="small"
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedItem(item);
                             setAnchorEl(e.currentTarget);
+                          }}
+                          sx={{
+                            backgroundColor: "rgba(255, 255, 255, 0.7)",
+                            backdropFilter: "blur(10px)",
+                            "&:hover": {
+                              backgroundColor: "rgba(255, 255, 255, 0.9)",
+                              transform: "scale(1.1)",
+                            },
+                            transition: "all 0.3s ease",
                           }}
                         >
                           <MoreVertIcon />
@@ -378,6 +548,15 @@ const Documenti = () => {
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
           onClose={() => setAnchorEl(null)}
+          sx={{
+            "& .MuiPaper-root": {
+              background: "rgba(255, 255, 255, 0.9)",
+              backdropFilter: "blur(10px)",
+              border: "1px solid rgba(255, 255, 255, 0.3)",
+              borderRadius: 2,
+              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
+            },
+          }}
         >
           {/* Only show rename option for files (items with mimetype) */}
           {selectedItem?.metadata?.mimetype && (
@@ -387,16 +566,26 @@ const Documenti = () => {
                 setEditDialog(true);
                 setAnchorEl(null);
               }}
+              sx={{
+                "&:hover": {
+                  backgroundColor: "rgba(46, 139, 87, 0.1)",
+                },
+              }}
             >
               <ListItemIcon>
-                <EditIcon fontSize="small" />
+                <EditIcon fontSize="small" sx={{ color: "#2E8B57" }} />
               </ListItemIcon>
               <ListItemText>Rinomina</ListItemText>
             </MenuItem>
           )}
           <MenuItem
             onClick={() => deleteItem(selectedItem)}
-            sx={{ color: "error.main" }}
+            sx={{
+              color: "#d32f2f",
+              "&:hover": {
+                backgroundColor: "rgba(211, 47, 47, 0.1)",
+              },
+            }}
           >
             <ListItemIcon>
               <DeleteIcon fontSize="small" color="error" />
@@ -409,8 +598,18 @@ const Documenti = () => {
         <Dialog
           open={createFolderDialog}
           onClose={() => setCreateFolderDialog(false)}
+          PaperProps={{
+            sx: {
+              background: "rgba(255, 255, 255, 0.95)",
+              backdropFilter: "blur(20px)",
+              borderRadius: 3,
+              border: "1px solid rgba(255, 255, 255, 0.3)",
+            },
+          }}
         >
-          <DialogTitle>Crea Nuova Cartella</DialogTitle>
+          <DialogTitle sx={{ color: "#2E8B57", fontWeight: 600 }}>
+            Crea Nuova Cartella
+          </DialogTitle>
           <DialogContent>
             <TextField
               autoFocus
@@ -420,41 +619,138 @@ const Documenti = () => {
               variant="outlined"
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 2,
+                  "&:hover fieldset": {
+                    borderColor: "#2E8B57",
+                  },
+                  "&.Mui-focused fieldset": {
+                    borderColor: "#2E8B57",
+                  },
+                },
+                "& .MuiInputLabel-root.Mui-focused": {
+                  color: "#2E8B57",
+                },
+              }}
             />
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setCreateFolderDialog(false)}>
+          <DialogActions sx={{ p: 3, gap: 2 }}>
+            <Button
+              onClick={() => setCreateFolderDialog(false)}
+              sx={{
+                color: "#666",
+                "&:hover": {
+                  backgroundColor: "rgba(102, 102, 102, 0.1)",
+                },
+              }}
+            >
               Annulla
             </Button>
-            <Button onClick={createFolder} variant="contained">
+            <Button
+              onClick={createFolder}
+              variant="contained"
+              sx={{
+                background: "linear-gradient(45deg, #2E8B57 30%, #32CD32 90%)",
+                borderRadius: 2,
+                "&:hover": {
+                  background:
+                    "linear-gradient(45deg, #1F5F3F 30%, #228B22 90%)",
+                },
+              }}
+            >
               Crea
             </Button>
           </DialogActions>
         </Dialog>
 
         {/* Upload Dialog */}
-        <Dialog open={uploadDialog} onClose={() => setUploadDialog(false)}>
-          <DialogTitle>Carica PDF</DialogTitle>
+        <Dialog
+          open={uploadDialog}
+          onClose={() => setUploadDialog(false)}
+          PaperProps={{
+            sx: {
+              background: "rgba(255, 255, 255, 0.95)",
+              backdropFilter: "blur(20px)",
+              borderRadius: 3,
+              border: "1px solid rgba(255, 255, 255, 0.3)",
+            },
+          }}
+        >
+          <DialogTitle sx={{ color: "#87CEEB", fontWeight: 600 }}>
+            Carica PDF
+          </DialogTitle>
           <DialogContent>
-            <input
-              type="file"
-              accept=".pdf"
-              onChange={(e) => setSelectedFile(e.target.files[0])}
-              style={{ marginTop: 16 }}
-            />
+            <Box
+              sx={{
+                border: "2px dashed #87CEEB",
+                borderRadius: 2,
+                p: 3,
+                mt: 2,
+                textAlign: "center",
+                backgroundColor: "rgba(135, 206, 235, 0.05)",
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  backgroundColor: "rgba(135, 206, 235, 0.1)",
+                  borderColor: "#4682B4",
+                },
+              }}
+            >
+              <input
+                type="file"
+                accept=".pdf"
+                onChange={(e) => setSelectedFile(e.target.files[0])}
+                style={{
+                  padding: 16,
+                  fontSize: "16px",
+                  width: "100%",
+                }}
+              />
+            </Box>
             {selectedFile && (
-              <Typography variant="body2" sx={{ mt: 1 }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  mt: 2,
+                  p: 2,
+                  backgroundColor: "rgba(46, 139, 87, 0.1)",
+                  borderRadius: 2,
+                  color: "#2E8B57",
+                  fontWeight: 500,
+                }}
+              >
                 File selezionato: {selectedFile.name} (
                 {(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
               </Typography>
             )}
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setUploadDialog(false)}>Annulla</Button>
+          <DialogActions sx={{ p: 3, gap: 2 }}>
+            <Button
+              onClick={() => setUploadDialog(false)}
+              sx={{
+                color: "#666",
+                "&:hover": {
+                  backgroundColor: "rgba(102, 102, 102, 0.1)",
+                },
+              }}
+            >
+              Annulla
+            </Button>
             <Button
               onClick={uploadFile}
               variant="contained"
               disabled={!selectedFile}
+              sx={{
+                background: "linear-gradient(45deg, #87CEEB 30%, #4682B4 90%)",
+                borderRadius: 2,
+                "&:hover": {
+                  background:
+                    "linear-gradient(45deg, #4682B4 30%, #1E90FF 90%)",
+                },
+                "&:disabled": {
+                  background: "rgba(135, 206, 235, 0.3)",
+                },
+              }}
             >
               Carica
             </Button>
@@ -462,8 +758,21 @@ const Documenti = () => {
         </Dialog>
 
         {/* Edit Dialog */}
-        <Dialog open={editDialog} onClose={() => setEditDialog(false)}>
-          <DialogTitle>Rinomina</DialogTitle>
+        <Dialog
+          open={editDialog}
+          onClose={() => setEditDialog(false)}
+          PaperProps={{
+            sx: {
+              background: "rgba(255, 255, 255, 0.95)",
+              backdropFilter: "blur(20px)",
+              borderRadius: 3,
+              border: "1px solid rgba(255, 255, 255, 0.3)",
+            },
+          }}
+        >
+          <DialogTitle sx={{ color: "#2E8B57", fontWeight: 600 }}>
+            Rinomina
+          </DialogTitle>
           <DialogContent>
             <TextField
               autoFocus
@@ -473,11 +782,46 @@ const Documenti = () => {
               variant="outlined"
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 2,
+                  "&:hover fieldset": {
+                    borderColor: "#2E8B57",
+                  },
+                  "&.Mui-focused fieldset": {
+                    borderColor: "#2E8B57",
+                  },
+                },
+                "& .MuiInputLabel-root.Mui-focused": {
+                  color: "#2E8B57",
+                },
+              }}
             />
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setEditDialog(false)}>Annulla</Button>
-            <Button onClick={renameItem} variant="contained">
+          <DialogActions sx={{ p: 3, gap: 2 }}>
+            <Button
+              onClick={() => setEditDialog(false)}
+              sx={{
+                color: "#666",
+                "&:hover": {
+                  backgroundColor: "rgba(102, 102, 102, 0.1)",
+                },
+              }}
+            >
+              Annulla
+            </Button>
+            <Button
+              onClick={renameItem}
+              variant="contained"
+              sx={{
+                background: "linear-gradient(45deg, #2E8B57 30%, #32CD32 90%)",
+                borderRadius: 2,
+                "&:hover": {
+                  background:
+                    "linear-gradient(45deg, #1F5F3F 30%, #228B22 90%)",
+                },
+              }}
+            >
               Rinomina
             </Button>
           </DialogActions>

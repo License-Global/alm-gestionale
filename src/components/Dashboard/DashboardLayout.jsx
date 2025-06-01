@@ -71,6 +71,11 @@ const navItems = [
     path: "/Clienti",
   },
   {
+    text: "Documenti",
+    icon: <FindInPageIcon />,
+    path: "/Documenti",
+  },
+  {
     text: "Ordini",
     icon: <LocalOfferIcon />,
     children: [
@@ -83,11 +88,7 @@ const navItems = [
       { text: "Ricevi", childIcon: <ArchiveIcon />, path: "/ordini" },
     ],
   },
-  {
-    text: "Documenti",
-    icon: <FindInPageIcon />,
-    path: "/Documenti",
-  },
+
   // {
   //   text: "Profilo",
   //   icon: <PersonIcon />,
