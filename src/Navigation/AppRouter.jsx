@@ -25,6 +25,7 @@ import Dashboard from "../pages/Dashboard";
 import OperatorsPage from "../pages/impostazioni/Operators";
 import ClientsPage from "../pages/impostazioni/Clients";
 import WorkInProgress from "../pages/WorkInProgress";
+import Documenti from "../pages/Documenti";
 
 const AppRouter = () => (
   <Routes>
@@ -183,6 +184,14 @@ const AppRouter = () => (
       element={
         <ProtectedRoute>
           <WorkInProgress />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/documenti"
+      element={
+        <ProtectedRoute>
+          <Documenti />
         </ProtectedRoute>
       }
     />

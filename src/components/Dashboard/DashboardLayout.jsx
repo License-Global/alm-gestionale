@@ -30,6 +30,7 @@ import {
   Group as GroupIcon,
   Groups as GroupsIcon,
   LocalOffer as LocalOfferIcon,
+  FindInPage as FindInPageIcon,
 } from "@mui/icons-material";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import { useLocation, Link, useNavigate } from "react-router-dom";
@@ -81,6 +82,11 @@ const navItems = [
       },
       { text: "Ricevi", childIcon: <ArchiveIcon />, path: "/ordini" },
     ],
+  },
+  {
+    text: "Documenti",
+    icon: <FindInPageIcon />,
+    path: "/Documenti",
   },
   // {
   //   text: "Profilo",
@@ -315,7 +321,9 @@ export default function DashboardLayout({ children }) {
               <b>Calendario</b>
             </Button>
           </Box>
-          {canShowMenu && <NotificationTool key={location.pathname} userId={userId} />}
+          {canShowMenu && (
+            <NotificationTool key={location.pathname} userId={userId} />
+          )}
           {!canShowMenu && (
             <Button
               color="inherit"
