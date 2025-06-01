@@ -5,8 +5,11 @@ import {
   Divider,
   Stack,
   CircularProgress,
+  Modal,
+  IconButton,
 } from "@mui/material";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import CloseIcon from "@mui/icons-material/Close";
 import FileList from "./FileList";
 import FileUploader from "./FileUploader";
 import { supabase } from "../../supabase/supabaseClient";
@@ -18,6 +21,8 @@ const AdminDocsModal = ({ bucketName, folderName }) => {
   const [currentPDF, setCurrentPDF] = useState(null);
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pdfModalOpen, setPdfModalOpen] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState("");
 
   useEffect(() => {
     fetchFiles();
@@ -53,8 +58,15 @@ const AdminDocsModal = ({ bucketName, folderName }) => {
   };
 
   const handleDownload = (fileUrl) => {
-    window.open(fileUrl, "_blank");
+    setPdfUrl(fileUrl);
+    setPdfModalOpen(true);
   };
+
+  const handleClosePdfModal = () => {
+    setPdfModalOpen(false);
+    setPdfUrl("");
+  };
+
   const handleDeleteFile = (fileUrl) => {
     fetchFiles();
   };
@@ -107,6 +119,57 @@ const AdminDocsModal = ({ bucketName, folderName }) => {
           />
         )}
       </Stack>
+
+      {/* PDF Viewer Modal */}
+      <Modal
+        open={pdfModalOpen}
+        onClose={handleClosePdfModal}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Box
+          sx={{
+            width: "90vw",
+            height: "90vh",
+            bgcolor: "background.paper",
+            borderRadius: 2,
+            boxShadow: 24,
+            position: "relative",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              p: 2,
+              borderBottom: 1,
+              borderColor: "divider",
+            }}
+          >
+            <Typography variant="h6">Visualizza PDF</Typography>
+            <IconButton onClick={handleClosePdfModal}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+          <Box sx={{ flex: 1, overflow: "hidden" }}>
+            {pdfUrl && (
+              <iframe
+                src={pdfUrl}
+                width="100%"
+                height="100%"
+                style={{ border: "none" }}
+                title="PDF Viewer"
+              />
+            )}
+          </Box>
+        </Box>
+      </Modal>
     </div>
   );
 };
