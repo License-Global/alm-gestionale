@@ -43,7 +43,8 @@ const Searchbar = ({ minisearch, type }) => {
           label:
             order.orderName +
             " - " +
-            customers.find((c) => c.id === order.clientId).customer_name,
+            customers.find((c) => c.id === order.clientId).customer_name +
+            (order.internal_id ? ` - ID: ${order.internal_id}` : ""),
           isOrder: true,
           icon: order.isArchived ? (
             <Inventory2Icon color="primary" />
@@ -61,7 +62,8 @@ const Searchbar = ({ minisearch, type }) => {
           label:
             order.orderName +
             " - " +
-            customers.find((c) => c.id === order.clientId).customer_name,
+            customers.find((c) => c.id === order.clientId).customer_name +
+            (order.internal_id ? ` - ID: ${order.internal_id}` : ""),
           isOrder: true,
           icon: <AssignmentIcon color="secondary" />,
         }));
@@ -94,7 +96,8 @@ const Searchbar = ({ minisearch, type }) => {
         label:
           order.orderName +
           " - " +
-          customers.find((c) => c.id === order.clientId).customer_name,
+          customers.find((c) => c.id === order.clientId).customer_name +
+          (order.internal_id ? ` - ID: ${order.internal_id}` : ""),
         icon: order.isArchived ? (
           <Inventory2Icon color="primary" />
         ) : (
