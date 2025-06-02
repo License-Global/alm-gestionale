@@ -26,6 +26,7 @@ import OperatorsPage from "../pages/impostazioni/Operators";
 import ClientsPage from "../pages/impostazioni/Clients";
 import WorkInProgress from "../pages/WorkInProgress";
 import Documenti from "../pages/Documenti";
+import Calendario from "../pages/Calendario";
 
 const AppRouter = () => (
   <Routes>
@@ -120,6 +121,14 @@ const AppRouter = () => (
       element={
         <ProtectedRoute>
           <Calendar />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/calendarioo"
+      element={
+        <ProtectedRoute>
+          <Calendario />
         </ProtectedRoute>
       }
     />
