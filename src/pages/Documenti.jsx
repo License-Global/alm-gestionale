@@ -76,7 +76,9 @@ const Documenti = () => {
         });
 
       if (error) throw error;
-      setItems(data || []);
+      // Filter out .keep files
+      const filteredData = (data || []).filter((item) => item.name !== ".keep");
+      setItems(filteredData);
     } catch (err) {
       setError("Errore nel caricamento dei documenti: " + err.message);
     } finally {
@@ -411,6 +413,48 @@ const Documenti = () => {
             }}
           >
             <CircularProgress size={60} sx={{ color: "#2E8B57" }} />
+          </Box>
+        ) : items.length === 0 ? (
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+              p: 8,
+              background: "rgba(255, 255, 255, 0.7)",
+              borderRadius: 3,
+              backdropFilter: "blur(10px)",
+              textAlign: "center",
+            }}
+          >
+            <FolderIcon
+              sx={{
+                fontSize: 80,
+                color: "#2E8B57",
+                opacity: 0.5,
+                mb: 2,
+              }}
+            />
+            <Typography
+              variant="h6"
+              sx={{
+                color: "#666",
+                fontWeight: 500,
+                mb: 1,
+              }}
+            >
+              Cartella vuota
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "#999",
+                maxWidth: 400,
+              }}
+            >
+              Non ci sono file o cartelle da mostrare in questa posizione.
+            </Typography>
           </Box>
         ) : (
           <Grid container spacing={3}>
