@@ -141,7 +141,7 @@ const DashboardPage = memo(() => {
             mb: { xs: 2, md: 3 },
           }}
         >
-          Bentornato, Utente! 👋
+          Dashboard
         </Typography>
       </motion.div>
 

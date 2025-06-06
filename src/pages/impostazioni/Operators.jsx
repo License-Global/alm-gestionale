@@ -57,27 +57,29 @@ export default function OperatorsPage() {
 
   // Salva (inserisci o aggiorna) operatore su Supabase
   const handleSave = async () => {
-    if (
-      !current?.workerName ||
-      !current?.operator_note ||
-      !current?.operator_phone
-    )
+    console.log("handleSave called with current:", current);
+    
+    // Valida solo il nome come campo obbligatorio
+    if (!current?.workerName?.trim()) {
+      notifyError("Il nome dell'operatore è obbligatorio.");
       return;
+    }
 
     if (current.id) {
       // Update
       const { data, error } = await supabase
         .from("personale")
         .update({
-          workerName: current.workerName,
-          operator_note: current.operator_note,
-          operator_phone: current.operator_phone,
+          workerName: current.workerName.trim(),
+          operator_note: current.operator_note?.trim() || "",
+          operator_phone: current.operator_phone?.trim() || "",
         })
         .eq("id", current.id)
         .select()
         .single();
 
       if (error) {
+        console.error("Error updating operator:", error);
         notifyError("Errore durante la modifica.");
       } else {
         setEmployees((prev) =>
@@ -91,15 +93,16 @@ export default function OperatorsPage() {
         .from("personale")
         .insert([
           {
-            workerName: current.workerName,
-            operator_note: current.operator_note,
-            operator_phone: current.operator_phone,
+            workerName: current.workerName.trim(),
+            operator_note: current.operator_note?.trim() || "",
+            operator_phone: current.operator_phone?.trim() || "",
           },
         ])
         .select()
         .single();
 
       if (error) {
+        console.error("Error inserting operator:", error);
         notifyError("Errore durante l'inserimento.");
       } else {
         setEmployees((prev) => [...prev, data]);
@@ -112,12 +115,40 @@ export default function OperatorsPage() {
 
   // Elimina operatore da Supabase
   const handleDelete = async (id) => {
-    const { error } = await supabase.from("personale").delete().eq("id", id);
-    if (error) {
-      notifyError("Errore durante l'eliminazione.");
-    } else {
-      setEmployees((prev) => prev.filter((e) => e.id !== id));
-      notifySuccess("Operatore eliminato!");
+    try {
+      // Prima verifica se l'operatore è ancora assegnato ad attività
+      const { data: activities, error: activitiesError } = await supabase
+        .from("activities")
+        .select("id, name")
+        .eq("responsible", id);
+
+      if (activitiesError) {
+        console.error("Error checking activities:", activitiesError);
+        notifyError("Errore durante la verifica delle attività.");
+        setConfirmDelete(null);
+        return;
+      }
+
+      // Se ci sono ancora attività assegnate, non permettere l'eliminazione
+      if (activities && activities.length > 0) {
+        notifyError(
+          `Impossibile eliminare l'operatore. È ancora assegnato a ${activities.length} attività. Riassegna prima le attività ad altri operatori.`
+        );
+        setConfirmDelete(null);
+        return;
+      }
+
+      // Se non ci sono attività assegnate, procedi con l'eliminazione
+      const { error } = await supabase.from("personale").delete().eq("id", id);
+      if (error) {
+        notifyError("Errore durante l'eliminazione.");
+      } else {
+        setEmployees((prev) => prev.filter((e) => e.id !== id));
+        notifySuccess("Operatore eliminato!");
+      }
+    } catch (error) {
+      console.error("Error in handleDelete:", error);
+      notifyError("Errore imprevisto durante l'eliminazione.");
     }
     setConfirmDelete(null);
   };
@@ -353,7 +384,7 @@ export default function OperatorsPage() {
             />
             <TextField
               label="Telefono"
-              type="operator_phone"
+              type="tel"
               value={current?.operator_phone || ""}
               onChange={(e) =>
                 setCurrent((prev) => ({

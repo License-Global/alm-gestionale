@@ -101,14 +101,6 @@ const AppRouter = () => (
     />
     <Route path="/login" element={<Login />} />
     <Route
-      path="/impostazioni"
-      element={
-        <ProtectedRoute>
-          <Impostazioni />
-        </ProtectedRoute>
-      }
-    />
-    <Route
       path="/operatori"
       element={
         <ProtectedRoute>
@@ -116,16 +108,9 @@ const AppRouter = () => (
         </ProtectedRoute>
       }
     />
+
     <Route
       path="/calendario"
-      element={
-        <ProtectedRoute>
-          <Calendar />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/calendarioo"
       element={
         <ProtectedRoute>
           <Calendario />

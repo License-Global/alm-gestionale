@@ -9,9 +9,18 @@ import Paper from "@mui/material/Paper";
 import Cancel from "@mui/icons-material/Cancel";
 import CheckCircle from "@mui/icons-material/CheckCircle";
 import DeleteIcon from "@mui/icons-material/Delete";
+import WarningIcon from "@mui/icons-material/Warning";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@mui/material";
+import { 
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Typography,
+  Box
+} from "@mui/material";
 import { useDeleteOrder } from "../../hooks/useDeleteOrder";
 import NoOrders from "../Orders/NoOrders";
 import { deleteFolder } from "../../services/bucketServices";
@@ -25,6 +34,8 @@ export default function BasicTable({ orders }) {
   const session = useSession();
 
   const [customers, setCustomers] = useState([]);
+  const [deleteDialog, setDeleteDialog] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState(null);
 
   const { deleteOrder, loading } = useDeleteOrder();
 
@@ -36,6 +47,23 @@ export default function BasicTable({ orders }) {
         });
       }
     });
+  };
+
+  const openDeleteDialog = (order) => {
+    setOrderToDelete(order);
+    setDeleteDialog(true);
+  };
+
+  const closeDeleteDialog = () => {
+    setDeleteDialog(false);
+    setOrderToDelete(null);
+  };
+
+  const confirmDelete = () => {
+    if (orderToDelete) {
+      handleDelete(orderToDelete.id, orderToDelete.orderName, orderToDelete.clientId);
+      closeDeleteDialog();
+    }
   };
 
   useEffect(() => {
@@ -118,13 +146,7 @@ export default function BasicTable({ orders }) {
                     <TableCell align="right">
                       <Button
                         variant="contained"
-                        onClick={() =>
-                          handleDelete(
-                            order.id,
-                            order.orderName,
-                            order.clientId
-                          )
-                        }
+                        onClick={() => openDeleteDialog(order)}
                         color="error"
                       >
                         <DeleteIcon fontSize="medium" />
@@ -136,6 +158,94 @@ export default function BasicTable({ orders }) {
           </Table>
         </TableContainer>
       )}
+
+      {/* Dialog di conferma eliminazione */}
+      <Dialog
+        open={deleteDialog}
+        onClose={closeDeleteDialog}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)",
+          },
+        }}
+      >
+        <DialogTitle 
+          sx={{ 
+            color: "#d32f2f", 
+            fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
+            gap: 1
+          }}
+        >
+          <WarningIcon color="error" />
+          Conferma eliminazione
+        </DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              Sei sicuro di voler eliminare la commessa <strong>"{orderToDelete?.orderName}"</strong>?
+            </Typography>
+            <Typography 
+              variant="body2" 
+              color="error" 
+              sx={{ 
+                backgroundColor: "rgba(211, 47, 47, 0.1)",
+                padding: 2,
+                borderRadius: 2,
+                border: "1px solid rgba(211, 47, 47, 0.3)"
+              }}
+            >
+              ⚠️ <strong>Attenzione:</strong> Questa azione eliminerà definitivamente tutti i dati associati alla commessa, inclusi:
+            </Typography>
+            <Box sx={{ mt: 1, ml: 2 }}>
+              <Typography variant="body2" color="text.secondary">• Tutte le attività</Typography>
+              <Typography variant="body2" color="text.secondary">• I documenti allegati</Typography>
+              <Typography variant="body2" color="text.secondary">• Le note e i commenti</Typography>
+            </Box>
+            <Typography variant="body2" color="error" sx={{ mt: 2, fontWeight: 600 }}>
+              Questa operazione non può essere annullata.
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, gap: 2 }}>
+          <Button
+            onClick={closeDeleteDialog}
+            variant="outlined"
+            sx={{
+              borderRadius: 2,
+              px: 3,
+              color: "#666",
+              borderColor: "#ccc",
+              "&:hover": {
+                backgroundColor: "rgba(102, 102, 102, 0.1)",
+                borderColor: "#999",
+              },
+            }}
+          >
+            Annulla
+          </Button>
+          <Button
+            onClick={confirmDelete}
+            variant="contained"
+            color="error"
+            disabled={loading}
+            sx={{
+              borderRadius: 2,
+              px: 3,
+              fontWeight: 600,
+              "&:hover": {
+                backgroundColor: "#b71c1c",
+              },
+            }}
+          >
+            {loading ? "Eliminazione..." : "Elimina definitivamente"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

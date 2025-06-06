@@ -67,7 +67,7 @@ const NewOrder = () => {
 
   const mainOrderSchema = Yup.object({
     orderName: Yup.string()
-      .matches(/^[a-zA-Z0-9À-ÿ ]+$/, "Sono ammessi solo lettere e numeri")
+      .matches(/^[a-zA-ZÀ-ÿ ]+$/, "Sono ammesse solo lettere e spazi")
       .max(30, "Non deve superare i 30 caratteri")
       .test(
         "uniqueOrderNamePerClient",

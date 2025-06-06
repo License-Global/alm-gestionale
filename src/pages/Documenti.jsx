@@ -38,6 +38,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import WidgetCard from "../components/Widgets/WidgetCard";
 import { supabase } from "../supabase/supabaseClient";
 import useSession from "../hooks/useSession";
+import { fetchCustomers } from "../services/customerService";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB limit
 
@@ -58,12 +59,44 @@ const Documenti = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [editDialog, setEditDialog] = useState(false);
   const [editName, setEditName] = useState("");
+  const [customers, setCustomers] = useState([]);
 
   useEffect(() => {
     if (userId) {
       loadItems();
+      loadCustomers();
     }
   }, [userId, currentPath]);
+
+  useEffect(() => {
+    if (userId) {
+      loadCustomers();
+    }
+  }, [userId]);
+
+  const loadCustomers = async () => {
+    try {
+      const customersData = await fetchCustomers();
+      setCustomers(customersData || []);
+    } catch (err) {
+      console.error("Errore nel caricamento dei clienti:", err);
+    }
+  };
+
+  const getCustomerNameById = (folderId) => {
+    // Estrai l'ID del cliente dal nome della cartella (l'ultimo numero)
+    const match = folderId.match(/^(.+?)(\d+)$/);
+    if (!match) return folderId;
+    
+    const orderName = match[1]; // Nome della commessa (parte prima del numero)
+    const customerId = parseInt(match[2], 10);
+    const customer = customers.find(c => c.id === customerId);
+    
+    if (customer) {
+      return `${orderName} - ${customer.customer_name}`;
+    }
+    return folderId; // Fallback al nome originale se non trovato
+  };
 
   const loadItems = async () => {
     setLoading(true);
@@ -335,7 +368,7 @@ const Documenti = () => {
                 transition: "all 0.3s ease",
               }}
             >
-              {part}
+              {getCustomerNameById(part)}
             </Link>
           ))}
         </Breadcrumbs>
@@ -534,7 +567,7 @@ const Documenti = () => {
                             mb: 1,
                           }}
                         >
-                          {item.name}
+                          {item.metadata?.mimetype ? item.name : getCustomerNameById(item.name)}
                         </Typography>
                         {item.metadata?.size && (
                           <Typography

@@ -57,27 +57,29 @@ export default function ClientsPage() {
 
   // Salva (inserisci o aggiorna) operatore su Supabase
   const handleSave = async () => {
-    if (
-      !current?.customer_name ||
-      !current?.customer_note ||
-      !current?.customer_phone
-    )
+    console.log("handleSave called with current:", current);
+    
+    // Valida solo il nome come campo obbligatorio
+    if (!current?.customer_name?.trim()) {
+      notifyError("Il nome del cliente è obbligatorio.");
       return;
+    }
 
     if (current.id) {
       // Update
       const { data, error } = await supabase
         .from("customers")
         .update({
-          customer_name: current.customer_name,
-          customer_note: current.customer_note,
-          customer_phone: current.customer_phone,
+          customer_name: current.customer_name.trim(),
+          customer_note: current.customer_note?.trim() || "",
+          customer_phone: current.customer_phone?.trim() || "",
         })
         .eq("id", current.id)
         .select()
         .single();
 
       if (error) {
+        console.error("Error updating customer:", error);
         notifyError("Errore durante la modifica.");
       } else {
         setClient((prev) =>
@@ -91,15 +93,16 @@ export default function ClientsPage() {
         .from("customers")
         .insert([
           {
-            customer_name: current.customer_name,
-            customer_note: current.customer_note,
-            customer_phone: current.customer_phone,
+            customer_name: current.customer_name.trim(),
+            customer_note: current.customer_note?.trim() || "",
+            customer_phone: current.customer_phone?.trim() || "",
           },
         ])
         .select()
         .single();
 
       if (error) {
+        console.error("Error inserting customer:", error);
         notifyError("Errore durante l'inserimento.");
       } else {
         setClient((prev) => [...prev, data]);
@@ -110,14 +113,42 @@ export default function ClientsPage() {
     setCurrent(null);
   };
 
-  // Elimina operatore da Supabase
+  // Elimina cliente da Supabase
   const handleDelete = async (id) => {
-    const { error } = await supabase.from("customers").delete().eq("id", id);
-    if (error) {
-      notifyError("Errore durante l'eliminazione.");
-    } else {
-      setClient((prev) => prev.filter((e) => e.id !== id));
-      notifySuccess("Cliente eliminato!");
+    try {
+      // Prima verifica se il cliente è ancora collegato a ordini/commesse
+      const { data: orders, error: ordersError } = await supabase
+        .from("orders")
+        .select("id, orderName")
+        .eq("clientId", id);
+
+      if (ordersError) {
+        console.error("Error checking orders:", ordersError);
+        notifyError("Errore durante la verifica degli ordini.");
+        setConfirmDelete(null);
+        return;
+      }
+
+      // Se ci sono ancora ordini collegati, non permettere l'eliminazione
+      if (orders && orders.length > 0) {
+        notifyError(
+          `Impossibile eliminare il cliente. È ancora collegato a ${orders.length} ordini. Elimina o archivia prima gli ordini collegati a questo cliente.`
+        );
+        setConfirmDelete(null);
+        return;
+      }
+
+      // Se non ci sono ordini collegati, procedi con l'eliminazione
+      const { error } = await supabase.from("customers").delete().eq("id", id);
+      if (error) {
+        notifyError("Errore durante l'eliminazione.");
+      } else {
+        setClient((prev) => prev.filter((e) => e.id !== id));
+        notifySuccess("Cliente eliminato!");
+      }
+    } catch (error) {
+      console.error("Error in handleDelete:", error);
+      notifyError("Errore imprevisto durante l'eliminazione.");
     }
     setConfirmDelete(null);
   };
