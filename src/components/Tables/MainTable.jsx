@@ -125,7 +125,13 @@ const MainTable = ({ order }) => {
       endDate: newOrder.endDate || new Date().toISOString(),
     };
 
-    setCurrentOrder(validatedOrder);
+    // Evita aggiornamenti inutili confrontando gli oggetti
+    setCurrentOrder(prevOrder => {
+      if (!prevOrder || JSON.stringify(prevOrder) !== JSON.stringify(validatedOrder)) {
+        return validatedOrder;
+      }
+      return prevOrder;
+    });
   }, []);
 
   // Gestione dei cambiamenti dell'ordine prop
@@ -152,11 +158,12 @@ const MainTable = ({ order }) => {
 
     const handleOrderUpdate = (updatedOrder) => {
       if (updatedOrder && updatedOrder.id === currentOrder.id) {
+        console.log("Aggiornamento realtime ricevuto:", updatedOrder);
         updateCurrentOrder(updatedOrder);
       }
     };
 
-    // Sottoscrizione agli aggiornamenti realtime
+    // Sottoscrizione agli aggiornamenti realtime (orders + activities)
     realtimeChannelRef.current = subscribeToOrderUpdates(
       currentOrder.id,
       handleOrderUpdate
@@ -361,47 +368,48 @@ const MainTable = ({ order }) => {
   }, [userId, currentOrder]);
 
 
-  useEffect(() => {
-    const fetchFileCounts = async () => {
-      if (!currentOrder?.activities || !Array.isArray(currentOrder.activities) || !session?.session?.user?.id) {
-        return;
-      }
+  // Funzione per aggiornare i conteggi dei file
+  const updateFileCounts = useCallback(async () => {
+    if (!currentOrder?.activities || !Array.isArray(currentOrder.activities) || !session?.session?.user?.id) {
+      return;
+    }
 
-      try {
-        const counts = {};
-        await Promise.all(
-          currentOrder.activities.map(async (activity) => {
-            if (!activity?.name) return;
-            
-            try {
-              const count = await getFileCount(
-                session.session.user.id,
-                `${currentOrder.orderName}${currentOrder.clientId}/${activity.name}`
-              );
-              counts[activity.name] = count || 0;
-            } catch (error) {
-              console.error(
-                `Errore nel recupero dei file per ${activity.name}:`,
-                error
-              );
-              counts[activity.name] = 0;
-            }
-          })
+    try {
+      const counts = {};
+      await Promise.all(
+        currentOrder.activities.map(async (activity) => {
+          if (!activity?.name) return;
+          
+          try {
+            const count = await getFileCount(
+              session.session.user.id,
+              `${currentOrder.orderName}${currentOrder.clientId}/${activity.name}`
+            );
+            counts[activity.name] = count || 0;
+          } catch (error) {
+            console.error(
+              `Errore nel recupero dei file per ${activity.name}:`,
+              error
+            );
+            counts[activity.name] = 0;
+          }
+        })
+      );
+
+      setFileCounts((prevCounts) => {
+        const isEqual = Object.keys(counts).every(
+          (key) => counts[key] === prevCounts[key]
         );
-
-        setFileCounts((prevCounts) => {
-          const isEqual = Object.keys(counts).every(
-            (key) => counts[key] === prevCounts[key]
-          );
-          return isEqual ? prevCounts : counts;
-        });
-      } catch (error) {
-        console.error('Errore generale nel caricamento file counts:', error);
-      }
-    };
-
-    fetchFileCounts();
+        return isEqual ? prevCounts : counts;
+      });
+    } catch (error) {
+      console.error('Errore generale nel caricamento file counts:', error);
+    }
   }, [currentOrder?.activities, currentOrder?.orderName, currentOrder?.clientId, session?.session?.user?.id]);
+
+  useEffect(() => {
+    updateFileCounts();
+  }, [updateFileCounts]);
 
   // Cleanup effect per la pulizia delle sottoscrizioni e timeout
   useEffect(() => {
@@ -756,21 +764,48 @@ const MainTable = ({ order }) => {
                           value={activityStatus}
                           displayEmpty
                           size="small"
-                          onChange={(e) =>
-                            updateActivityStatusInOrder(
-                              activity.id,
-                              e.target.value
-                            )
-                              .then(() => {
-                                handleInviaNotifica(activity, e.target.value);
-                              })
-                              .catch((error) => {
-                                console.error(
-                                  "Errore nell'aggiornamento dello stato dell'attività:",
-                                  error
-                                );
-                              })
-                          }
+                          onChange={async (e) => {
+                            const newStatus = e.target.value;
+                            
+                            try {
+                              // Aggiorna ottimisticamente l'UI
+                              const updatedActivities = safeActivities.map((act) =>
+                                act.id === activity.id 
+                                  ? { ...act, status: newStatus, completed: newStatus === "Completato" ? new Date().toISOString() : act.completed }
+                                  : act
+                              );
+                              
+                              const updatedOrder = {
+                                ...currentOrder,
+                                activities: updatedActivities
+                              };
+                              
+                              setCurrentOrder(updatedOrder);
+
+                              // Quindi aggiorna il database
+                              await updateActivityStatusInOrder(activity.id, newStatus);
+                              
+                              // Invia notifica
+                              await handleInviaNotifica(activity, newStatus);
+                              
+                            } catch (error) {
+                              console.error("Errore nell'aggiornamento dello stato dell'attività:", error);
+                              
+                              // Ripristina lo stato precedente in caso di errore
+                              const revertedActivities = safeActivities.map((act) =>
+                                act.id === activity.id 
+                                  ? { ...act, status: activityStatus }
+                                  : act
+                              );
+                              
+                              const revertedOrder = {
+                                ...currentOrder,
+                                activities: revertedActivities
+                              };
+                              
+                              setCurrentOrder(revertedOrder);
+                            }
+                          }}
                           sx={{
                             minWidth: { xs: 100, sm: 120 },
                             fontSize: { xs: "0.75rem", sm: "0.875rem" },

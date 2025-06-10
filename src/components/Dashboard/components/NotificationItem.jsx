@@ -2,6 +2,7 @@ import React from "react";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import Divider from "@mui/material/Divider";
+import Chip from "@mui/material/Chip";
 import { motion } from "framer-motion";
 
 const NotificationItem = ({ notif, idx, isLast }) => (
@@ -52,9 +53,52 @@ const NotificationItem = ({ notif, idx, isLast }) => (
                   whiteSpace: "nowrap",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
                 }}
               >
-                {notif.payload?.title || "Notifica"}
+                {(() => {
+                  const title = notif.payload?.title || "Notifica";
+                  
+                  // Funzione per creare il chip con colori appropriati
+                  const createStatusChip = (keyword, backgroundColor) => {
+                    const parts = title.split(keyword);
+                    return (
+                      <>
+                        {parts[0]}
+                        <Chip
+                          label={keyword}
+                          size="small"
+                          sx={{
+                            backgroundColor: backgroundColor,
+                            color: "white",
+                            fontSize: "10px",
+                            height: "18px",
+                            "& .MuiChip-label": {
+                              padding: "0 6px",
+                              fontSize: "10px",
+                              fontWeight: 600,
+                            },
+                          }}
+                        />
+                        {parts[1]}
+                      </>
+                    );
+                  };
+
+                  if (title.includes("Bloccato")) {
+                    return createStatusChip("Bloccato", "#d32f2f"); // Rosso
+                  }
+                  if (title.includes("In corso")) {
+                    return createStatusChip("In corso", "#1976d2"); // Blu
+                  }
+                  if (title.includes("Completato")) {
+                    return createStatusChip("Completato", "#2e7d32"); // Verde
+                  }
+                  
+                  return title;
+                })()}
               </span>
             </div>
           }

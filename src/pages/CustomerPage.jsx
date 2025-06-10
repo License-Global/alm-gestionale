@@ -234,16 +234,16 @@ const CustomerPage = () => {
             </Grid>
           </Grid>
           
-          {/* Sezione Ordini Collegati */}
+          {/* Sezione Ordini Correlati */}
           <Divider sx={{ my: 4 }} />
           <Box sx={{ mt: 4 }}>
             <Typography
               variant="h5"
-              color="primary"
+              color="primary.dark"
               sx={{ mb: 3, display: "flex", alignItems: "center", gap: 1 }}
             >
               <AssignmentIcon />
-              Ordini Collegati ({orders.length})
+              Ordini Correlati ({orders.length})
             </Typography>
             
             {ordersLoading ? (

@@ -309,17 +309,32 @@ export const updateActivityStatusInOrder = async (activityId, newStatus) => {
         .update({ status: newStatus, completed: new Date().toISOString() })
         .eq("id", activityId)
         .select();
+
+      if (error) {
+        console.error("Errore nell'aggiornamento dello stato dell'attività:", error);
+        throw error;
+      }
+
+      console.log("Stato dell'attività aggiornato con successo (Completato):", data);
+      return { success: true, data };
     } else {
       const { data, error } = await supabase
         .from("activities")
         .update({ status: newStatus })
         .eq("id", activityId)
         .select();
+
+      if (error) {
+        console.error("Errore nell'aggiornamento dello stato dell'attività:", error);
+        throw error;
+      }
+
+      console.log("Stato dell'attività aggiornato con successo:", data);
+      return { success: true, data };
     }
-    console.log("Stato dell'attività aggiornato con successo:");
   } catch (err) {
-    console.error("Errore inaspettato:", err);
-    return null;
+    console.error("Errore inaspettato nell'aggiornamento dell'attività:", err);
+    throw err;
   }
 };
 

@@ -78,7 +78,7 @@ export default function OperatorAgenda({ operatorId }) {
   // Naviga all'ordine quando viene selezionato un evento
   useEffect(() => {
     if (orderId) {
-      navigate(`/order/${orderId}`);
+      navigate(`/${orderId}`);
     }
   }, [orderId, navigate]);
 
