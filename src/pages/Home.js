@@ -42,7 +42,9 @@ const variants = {
 const Home = () => {
   let ordersData = useRealtimeOrderWithActivities("orders", "activities");
   const [customers, setCustomers] = useState([]);
-  const [sort, setSort] = useState("name_asc"); // Cambiato il valore predefinito a nome ascendente
+  // Leggi l'ordinamento dalla sessionStorage se presente
+  const initialSort = sessionStorage.getItem("commesseSort") || "name_asc";
+  const [sort, setSort] = useState(initialSort);
 
   // Funzione che applica l'ordinamento agli ordini
   const orders = useMemo(() => {
@@ -122,7 +124,10 @@ const Home = () => {
     }
   };
 
-  const handleSort = (e) => setSort(e.target.value);
+  const handleSort = (e) => {
+    setSort(e.target.value);
+    sessionStorage.setItem("commesseSort", e.target.value);
+  };
 
   useEffect(() => {
     const fetchCustomersData = async () => {

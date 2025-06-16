@@ -55,9 +55,9 @@ const OperatorDateTimePicker = ({
   const isTimeDisabled = (time, clockType) => {
     if (!time) return false;
 
-    // Disable times between 08:00 and 20:00 (8 AM to 8 PM)
+    // Allow only times between 08:00 and 20:00 (8 AM to 8 PM)
     const hour = time.hour();
-    if (hour >= 8 && hour < 20) {
+    if (hour < 8 || hour >= 20) {
       return true;
     }
 

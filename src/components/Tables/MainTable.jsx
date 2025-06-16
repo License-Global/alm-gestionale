@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
 import theme from "../../theme";
 import {
   Typography,
@@ -59,7 +65,10 @@ import dayjs from "dayjs";
 import { updateActivityStatusInOrder } from "../../services/activitiesService";
 import { deleteFolder, getFileCount } from "../../services/bucketServices";
 import { archiveOrder } from "../../services/orderService";
-import { subscribeToOrderUpdates, unsubscribeFromOrderUpdates } from "../../services/supabaseRealtimeService";
+import {
+  subscribeToOrderUpdates,
+  unsubscribeFromOrderUpdates,
+} from "../../services/supabaseRealtimeService";
 import Chatbox from "../Chat/Chatbox";
 import AdminDocsModal from "../misc/AdminDocsModal";
 import useActiveUser from "../../hooks/useActiveUser";
@@ -81,19 +90,22 @@ const MainTable = ({ order }) => {
   const isVerySmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const messagesContainerRef = useRef(null);
   const [customers, setCustomers] = useState([]);
-  
+
   // Stato per gestire l'ordine con protezione dai cambiamenti live
   const [currentOrder, setCurrentOrder] = useState(null);
   const [isOrderLoading, setIsOrderLoading] = useState(false);
-  
+
   // Ref per evitare race conditions
   const updateTimeoutRef = useRef(null);
   const realtimeChannelRef = useRef(null);
 
-  const getWorkerName = useCallback((id) => {
-    if (!personale || !Array.isArray(personale)) return "Sconosciuto";
-    return personale.find((p) => p.id === id)?.workerName || "Sconosciuto";
-  }, [personale]);
+  const getWorkerName = useCallback(
+    (id) => {
+      if (!personale || !Array.isArray(personale)) return "Sconosciuto";
+      return personale.find((p) => p.id === id)?.workerName || "Sconosciuto";
+    },
+    [personale]
+  );
 
   // Memoizza il cliente per evitare ricalcoli non necessari
   const currentCustomer = useMemo(() => {
@@ -114,20 +126,23 @@ const MainTable = ({ order }) => {
     const validatedOrder = {
       ...newOrder,
       activities: Array.isArray(newOrder.activities) ? newOrder.activities : [],
-      orderName: newOrder.orderName || '',
+      orderName: newOrder.orderName || "",
       clientId: newOrder.clientId || null,
-      urgency: newOrder.urgency || 'Bassa',
+      urgency: newOrder.urgency || "Bassa",
       isConfirmed: Boolean(newOrder.isConfirmed),
-      internal_id: newOrder.internal_id || '',
-      materialShelf: newOrder.materialShelf || '',
-      accessories: newOrder.accessories || '',
+      internal_id: newOrder.internal_id || "",
+      materialShelf: newOrder.materialShelf || "",
+      accessories: newOrder.accessories || "",
       startDate: newOrder.startDate || new Date().toISOString(),
       endDate: newOrder.endDate || new Date().toISOString(),
     };
 
     // Evita aggiornamenti inutili confrontando gli oggetti
-    setCurrentOrder(prevOrder => {
-      if (!prevOrder || JSON.stringify(prevOrder) !== JSON.stringify(validatedOrder)) {
+    setCurrentOrder((prevOrder) => {
+      if (
+        !prevOrder ||
+        JSON.stringify(prevOrder) !== JSON.stringify(validatedOrder)
+      ) {
         return validatedOrder;
       }
       return prevOrder;
@@ -183,7 +198,7 @@ const MainTable = ({ order }) => {
         const data = await fetchCustomers();
         setCustomers(Array.isArray(data) ? data : []);
       } catch (error) {
-        console.error('Errore nel caricamento clienti:', error);
+        console.error("Errore nel caricamento clienti:", error);
         setCustomers([]);
       }
     };
@@ -199,7 +214,7 @@ const MainTable = ({ order }) => {
 
   const handleArchive = async () => {
     if (!currentOrder?.id) return;
-    
+
     setLoadingArchivio(true);
     setSuccessArchivio(false);
     setErrorArchivio(null);
@@ -208,16 +223,23 @@ const MainTable = ({ order }) => {
       const result = await archiveOrder(currentOrder.id);
 
       if (result.success) {
-        if (session?.session?.user?.id && currentOrder.orderName && currentOrder.clientId) {
-          deleteFolder(session.session.user.id, currentOrder.orderName + currentOrder.clientId);
+        if (
+          session?.session?.user?.id &&
+          currentOrder.orderName &&
+          currentOrder.clientId
+        ) {
+          deleteFolder(
+            session.session.user.id,
+            currentOrder.orderName + currentOrder.clientId
+          );
         }
         setSuccessArchivio(true);
       } else {
         setErrorArchivio(result.error);
       }
     } catch (error) {
-      console.error('Errore durante l\'archiviazione:', error);
-      setErrorArchivio('Errore durante l\'archiviazione');
+      console.error("Errore durante l'archiviazione:", error);
+      setErrorArchivio("Errore durante l'archiviazione");
     } finally {
       setLoadingArchivio(false);
     }
@@ -338,39 +360,45 @@ const MainTable = ({ order }) => {
     return Math.round(percentage);
   }, []);
 
-  const handleInviaNotifica = useCallback(async (activity, newStatus) => {
-    if (!activity || !currentOrder || !userId) return;
-    
-    try {
-      await sendNotification({
-        tenant_id: userId,
-        type: "change",
-        payload: {
-          icon: "change",
-          tags: [],
-          type: "change",
-          title: `${activity.name} in ${currentOrder.orderName} adesso è ${newStatus}.`,
-          message: "",
-          priority: "normal",
-          action_url: `/${currentOrder.id}`,
-          expires_at: null,
-          action_label: "MOSTRA",
-          reference_id: currentOrder.id,
-          reference_type: "mainTable",
-        },
-        read: false,
-        created_at: new Date().toISOString(),
-        read_at: null,
-      });
-    } catch (e) {
-      console.log("Errore nell'invio della notifica.", e);
-    }
-  }, [userId, currentOrder]);
+  const handleInviaNotifica = useCallback(
+    async (activity, newStatus) => {
+      if (!activity || !currentOrder || !userId) return;
 
+      try {
+        await sendNotification({
+          tenant_id: userId,
+          type: "change",
+          payload: {
+            icon: "change",
+            tags: [],
+            type: "change",
+            title: `${activity.name} in ${currentOrder.orderName} adesso è ${newStatus}.`,
+            message: "",
+            priority: "normal",
+            action_url: `/${currentOrder.id}`,
+            expires_at: null,
+            action_label: "MOSTRA",
+            reference_id: currentOrder.id,
+            reference_type: "mainTable",
+          },
+          read: false,
+          created_at: new Date().toISOString(),
+          read_at: null,
+        });
+      } catch (e) {
+        console.log("Errore nell'invio della notifica.", e);
+      }
+    },
+    [userId, currentOrder]
+  );
 
   // Funzione per aggiornare i conteggi dei file
   const updateFileCounts = useCallback(async () => {
-    if (!currentOrder?.activities || !Array.isArray(currentOrder.activities) || !session?.session?.user?.id) {
+    if (
+      !currentOrder?.activities ||
+      !Array.isArray(currentOrder.activities) ||
+      !session?.session?.user?.id
+    ) {
       return;
     }
 
@@ -379,7 +407,7 @@ const MainTable = ({ order }) => {
       await Promise.all(
         currentOrder.activities.map(async (activity) => {
           if (!activity?.name) return;
-          
+
           try {
             const count = await getFileCount(
               session.session.user.id,
@@ -403,9 +431,14 @@ const MainTable = ({ order }) => {
         return isEqual ? prevCounts : counts;
       });
     } catch (error) {
-      console.error('Errore generale nel caricamento file counts:', error);
+      console.error("Errore generale nel caricamento file counts:", error);
     }
-  }, [currentOrder?.activities, currentOrder?.orderName, currentOrder?.clientId, session?.session?.user?.id]);
+  }, [
+    currentOrder?.activities,
+    currentOrder?.orderName,
+    currentOrder?.clientId,
+    session?.session?.user?.id,
+  ]);
 
   useEffect(() => {
     updateFileCounts();
@@ -426,220 +459,230 @@ const MainTable = ({ order }) => {
   // Early return con gestione sicura degli stati di caricamento
   if (order === false || !currentOrder) return null;
   if (isOrderLoading) return <div>Caricamento ordine...</div>;
-  
+
   // Validazione sicura delle activities
-  const safeActivities = Array.isArray(currentOrder.activities) ? currentOrder.activities : [];
-  
+  const safeActivities = Array.isArray(currentOrder.activities)
+    ? currentOrder.activities
+    : [];
+
   return (
-      <>
-        {" "}
-        <Paper
+    <>
+      {" "}
+      <Paper
+        sx={{
+          backgroundColor: theme.palette.grey[100],
+          padding: { xs: 1, sm: 2 },
+          m: { xs: 1, sm: 2, md: 3 },
+          boxShadow: 4,
+          border: "2px solid ",
+          borderRadius: "16px",
+          borderColor: handleOrderPriorityHighlight(currentOrder?.urgency),
+        }}
+      >
+        <Box
           sx={{
-            backgroundColor: theme.palette.grey[100],
-            padding: { xs: 1, sm: 2 },
-            m: { xs: 1, sm: 2, md: 3 },
-            boxShadow: 4,
-            border: "2px solid ",
-            borderRadius: "16px",
-            borderColor: handleOrderPriorityHighlight(currentOrder?.urgency),
+            mx: "16px",
           }}
         >
-          <Box
-            sx={{
-              mx: "16px",
-            }}
-          >
-            {" "}
-            <HeaderContainer>
-              <HeaderLeftSection>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    textDecoration: "underline",
-                    gap: "8px",
-                  }}
-                >
-                  <Typography
-                    variant="h6"
-                    component="span"
-                    sx={{
-                      fontSize: { xs: "1rem", sm: "1.25rem", md: "1.5rem" },
-                    }}
-                  >
-                    <i>Confermato: </i>
-                  </Typography>
-                  {currentOrder.isConfirmed ? (
-                    <Check
-                      fontSize={isVerySmallScreen ? "medium" : "large"}
-                      color="success"
-                    />
-                  ) : (
-                    <Clear
-                      fontSize={isVerySmallScreen ? "medium" : "large"}
-                      color="error"
-                    />
-                  )}
-                </div>
-              </HeaderLeftSection>
-
-              <HeaderRightSection>
-                <ClientInfo>
-                  <Typography
-                    variant="h6"
-                    component="div"
-                    sx={{
-                      fontSize: { xs: "0.9rem", sm: "1.1rem", md: "1.25rem" },
-                    }}
-                  >
-                    <b>Cliente:</b>{" "}
-                    <i>
-                      {currentCustomer?.customer_name || 'Cliente non trovato'}
-                    </i>
-                  </Typography>
-                </ClientInfo>
-                <ClientInfo>
-                  <Typography
-                    variant="h6"
-                    component="div"
-                    sx={{
-                      fontSize: { xs: "0.9rem", sm: "1.1rem", md: "1.25rem" },
-                    }}
-                  >
-                    <b>ID: </b>
-                    <i>{currentOrder?.internal_id || 'N/A'}</i>
-                  </Typography>
-                </ClientInfo>
-              </HeaderRightSection>
-            </HeaderContainer>
-            <OrderInfoCard>
-              <Grid
-                container
-                spacing={{ xs: 1, sm: 2, md: 3 }}
-                sx={{
-                  textAlign: "center",
-                  justifyContent: "space-between",
+          {" "}
+          <HeaderContainer>
+            <HeaderLeftSection>
+              <div
+                style={{
+                  display: "flex",
                   alignItems: "center",
+                  textDecoration: "underline",
+                  gap: "8px",
                 }}
               >
-                {/* Griglia per i dettagli dell'ordine */}
-                <Grid item xs={12} sm={6} md={4} lg={1.5}>
-                  <OrderInfoItem>
-                    <Assignment fontSize="large" />
-                    <Typography variant="subtitle1">
-                      <b>Ordine:</b> <br /> {currentOrder?.orderName || 'N/A'}
-                    </Typography>
-                  </OrderInfoItem>
-                </Grid>
-                {/* Altri campi dell'ordine */}
-                <Grid item xs={12} sm={6} md={4} lg={1.5}>
-                  <OrderInfoItem>
-                    <Inventory2 fontSize="large" />
-                    <Typography variant="body1">
-                      <b>Scaffale: </b> <br /> {currentOrder?.materialShelf || 'N/A'}
-                    </Typography>
-                  </OrderInfoItem>
-                </Grid>
-                <Grid item xs={12} sm={6} md={4} lg={1.5}>
-                  <OrderInfoItem>
-                    <PriorityHigh fontSize="large" />
-                    <Typography variant="body1">
-                      <b>Priorità:</b> <br />{" "}
-                      <Chip
-                        sx={{
-                          backgroundColor: handleOrderPriorityHighlight(
-                            currentOrder?.urgency
-                          ),
-                          fontSize: { xs: "0.75rem", sm: "0.875rem" },
-                          height: { xs: 24, sm: 32 },
-                        }}
-                        label={currentOrder?.urgency || 'N/A'}
-                      />
-                    </Typography>
-                  </OrderInfoItem>
-                </Grid>
-                <Grid item xs={12} sm={6} md={4} lg={1.5}>
-                  <OrderInfoItem>
-                    <Person fontSize="large" />
-                    <Typography variant="body1">
-                      <b>Responsabile:</b> <br />{" "}
-                      {getWorkerName(currentOrder?.orderManager)}
-                    </Typography>
-                  </OrderInfoItem>
-                </Grid>
-                <Grid item xs={12} sm={6} md={4} lg={1.5}>
-                  <OrderInfoItem>
-                    <Construction fontSize="large" />
-                    <Typography variant="body1">
-                      <b>Accessori:</b> <br /> {currentOrder?.accessories || 'Nessuno'}
-                    </Typography>
-                  </OrderInfoItem>
-                </Grid>
-                <Grid item xs={12} sm={6} md={4} lg={1.5}>
-                  <OrderInfoItem>
-                    <DateRange fontSize="large" />
-                    <Typography variant="body1">
-                      <b>Data inizio:</b> <br />{" "}
-                      {currentOrder?.startDate ? new Date(currentOrder.startDate).toLocaleDateString("it-IT") : 'N/A'}
-                    </Typography>
-                  </OrderInfoItem>
-                </Grid>
-                <Grid item xs={12} sm={6} md={4} lg={1.5}>
-                  <OrderInfoItem>
-                    <DateRange fontSize="large" />
-                    <Typography variant="body1">
-                      <b>Data fine:</b> <br />{" "}
-                      {currentOrder?.endDate ? new Date(currentOrder.endDate).toLocaleDateString("it-IT") : 'N/A'}
-                    </Typography>
-                  </OrderInfoItem>
-                </Grid>
+                <Typography
+                  variant="h6"
+                  component="span"
+                  sx={{
+                    fontSize: { xs: "1rem", sm: "1.25rem", md: "1.5rem" },
+                  }}
+                >
+                  <i>Confermato: </i>
+                </Typography>
+                {currentOrder.isConfirmed ? (
+                  <Check
+                    fontSize={isVerySmallScreen ? "medium" : "large"}
+                    color="success"
+                  />
+                ) : (
+                  <Clear
+                    fontSize={isVerySmallScreen ? "medium" : "large"}
+                    color="error"
+                  />
+                )}
+              </div>
+            </HeaderLeftSection>
+
+            <HeaderRightSection>
+              <ClientInfo>
+                <Typography
+                  variant="h6"
+                  component="div"
+                  sx={{
+                    fontSize: { xs: "0.9rem", sm: "1.1rem", md: "1.25rem" },
+                  }}
+                >
+                  <b>Cliente:</b>{" "}
+                  <i>
+                    {currentCustomer?.customer_name || "Cliente non trovato"}
+                  </i>
+                </Typography>
+              </ClientInfo>
+              <ClientInfo>
+                <Typography
+                  variant="h6"
+                  component="div"
+                  sx={{
+                    fontSize: { xs: "0.9rem", sm: "1.1rem", md: "1.25rem" },
+                  }}
+                >
+                  <b>ID: </b>
+                  <i>{currentOrder?.internal_id || "N/A"}</i>
+                </Typography>
+              </ClientInfo>
+            </HeaderRightSection>
+          </HeaderContainer>
+          <OrderInfoCard>
+            <Grid
+              container
+              spacing={{ xs: 1, sm: 2, md: 3 }}
+              sx={{
+                textAlign: "center",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              {/* Griglia per i dettagli dell'ordine */}
+              <Grid item xs={12} sm={6} md={4} lg={1.5}>
+                <OrderInfoItem>
+                  <Assignment fontSize="large" />
+                  <Typography variant="subtitle1">
+                    <b>Ordine:</b> <br /> {currentOrder?.orderName || "N/A"}
+                  </Typography>
+                </OrderInfoItem>
               </Grid>
-            </OrderInfoCard>{" "}
-            <StyledTableContainer component={Paper}>
-              <Table
-                sx={{ minWidth: { xs: 300, sm: 650 } }}
-                aria-label="tabella attività"
-              >
-                {/* Header tabella dell'ordine */}
-                <StyledTableHead>
-                  <TableRow>
-                    <StyledTableCell>Attività</StyledTableCell>
-                    <StyledTableCell align="right">Scadenza</StyledTableCell>
-                    {!isSmallScreen && (
-                      <StyledTableCell align="right">Stato</StyledTableCell>
-                    )}
-                    {!isSmallScreen && (
-                      <StyledTableCell align="right">
-                        Completato
-                      </StyledTableCell>
-                    )}
-                    <StyledTableCell align="right">Assegnato</StyledTableCell>
-                    {!isSmallScreen && (
-                      <StyledTableCell align="right">
-                        Situazione
-                      </StyledTableCell>
-                    )}
-                    <StyledTableCell align="right">Documenti</StyledTableCell>
-                    <StyledTableCell align="right">Azione</StyledTableCell>
-                    <StyledTableCell align="right">Note</StyledTableCell>
-                  </TableRow>
-                </StyledTableHead>
+              {/* Altri campi dell'ordine */}
+              <Grid item xs={12} sm={6} md={4} lg={1.5}>
+                <OrderInfoItem>
+                  <Inventory2 fontSize="large" />
+                  <Typography variant="body1">
+                    <b>Scaffale: </b> <br />{" "}
+                    {currentOrder?.materialShelf || "N/A"}
+                  </Typography>
+                </OrderInfoItem>
+              </Grid>
+              <Grid item xs={12} sm={6} md={4} lg={1.5}>
+                <OrderInfoItem>
+                  <PriorityHigh fontSize="large" />
+                  <Typography variant="body1">
+                    <b>Priorità:</b> <br />{" "}
+                    <Chip
+                      sx={{
+                        backgroundColor: handleOrderPriorityHighlight(
+                          currentOrder?.urgency
+                        ),
+                        fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                        height: { xs: 24, sm: 32 },
+                      }}
+                      label={currentOrder?.urgency || "N/A"}
+                    />
+                  </Typography>
+                </OrderInfoItem>
+              </Grid>
+              <Grid item xs={12} sm={6} md={4} lg={1.5}>
+                <OrderInfoItem>
+                  <Person fontSize="large" />
+                  <Typography variant="body1">
+                    <b>Responsabile:</b> <br />{" "}
+                    {currentOrder?.orderManager.workerName}
+                  </Typography>
+                </OrderInfoItem>
+              </Grid>
+              <Grid item xs={12} sm={6} md={4} lg={1.5}>
+                <OrderInfoItem>
+                  <Construction fontSize="large" />
+                  <Typography variant="body1">
+                    <b>Accessori:</b> <br />{" "}
+                    {currentOrder?.accessories || "Nessuno"}
+                  </Typography>
+                </OrderInfoItem>
+              </Grid>
+              <Grid item xs={12} sm={6} md={4} lg={1.5}>
+                <OrderInfoItem>
+                  <DateRange fontSize="large" />
+                  <Typography variant="body1">
+                    <b>Data inizio:</b> <br />{" "}
+                    {currentOrder?.startDate
+                      ? new Date(currentOrder.startDate).toLocaleDateString(
+                          "it-IT"
+                        )
+                      : "N/A"}
+                  </Typography>
+                </OrderInfoItem>
+              </Grid>
+              <Grid item xs={12} sm={6} md={4} lg={1.5}>
+                <OrderInfoItem>
+                  <DateRange fontSize="large" />
+                  <Typography variant="body1">
+                    <b>Data fine:</b> <br />{" "}
+                    {currentOrder?.endDate
+                      ? new Date(currentOrder.endDate).toLocaleDateString(
+                          "it-IT"
+                        )
+                      : "N/A"}
+                  </Typography>
+                </OrderInfoItem>
+              </Grid>
+            </Grid>
+          </OrderInfoCard>{" "}
+          <StyledTableContainer component={Paper}>
+            <Table
+              sx={{ minWidth: { xs: 300, sm: 650 } }}
+              aria-label="tabella attività"
+            >
+              {/* Header tabella dell'ordine */}
+              <StyledTableHead>
+                <TableRow>
+                  <StyledTableCell>Attività</StyledTableCell>
+                  <StyledTableCell align="right">Scadenza</StyledTableCell>
+                  {!isSmallScreen && (
+                    <StyledTableCell align="right">Stato</StyledTableCell>
+                  )}
+                  {!isSmallScreen && (
+                    <StyledTableCell align="right">Completato</StyledTableCell>
+                  )}
+                  <StyledTableCell align="right">Assegnato</StyledTableCell>
+                  {!isSmallScreen && (
+                    <StyledTableCell align="right">Situazione</StyledTableCell>
+                  )}
+                  <StyledTableCell align="right">Documenti</StyledTableCell>
+                  <StyledTableCell align="right">Azione</StyledTableCell>
+                  <StyledTableCell align="right">Note</StyledTableCell>
+                </TableRow>
+              </StyledTableHead>
 
-                {/* Body tabella dell'ordine */}
+              {/* Body tabella dell'ordine */}
 
-                <TableBody>
-                  {safeActivities.map((activity, index) => {
-                    // Controllo di sicurezza per ogni attività
-                    if (!activity) return null;
-                    
-                    const activityName = activity.name || `Attività ${index + 1}`;
-                    const activityStatus = activity.status || 'Standby';
-                    const activityEndDate = activity.endDate;
-                    const activityCompleted = activity.completed;
-                    const activityResponsible = activity.responsible;
-                    const activityNote = Array.isArray(activity.note) ? activity.note : [];
-                    
-                    return (
+              <TableBody>
+                {safeActivities.map((activity, index) => {
+                  // Controllo di sicurezza per ogni attività
+                  if (!activity) return null;
+
+                  const activityName = activity.name || `Attività ${index + 1}`;
+                  const activityStatus = activity.status || "Standby";
+                  const activityEndDate = activity.endDate;
+                  const activityCompleted = activity.completed;
+                  const activityResponsible = activity.responsible;
+                  const activityNote = Array.isArray(activity.note)
+                    ? activity.note
+                    : [];
+
+                  return (
                     <TableRow
                       sx={
                         activityStatus === "Bloccato"
@@ -679,13 +722,18 @@ const MainTable = ({ order }) => {
                             },
                           }}
                         >
-                          {activityEndDate ? new Date(activityEndDate).toLocaleString("it-IT", {
-                            day: "2-digit",
-                            month: "2-digit",
-                            year: isSmallScreen ? "2-digit" : "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          }) : 'N/A'}
+                          {activityEndDate
+                            ? new Date(activityEndDate).toLocaleString(
+                                "it-IT",
+                                {
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: isSmallScreen ? "2-digit" : "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                }
+                              )
+                            : "N/A"}
                         </Typography>
                       </StyledTableCell>
                       {!isSmallScreen && (
@@ -720,7 +768,7 @@ const MainTable = ({ order }) => {
                             wordBreak: "break-word",
                           }}
                         >
-                          {getWorkerName(activityResponsible)}
+                          {activityResponsible.workerName}
                         </Typography>
                       </StyledTableCell>
                       {!isSmallScreen && (
@@ -766,43 +814,57 @@ const MainTable = ({ order }) => {
                           size="small"
                           onChange={async (e) => {
                             const newStatus = e.target.value;
-                            
+
                             try {
                               // Aggiorna ottimisticamente l'UI
-                              const updatedActivities = safeActivities.map((act) =>
-                                act.id === activity.id 
-                                  ? { ...act, status: newStatus, completed: newStatus === "Completato" ? new Date().toISOString() : act.completed }
-                                  : act
+                              const updatedActivities = safeActivities.map(
+                                (act) =>
+                                  act.id === activity.id
+                                    ? {
+                                        ...act,
+                                        status: newStatus,
+                                        completed:
+                                          newStatus === "Completato"
+                                            ? new Date().toISOString()
+                                            : act.completed,
+                                      }
+                                    : act
                               );
-                              
+
                               const updatedOrder = {
                                 ...currentOrder,
-                                activities: updatedActivities
+                                activities: updatedActivities,
                               };
-                              
+
                               setCurrentOrder(updatedOrder);
 
                               // Quindi aggiorna il database
-                              await updateActivityStatusInOrder(activity.id, newStatus);
-                              
+                              await updateActivityStatusInOrder(
+                                activity.id,
+                                newStatus
+                              );
+
                               // Invia notifica
                               await handleInviaNotifica(activity, newStatus);
-                              
                             } catch (error) {
-                              console.error("Errore nell'aggiornamento dello stato dell'attività:", error);
-                              
-                              // Ripristina lo stato precedente in caso di errore
-                              const revertedActivities = safeActivities.map((act) =>
-                                act.id === activity.id 
-                                  ? { ...act, status: activityStatus }
-                                  : act
+                              console.error(
+                                "Errore nell'aggiornamento dello stato dell'attività:",
+                                error
                               );
-                              
+
+                              // Ripristina lo stato precedente in caso di errore
+                              const revertedActivities = safeActivities.map(
+                                (act) =>
+                                  act.id === activity.id
+                                    ? { ...act, status: activityStatus }
+                                    : act
+                              );
+
                               const revertedOrder = {
                                 ...currentOrder,
-                                activities: revertedActivities
+                                activities: revertedActivities,
                               };
-                              
+
                               setCurrentOrder(revertedOrder);
                             }
                           }}
@@ -828,7 +890,9 @@ const MainTable = ({ order }) => {
                           color="secondary"
                         >
                           <IconButton
-                            onClick={() => handleOpenModal(activity, currentOrder.id)}
+                            onClick={() =>
+                              handleOpenModal(activity, currentOrder.id)
+                            }
                             size="small"
                           >
                             <Email
@@ -841,122 +905,122 @@ const MainTable = ({ order }) => {
                         </Badge>
                       </StyledTableCell>
                     </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </StyledTableContainer>
-          </Box>{" "}
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: { xs: "column", sm: "row" },
-              justifyContent: "space-between",
-              alignItems: { xs: "stretch", sm: "center" },
-              gap: { xs: 2, sm: 0 },
-            }}
-          >
-            <Box sx={{ mt: "15px", width: { xs: "100%", sm: "50%" } }}>
-              <LinearProgress
-                variant="determinate"
-                value={handleProgressPercentage(safeActivities)}
-                color={
-                  safeActivities.every((act) => act?.status === "Completato")
-                    ? "secondary"
-                    : "primary"
-                }
-              />
-            </Box>
-            <Button
-              variant="contained"
-              color="secondary"
-              sx={
-                authorizedUser !== btoa("admin")
-                  ? { display: "none" }
-                  : {
-                      mt: "15px",
-                      fontWeight: "bold",
-                      minWidth: { xs: "100%", sm: "auto" },
-                    }
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </StyledTableContainer>
+        </Box>{" "}
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            justifyContent: "space-between",
+            alignItems: { xs: "stretch", sm: "center" },
+            gap: { xs: 2, sm: 0 },
+          }}
+        >
+          <Box sx={{ mt: "15px", width: { xs: "100%", sm: "50%" } }}>
+            <LinearProgress
+              variant="determinate"
+              value={handleProgressPercentage(safeActivities)}
+              color={
+                safeActivities.every((act) => act?.status === "Completato")
+                  ? "secondary"
+                  : "primary"
               }
-              onClick={handleArchive}
-              disabled={loadingArchivio}
-            >
-              Archivia
-            </Button>
+            />
           </Box>
-        </Paper>
-        <Divider sx={{ my: "15px", borderBottomWidth: 5 }} />
-        {/* Modal note */}
-        {selectedItem && (
-          <Modal
-            ref={messagesContainerRef}
-            id={"modal" + selectedItem.name}
-            open={open}
-            onClose={handleCloseModal}
+          <Button
+            variant="contained"
+            color="secondary"
+            sx={
+              authorizedUser !== btoa("admin")
+                ? { display: "none" }
+                : {
+                    mt: "15px",
+                    fontWeight: "bold",
+                    minWidth: { xs: "100%", sm: "auto" },
+                  }
+            }
+            onClick={handleArchive}
+            disabled={loadingArchivio}
           >
-            <Box sx={StyledModal}>
-              <Typography id={"modal-title"} sx={titleStyle}>
-                {selectedItem?.name}
-              </Typography>
-              <Chatbox
-                authorizedUser={atob(authorizedUser)}
-                selectedItem={selectedItem}
-                order={currentOrder}
-                closeModal={handleCloseModal}
-              />
-              <Box sx={{ m: 2 }}>
-                <Button
-                  onClick={handleCloseModal}
-                  color="error"
-                  variant="contained"
-                  size="medium"
-                  sx={{ ml: 1 }}
-                >
-                  Esci
-                </Button>
-              </Box>
+            Archivia
+          </Button>
+        </Box>
+      </Paper>
+      <Divider sx={{ my: "15px", borderBottomWidth: 5 }} />
+      {/* Modal note */}
+      {selectedItem && (
+        <Modal
+          ref={messagesContainerRef}
+          id={"modal" + selectedItem.name}
+          open={open}
+          onClose={handleCloseModal}
+        >
+          <Box sx={StyledModal}>
+            <Typography id={"modal-title"} sx={titleStyle}>
+              {selectedItem?.name}
+            </Typography>
+            <Chatbox
+              authorizedUser={atob(authorizedUser)}
+              selectedItem={selectedItem}
+              order={currentOrder}
+              closeModal={handleCloseModal}
+            />
+            <Box sx={{ m: 2 }}>
+              <Button
+                onClick={handleCloseModal}
+                color="error"
+                variant="contained"
+                size="medium"
+                sx={{ ml: 1 }}
+              >
+                Esci
+              </Button>
             </Box>
-          </Modal>
-        )}
-        {/* Modal docs */}
-        {selectedItemDocs && (
-          <Modal
-            ref={messagesContainerRef}
-            id={"modal" + selectedItemDocs.name}
-            open={open}
-            onClose={handleCloseModalDoc}
-          >
-            <Box sx={StyledModal}>
-              <Typography id={"modal-title"} sx={titleStyle}>
-                {selectedItemDocs?.name}
-              </Typography>
-              <AdminDocsModal
-                bucketName={session?.session?.user?.id}
-                folderName={
-                  currentOrder?.orderName &&
-                  currentOrder?.clientId &&
-                  selectedItemDocs?.name
-                    ? `${currentOrder.orderName}${currentOrder.clientId}/${selectedItemDocs.name}`
-                    : ""
-                }
-              />
-              <Box sx={{ m: 4 }}>
-                <Button
-                  onClick={handleCloseModalDoc}
-                  color="error"
-                  variant="contained"
-                  size="medium"
-                  sx={{ ml: 1 }}
-                >
-                  Esci
-                </Button>
-              </Box>
+          </Box>
+        </Modal>
+      )}
+      {/* Modal docs */}
+      {selectedItemDocs && (
+        <Modal
+          ref={messagesContainerRef}
+          id={"modal" + selectedItemDocs.name}
+          open={open}
+          onClose={handleCloseModalDoc}
+        >
+          <Box sx={StyledModal}>
+            <Typography id={"modal-title"} sx={titleStyle}>
+              {selectedItemDocs?.name}
+            </Typography>
+            <AdminDocsModal
+              bucketName={session?.session?.user?.id}
+              folderName={
+                currentOrder?.orderName &&
+                currentOrder?.clientId &&
+                selectedItemDocs?.name
+                  ? `${currentOrder.orderName}${currentOrder.clientId}/${selectedItemDocs.name}`
+                  : ""
+              }
+            />
+            <Box sx={{ m: 4 }}>
+              <Button
+                onClick={handleCloseModalDoc}
+                color="error"
+                variant="contained"
+                size="medium"
+                sx={{ ml: 1 }}
+              >
+                Esci
+              </Button>
             </Box>
-          </Modal>
-        )}
-      </>
-    );
+          </Box>
+        </Modal>
+      )}
+    </>
+  );
 };
 
 export default MainTable;

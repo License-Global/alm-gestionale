@@ -12,14 +12,16 @@ import {
 import { useTheme } from "@mui/material/styles";
 import { useRole } from "../context/RoleContext";
 import { useNavigate } from "react-router-dom";
-
-const ADMIN_PASSWORD = "admin123";
+import { supabase } from "../supabase/supabaseClient";
+import useUser from "../hooks/useUser";
 
 const RoleSelection = () => {
   const navigate = useNavigate();
+  const { userId } = useUser();
   const [selectedRole, setSelectedRole] = useState("");
   const [adminPassInput, setAdminPassInput] = useState("");
   const [adminPassError, setAdminPassError] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const { role, setRole } = useRole();
   const theme = useTheme();
@@ -31,13 +33,27 @@ const RoleSelection = () => {
     }
   }, []);
 
-  const handleRoleSelection = () => {
+  const handleRoleSelection = async () => {
     if (selectedRole === "admin") {
-      if (adminPassInput === ADMIN_PASSWORD) {
-        setRole(selectedRole);
-        navigate("/");
-      } else {
+      setLoading(true);
+      setAdminPassError(false);
+      try {
+        const { data, error } = await supabase.rpc("check_admin_login", {
+          p_user_id: userId,
+          p_code: adminPassInput,
+        });
+        if (error) {
+          setAdminPassError(true);
+        } else if (data === true) {
+          setRole(selectedRole);
+          navigate("/");
+        } else {
+          setAdminPassError(true);
+        }
+      } catch (e) {
         setAdminPassError(true);
+      } finally {
+        setLoading(false);
       }
     } else if (selectedRole === "operator") {
       setRole(selectedRole);
@@ -224,11 +240,12 @@ const RoleSelection = () => {
               }}
               disabled={
                 !selectedRole ||
-                (selectedRole === "admin" && adminPassInput.length === 0)
+                (selectedRole === "admin" && adminPassInput.length === 0) ||
+                loading
               }
               onClick={handleRoleSelection}
             >
-              Conferma
+              {loading ? "Verifica..." : "Conferma"}
             </Button>
           </Box>
         </Paper>

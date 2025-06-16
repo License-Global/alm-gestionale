@@ -14,6 +14,7 @@ import AssignmentIcon from "@mui/icons-material/Assignment";
 import { Link } from "react-router-dom";
 import autoAnimate from "@formkit/auto-animate";
 import { useRole } from "../../context/RoleContext";
+import NoOrders from "./NoOrders";
 
 const getProgress = (activities) => {
   if (!Array.isArray(activities) || activities.length === 0) return 0;
@@ -38,6 +39,10 @@ const CommesseList = ({ orders, customers }) => {
   React.useEffect(() => {
     if (listRef.current) autoAnimate(listRef.current);
   }, [listRef]);
+
+  if (!orders || orders.length === 0) {
+    return <NoOrders />;
+  }
 
   return (
     <Box

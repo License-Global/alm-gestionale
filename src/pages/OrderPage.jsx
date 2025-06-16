@@ -4,14 +4,20 @@ import { CircularProgress } from "@mui/material";
 import { useOrder } from "../hooks/useOrders";
 import { Box } from "@mui/system";
 import MainTable from "../components/Tables/MainTable";
+import useRealtimeSingleOrderWithActivities from "../hooks/useRealTimeSingle";
 
 const OrderPage = () => {
   const { id } = useParams();
-  const { order, loading } = useOrder(id);
+  // const { order, loading } = useOrder(id);
+  const order = useRealtimeSingleOrderWithActivities(
+    "orders",
+    "activities",
+    id
+  );
 
   return (
     <div>
-      {loading || !order ? (
+      {!order ? (
         <Box
           sx={{
             display: "flex",

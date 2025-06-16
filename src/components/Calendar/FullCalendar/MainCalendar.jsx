@@ -14,7 +14,12 @@ import { supabase } from "../../../supabase/supabaseClient";
 import "./MainCalendar.css";
 
 const MainCalendar = ({ orders, onActivityUpdate }) => {
-  const [viewMode, setViewMode] = useState("activities");
+  // Persist viewMode in localStorage
+  const getInitialViewMode = () => {
+    return localStorage.getItem("calendarViewMode") || "activities";
+  };
+
+  const [viewMode, setViewMode] = useState(getInitialViewMode());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [formData, setFormData] = useState({
@@ -115,7 +120,10 @@ const MainCalendar = ({ orders, onActivityUpdate }) => {
 
               events.push({
                 id: `activity-${activity.id}`,
-                title: `${activity.name}`,
+                // Aggiungi nome cliente nel titolo
+                title: `${activity.name} - ${
+                  order.client?.customer_name || ""
+                }`,
                 start: activity.startDate,
                 end: activity.endDate,
                 backgroundColor: eventColor,
@@ -128,9 +136,14 @@ const MainCalendar = ({ orders, onActivityUpdate }) => {
                   activityId: activity.id,
                   activityName: activity.name,
                   status: activity.status,
-                  responsible: activity.responsible,
+                  // Qui: responsible deve essere solo l'id
+                  responsible:
+                    activity.responsible?.id || activity.responsible || null,
                   urgency: order.urgency,
                   internal_id: order.internal_id,
+                  // Qui: clientId deve essere solo l'id
+                  clientId: order.client?.id || order.clientId || null,
+                  client: order.client, // opzionale, solo per visualizzazione nome cliente
                 },
               });
             }
@@ -158,7 +171,8 @@ const MainCalendar = ({ orders, onActivityUpdate }) => {
 
         events.push({
           id: `order-${order.id}`,
-          title: `${order.orderName}`,
+          // Aggiungi nome cliente nel titolo
+          title: `${order.orderName} - ${order.client?.customer_name || ""}`,
           start: order.startDate,
           end: order.endDate,
           backgroundColor: eventColor,
@@ -171,7 +185,11 @@ const MainCalendar = ({ orders, onActivityUpdate }) => {
             urgency: order.urgency,
             internal_id: order.internal_id,
             isConfirmed: order.isConfirmed,
-            orderManager: order.orderManager,
+            // Qui: orderManager deve essere solo l'id
+            orderManager: order.orderManager?.id || order.orderManager || null,
+            // Qui: clientId deve essere solo l'id
+            clientId: order.client?.id || order.clientId || null,
+            client: order.client, // opzionale, solo per visualizzazione nome cliente
           },
         });
       });
@@ -196,11 +214,23 @@ const MainCalendar = ({ orders, onActivityUpdate }) => {
         endDate: clickInfo.event.end ? dayjs(clickInfo.event.end) : null,
       });
     } else {
-      // Format dates for datetime-local input for orders
+      // Format dates for datetime-local input for orders (convert UTC to local)
       const formatDateForInput = (date) => {
         if (!date) return "";
+        // Convert UTC date to local and format as YYYY-MM-DDTHH:mm
         const d = new Date(date);
-        return d.toISOString().slice(0, 16);
+        const pad = (n) => n.toString().padStart(2, "0");
+        return (
+          d.getFullYear() +
+          "-" +
+          pad(d.getMonth() + 1) +
+          "-" +
+          pad(d.getDate()) +
+          "T" +
+          pad(d.getHours()) +
+          ":" +
+          pad(d.getMinutes())
+        );
       };
 
       setFormData({
@@ -245,12 +275,12 @@ const MainCalendar = ({ orders, onActivityUpdate }) => {
       let startDateFormatted, endDateFormatted;
 
       if (selectedEvent.type === "activity") {
-        // For activities using OperatorDateTimePicker (dayjs objects)
+        // Convert local time to UTC ISO string for timestampz
         startDateFormatted = formData.startDate
-          ? formData.startDate.toISOString()
+          ? new Date(formData.startDate).toISOString()
           : null;
         endDateFormatted = formData.endDate
-          ? formData.endDate.toISOString()
+          ? new Date(formData.endDate).toISOString()
           : null;
 
         // Update activity in Supabase
@@ -273,52 +303,59 @@ const MainCalendar = ({ orders, onActivityUpdate }) => {
         console.log("Activity updated successfully:", data);
 
         // Show success message
-        const displayStartDate = formData.startDate
-          ? formData.startDate.format("DD/MM/YYYY HH:mm")
-          : "Non impostata";
+        // const displayStartDate = formData.startDate
+        //   ? formData.startDate.format("DD/MM/YYYY HH:mm")
+        //   : "Non impostata";
 
-        const displayEndDate = formData.endDate
-          ? formData.endDate.format("DD/MM/YYYY HH:mm")
-          : "Non impostata";
-        alert(`
-Attività aggiornata con successo:
-${selectedEvent.activityName}
-
-Nuova data inizio: ${displayStartDate}
-Nuova data fine: ${displayEndDate}
-        `);
+        // const displayEndDate = formData.endDate
+        //   ? formData.endDate.format("DD/MM/YYYY HH:mm")
+        //   : "Non impostata";
+        // alert(`
+        // Attività aggiornata con successo:
+        // ${selectedEvent.activityName}
+        //
+        // Nuova data inizio: ${displayStartDate}
+        // Nuova data fine: ${displayEndDate}
+        // `);
 
         // Call the callback to refresh data if provided
         if (onActivityUpdate) {
           onActivityUpdate();
         }
       } else {
-        // For orders - you might want to implement order updates here in the future
-        const startDateFormatted = formData.startDate;
-        const endDateFormatted = formData.endDate;
-        console.log("Order update not implemented yet:", {
-          orderId: selectedEvent.orderId,
-          newStartDate: startDateFormatted,
-          newEndDate: endDateFormatted,
-        });
+        // For orders - convert local time to UTC ISO string for timestampz
+        const startDateFormatted = formData.startDate
+          ? new Date(formData.startDate).toISOString()
+          : null;
+        const endDateFormatted = formData.endDate
+          ? new Date(formData.endDate).toISOString()
+          : null;
 
-        const orderDisplayStartDate = formData.startDate
-          ? new Date(formData.startDate).toLocaleString("it-IT")
-          : "Non impostata";
+        const { data, error } = await supabase
+          .from("orders")
+          .update({
+            startDate: startDateFormatted,
+            endDate: endDateFormatted,
+          })
+          .eq("id", selectedEvent.orderId);
 
-        const orderDisplayEndDate = formData.endDate
-          ? new Date(formData.endDate).toLocaleString("it-IT")
-          : "Non impostata";
+        if (error) {
+          console.error("Error updating order:", error);
+          alert(
+            "Errore durante il salvataggio delle modifiche: " + error.message
+          );
+          return;
+        }
 
-        alert(`
-Modifiche per ordine (funzionalità da implementare):
-${selectedEvent.orderName}
+        console.log("Order updated successfully:", data);
 
-Nuova data inizio: ${orderDisplayStartDate}
-Nuova data fine: ${orderDisplayEndDate}
-        `);
+        // Call the callback to refresh data if provided
+        if (onActivityUpdate) {
+          onActivityUpdate();
+        }
       }
       handleModalClose();
+      window.location.reload(); // Refresh the page after saving
     } catch (error) {
       console.error("Unexpected error:", error);
       alert("Errore imprevisto durante il salvataggio");
@@ -333,6 +370,11 @@ Nuova data fine: ${orderDisplayEndDate}
   };
 
   const events = transformOrdersToEvents(orders);
+
+  // Aggiorna localStorage quando cambia la modalità
+  useEffect(() => {
+    localStorage.setItem("calendarViewMode", viewMode);
+  }, [viewMode]);
 
   return (
     <div className="main-calendar-container">
@@ -406,7 +448,12 @@ Nuova data fine: ${orderDisplayEndDate}
                         : selectedEvent.orderName}
                     </h4>
                     <p>
-                      <strong>ID Interno:</strong> {selectedEvent.internal_id}
+                      <strong>ID:</strong> {selectedEvent.internal_id}
+                    </p>
+                    {/* Mostra il nome del cliente se disponibile */}
+                    <p>
+                      <strong>Cliente:</strong>{" "}
+                      {selectedEvent.client?.customer_name || "N/A"}
                     </p>
                     {selectedEvent.type === "activity" && (
                       <>
@@ -506,7 +553,7 @@ Nuova data fine: ${orderDisplayEndDate}
                           type="datetime-local"
                           id="startDate"
                           name="startDate"
-                          value={formData.startDate}
+                          value={formData.startDate || ""}
                           onChange={handleFormChange}
                           className="form-control"
                         />
@@ -522,7 +569,7 @@ Nuova data fine: ${orderDisplayEndDate}
                           type="datetime-local"
                           id="endDate"
                           name="endDate"
-                          value={formData.endDate}
+                          value={formData.endDate || ""}
                           onChange={handleFormChange}
                           className="form-control"
                         />

@@ -2,8 +2,10 @@ import { Card, Typography, Box } from "@mui/material";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import CampaignIcon from "@mui/icons-material/Campaign";
-import ChangeCircleIcon from '@mui/icons-material/ChangeCircle';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import ChangeCircleIcon from "@mui/icons-material/ChangeCircle";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import Link from "@mui/material/Link";
+import { Link as RouterLink } from "react-router-dom";
 
 // Mappa type -> icona
 const icons = {
@@ -13,7 +15,7 @@ const icons = {
   change: <ChangeCircleIcon sx={{ color: "#1976d2" }} />,
   "activity-status": <CheckCircleIcon sx={{ color: "#43a047" }} />,
   message: <CampaignIcon sx={{ color: "#0288d1" }} />,
-  "chat": <CampaignIcon sx={{ color: "#0288d1" }} />,
+  chat: <CampaignIcon sx={{ color: "#0288d1" }} />,
   // fallback
   default: <NotificationsIcon sx={{ color: "#fbc02d" }} />,
 };
@@ -31,11 +33,16 @@ const NotificationCard = ({
   action_url,
   action_label,
   icon,
+  action_object,
+  reference_object,
 }) => {
   // Render icona custom o fallback
   const renderIcon = () =>
     icon ? (
-      <i className={`icon-${icon}`} style={{ fontSize: 22, color: "#1976d2" }} />
+      <i
+        className={`icon-${icon}`}
+        style={{ fontSize: 22, color: "#1976d2" }}
+      />
     ) : (
       icons[type] || icons["default"]
     );
@@ -83,7 +90,10 @@ const NotificationCard = ({
           variant="subtitle2"
           sx={{ fontWeight: "bold", fontFamily: "monospace" }}
         >
-          {title}
+          {title} -{" "}
+          <RouterLink to={`/clienti/${action_object?.clientId}`}>
+            {action_object?.client?.customer_name}
+          </RouterLink>
         </Typography>
         {displayMode === "create" ? (
           <>
@@ -108,13 +118,20 @@ const NotificationCard = ({
       <Box sx={{ textAlign: "right", minWidth: 80 }}>
         <Typography
           variant={displayMode === "create" ? "body2" : "caption"}
-          sx={{ fontFamily: "monospace", color: displayMode === "create" ? undefined : "gray" }}
+          sx={{
+            fontFamily: "monospace",
+            color: displayMode === "create" ? undefined : "gray",
+          }}
         >
           {date}
         </Typography>
         <Typography
           variant={displayMode === "create" ? "body2" : "caption"}
-          sx={{ fontFamily: "monospace", color: displayMode === "create" ? undefined : "gray", display: "block" }}
+          sx={{
+            fontFamily: "monospace",
+            color: displayMode === "create" ? undefined : "gray",
+            display: "block",
+          }}
         >
           {time}
         </Typography>

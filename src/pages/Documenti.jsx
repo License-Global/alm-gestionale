@@ -40,7 +40,7 @@ import { supabase } from "../supabase/supabaseClient";
 import useSession from "../hooks/useSession";
 import { fetchCustomers } from "../services/customerService";
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB limit
+const MAX_FILE_SIZE = 80 * 1024 * 1024; // 80MB limit
 
 const Documenti = () => {
   const session = useSession();
@@ -87,11 +87,11 @@ const Documenti = () => {
     // Estrai l'ID del cliente dal nome della cartella (l'ultimo numero)
     const match = folderId.match(/^(.+?)(\d+)$/);
     if (!match) return folderId;
-    
+
     const orderName = match[1]; // Nome della commessa (parte prima del numero)
     const customerId = parseInt(match[2], 10);
-    const customer = customers.find(c => c.id === customerId);
-    
+    const customer = customers.find((c) => c.id === customerId);
+
     if (customer) {
       return `${orderName} - ${customer.customer_name}`;
     }
@@ -146,7 +146,7 @@ const Documenti = () => {
     if (!selectedFile) return;
 
     if (selectedFile.size > MAX_FILE_SIZE) {
-      setError("Il file è troppo grande. Massimo 10MB consentiti.");
+      setError("Il file è troppo grande. Massimo 80MB consentiti.");
       return;
     }
 
@@ -567,7 +567,9 @@ const Documenti = () => {
                             mb: 1,
                           }}
                         >
-                          {item.metadata?.mimetype ? item.name : getCustomerNameById(item.name)}
+                          {item.metadata?.mimetype
+                            ? item.name
+                            : getCustomerNameById(item.name)}
                         </Typography>
                         {item.metadata?.size && (
                           <Typography

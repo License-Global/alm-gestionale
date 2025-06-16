@@ -1,7 +1,12 @@
 import { Grid } from "@mui/system";
 import CommessaCard from "../Widgets/components/CommessaCard";
+import NoOrders from "./NoOrders";
 
 const CommesseCards = ({ orders, customers }) => {
+  if (!orders || orders.length === 0) {
+    return <NoOrders />;
+  }
+
   return (
     <Grid container spacing={4} justifyContent="center">
       {orders &&
