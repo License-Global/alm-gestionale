@@ -18,9 +18,6 @@ import {
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { TwitterPicker } from "react-color";
 import { toast, Zoom } from "react-toastify";
-import { createOrder } from "../../services/activitiesService";
-import { createFolder } from "../../services/bucketServices";
-import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import { supabase } from "../../supabase/supabaseClient";
 import useSession from "../../hooks/useSession";
@@ -264,13 +261,19 @@ ActivityRow.propTypes = {
 };
 
 // Componente principale della tabella
-const ActivityTable = ({ selectedSchema, personale, formikValues }) => {
+const ActivityTable = ({ 
+  selectedSchema, 
+  personale, 
+  formikValues,
+  activities = [],
+  onActivitiesChange = () => {},
+  onFinalSubmit = () => {},
+  loading = false
+}) => {
   const { session } = useSession();
-  const navigate = useNavigate();
 
-  const [rows, setRows] = useState([]);
+  const [rows, setRows] = useState(activities);
   const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
 
   const [selectedOperator, setSelectedOperator] = useState(null);
 
@@ -308,8 +311,20 @@ const ActivityTable = ({ selectedSchema, personale, formikValues }) => {
       }
     };
 
-    loadActivities();
-  }, [selectedSchema, notifyWarn]);
+    // Se abbiamo activities dal props, usa quelle, altrimenti carica dal schema
+    if (activities && activities.length > 0) {
+      setRows(activities);
+    } else {
+      loadActivities();
+    }
+  }, [selectedSchema, activities, notifyWarn]);
+
+  // Sincronizza le attività con il componente padre
+  useEffect(() => {
+    if (JSON.stringify(rows) !== JSON.stringify(activities)) {
+      onActivitiesChange(rows);
+    }
+  }, [rows, onActivitiesChange, activities]);
 
   // Validazione combinata: campi + conflitti DB + conflitti interni + ordine date
   useEffect(() => {
@@ -410,29 +425,7 @@ const ActivityTable = ({ selectedSchema, personale, formikValues }) => {
 
   // Conferma finale: salviamo la commessa
   const handleConfirm = async () => {
-    const data = {
-      ...formikValues,
-      activities: formatRows(rows),
-      user_id: session.user.id,
-    };
-
-    try {
-      setLoading(true);
-      const orderRes = await createOrder(data);
-      console.log("Order created:", orderRes);
-
-      await createFolder(
-        session.user.id,
-        formikValues.orderName + formikValues.clientId
-      );
-
-      navigate("/");
-    } catch (e) {
-      console.error(e);
-      notifyWarn("Errore durante la conferma");
-    } finally {
-      setLoading(false);
-    }
+    await onFinalSubmit();
   };
 
   return (
@@ -491,6 +484,10 @@ ActivityTable.propTypes = {
   }),
   personale: PropTypes.array.isRequired,
   formikValues: PropTypes.object.isRequired,
+  activities: PropTypes.array,
+  onActivitiesChange: PropTypes.func,
+  onFinalSubmit: PropTypes.func,
+  loading: PropTypes.bool,
 };
 
 export default ActivityTable;

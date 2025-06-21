@@ -326,17 +326,26 @@ export default function DashboardLayout({ children }) {
             <NotificationTool key={location.pathname} userId={userId} />
           )}
           {!canShowMenu && (
-            <Button
-              color="inherit"
-              onClick={() => {
-                removeRole();
-                navigate("/login");
-              }}
-              startIcon={<LogoutIcon />}
-              sx={{ ml: 2, fontWeight: 600 }}
-            >
-              Esci
-            </Button>
+            <>
+              <Button
+                onClick={() => navigate("/documenti")}
+                color="inherit"
+                startIcon={<FindInPageIcon />}
+              >
+                <b>Documenti</b>
+              </Button>
+              <Button
+                color="inherit"
+                onClick={() => {
+                  removeRole();
+                  navigate("/login");
+                }}
+                startIcon={<LogoutIcon />}
+                sx={{ ml: 2, fontWeight: 600 }}
+              >
+                Esci
+              </Button>
+            </>
           )}
         </Toolbar>
       </AppBar>

@@ -9,7 +9,11 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+import { useArchivedOrders } from "../../../hooks/useArchivedOrder";
+
 const AndamentoCommesse = ({ orders = [] }) => {
+  const { orders: archivedOrders = [], loading } = useArchivedOrders();
+
   const chartData = useMemo(() => {
     // Array dei mesi in italiano
     const months = [
@@ -31,10 +35,11 @@ const AndamentoCommesse = ({ orders = [] }) => {
     const monthlyCount = months.map((month, index) => ({
       month,
       count: 0,
+      archived: 0,
       monthIndex: index,
     }));
 
-    // Conta le commesse per mese
+    // Conta le commesse inserite per mese
     orders.forEach((order) => {
       if (order.created_at) {
         const date = new Date(order.created_at);
@@ -43,8 +48,17 @@ const AndamentoCommesse = ({ orders = [] }) => {
       }
     });
 
+    // Conta le commesse archiviate per mese (usando created_at della tabella archived)
+    archivedOrders.forEach((order) => {
+      if (order.created_at) {
+        const date = new Date(order.created_at);
+        const monthIndex = date.getMonth();
+        monthlyCount[monthIndex].archived++;
+      }
+    });
+
     return monthlyCount;
-  }, [orders]);
+  }, [orders, archivedOrders]);
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -59,7 +73,8 @@ const AndamentoCommesse = ({ orders = [] }) => {
           }}
         >
           <p style={{ fontWeight: "500", color: "#374151" }}>{`${label}`}</p>
-          <p style={{ color: "#2563eb" }}>{`Commesse: ${payload[0].value}`}</p>
+          <p style={{ color: "#87ceeb" }}>{`Commesse inserite: ${payload[0]?.value || 0}`}</p>
+          <p style={{ color: "#22c55e" }}>{`Commesse archiviate: ${payload[1]?.value || 0}`}</p>
         </div>
       );
     }
@@ -67,8 +82,9 @@ const AndamentoCommesse = ({ orders = [] }) => {
   };
 
   // Debug log
-  console.log("Orders data:", orders.length);
-  console.log("Chart data:", chartData);
+  // console.log("Orders data:", orders.length);
+  // console.log("Archived data:", archivedOrders.length);
+  // console.log("Chart data:", chartData);
 
   return (
     <div
@@ -99,7 +115,7 @@ const AndamentoCommesse = ({ orders = [] }) => {
             fontSize: "14px",
           }}
         >
-          Numero di commesse aggiunte per mese
+          Numero di commesse aggiunte e archiviate per mese
         </p>
       </div>
 
@@ -126,10 +142,20 @@ const AndamentoCommesse = ({ orders = [] }) => {
             <Line
               type="monotone"
               dataKey="count"
-              stroke="#22c55e"
+              stroke="#87ceeb" // aggiunte blu chiaro
               strokeWidth={3}
               dot={{ fill: "#87ceeb", strokeWidth: 2, r: 6 }}
+              activeDot={{ r: 8, fill: "#87ceeb" }}
+              name="Commesse inserite"
+            />
+            <Line
+              type="monotone"
+              dataKey="archived"
+              stroke="#22c55e" // archiviate verde
+              strokeWidth={3}
+              dot={{ fill: "#22c55e", strokeWidth: 2, r: 6 }}
               activeDot={{ r: 8, fill: "#22c55e" }}
+              name="Commesse archiviate"
             />
           </LineChart>
         </ResponsiveContainer>
@@ -145,7 +171,8 @@ const AndamentoCommesse = ({ orders = [] }) => {
           color: "#6b7280",
         }}
       >
-        <span>Totale commesse: {orders.length}</span>
+        <span>Totale commesse inserite: {orders.length}</span>
+        <span>Totale commesse archiviate: {archivedOrders.length}</span>
         <span>Anno corrente</span>
       </div>
     </div>

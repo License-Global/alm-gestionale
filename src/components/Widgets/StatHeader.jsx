@@ -2,8 +2,10 @@ import React from "react";
 import { Box, Stack } from "@mui/material";
 import { TrendingUp, PeopleAlt, ShoppingCart } from "@mui/icons-material";
 import StatWidget from "./StatWidget";
+import { useArchivedOrders } from "../../hooks/useArchivedOrder";
 
 export default function StatHeader({ orders }) {
+  const { orders: archivedOrders } = useArchivedOrders();
   // Calcola le statistiche dai dati degli ordini
   const calculateStats = () => {
     if (!orders || !Array.isArray(orders)) {
@@ -15,7 +17,7 @@ export default function StatHeader({ orders }) {
       };
     }
 
-    const total = orders.length;
+    const total = orders.length + archivedOrders.length;
 
     // Commesse in corso: ordini con almeno 1 attività non in "Standby"
     const inProgress = orders.filter(
@@ -51,20 +53,21 @@ export default function StatHeader({ orders }) {
       <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
         <StatWidget
           title="Totale commesse"
-          value={stats.total.toString()}
+          value={stats.total.toString()
+          }
           icon={<PeopleAlt />}
           color="primary"
         />
         <StatWidget
           title="Commesse in Corso"
-          value={stats.inProgress.toString()}
+          value={stats.total.toString() - archivedOrders.length}
           icon={<ShoppingCart />}
           color="secondary"
         />
 
         <StatWidget
           title="Commesse Completate"
-          value={stats.completed.toString()}
+          value={archivedOrders.length.toString()}
           icon={<TrendingUp />}
           color="info"
         />

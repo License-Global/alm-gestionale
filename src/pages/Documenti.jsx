@@ -3,7 +3,6 @@ import {
   Box,
   Typography,
   Button,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -30,7 +29,6 @@ import {
   Upload as UploadIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
-  MoreVert as MoreVertIcon,
   Home as HomeIcon,
   CreateNewFolder as CreateNewFolderIcon,
 } from "@mui/icons-material";
@@ -39,10 +37,14 @@ import WidgetCard from "../components/Widgets/WidgetCard";
 import { supabase } from "../supabase/supabaseClient";
 import useSession from "../hooks/useSession";
 import { fetchCustomers } from "../services/customerService";
+import { useRole } from '../context/RoleContext';
 
 const MAX_FILE_SIZE = 80 * 1024 * 1024; // 80MB limit
 
 const Documenti = () => {
+  const { role } = useRole();
+  const isOperator = role && atob(role) === 'operator';
+
   const session = useSession();
   const userId = session?.session?.user?.id;
 
@@ -60,6 +62,10 @@ const Documenti = () => {
   const [editDialog, setEditDialog] = useState(false);
   const [editName, setEditName] = useState("");
   const [customers, setCustomers] = useState([]);
+  const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState("");
+  const [fileActionDialog, setFileActionDialog] = useState(false);
+  const [pendingFile, setPendingFile] = useState(null);
 
   useEffect(() => {
     if (userId) {
@@ -280,6 +286,32 @@ const Documenti = () => {
 
   const pathParts = currentPath ? currentPath.split("/") : [];
 
+  // Funzione per download file (comportamento attuale)
+  const handleDownloadFile = async (item) => {
+    if (item && item.name) {
+      downloadFile(item.name); // usa la funzione già definita
+    }
+    setFileActionDialog(false);
+    setPendingFile(null);
+  };
+
+  // Funzione per visualizzare PDF
+  const handleViewPdf = async (item) => {
+    if (!item) return;
+    try {
+      const { data, error } = await supabase.storage
+        .from(userId)
+        .getPublicUrl(currentPath ? `${currentPath}/${item.name}` : item.name);
+      if (error) throw error;
+      setPdfUrl(data.publicUrl);
+      setPdfDialogOpen(true);
+    } catch (e) {
+      setError("Errore nel caricamento del PDF");
+    }
+    setFileActionDialog(false);
+    setPendingFile(null);
+  };
+
   return (
     <WidgetCard title={"Gestione Documenti"}>
       <Box
@@ -374,63 +406,65 @@ const Documenti = () => {
         </Breadcrumbs>
 
         {/* Action Buttons */}
-        <Box
-          sx={{
-            mb: 4,
-            display: "flex",
-            gap: 3,
-            justifyContent: "center",
-          }}
-        >
-          <Button
-            variant="contained"
-            startIcon={<CreateNewFolderIcon />}
-            onClick={() => setCreateFolderDialog(true)}
+        {!isOperator && (
+          <Box
             sx={{
-              background: "linear-gradient(45deg, #2E8B57 30%, #32CD32 90%)",
-              borderRadius: 3,
-              boxShadow: "0 6px 20px rgba(46, 139, 87, 0.4)",
-              px: 4,
-              py: 1.5,
-              fontSize: "1.1rem",
-              fontWeight: 600,
-              textTransform: "none",
-              "&:hover": {
-                background: "linear-gradient(45deg, #1F5F3F 30%, #228B22 90%)",
-                transform: "translateY(-2px)",
-                boxShadow: "0 8px 25px rgba(46, 139, 87, 0.6)",
-              },
-              transition: "all 0.3s ease",
+              mb: 4,
+              display: "flex",
+              gap: 3,
+              justifyContent: "center",
             }}
           >
-            Nuova Cartella
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<UploadIcon />}
-            onClick={() => setUploadDialog(true)}
-            sx={{
-              borderColor: "#87CEEB",
-              color: "#4682B4",
-              borderWidth: 2,
-              borderRadius: 3,
-              px: 4,
-              py: 1.5,
-              fontSize: "1.1rem",
-              fontWeight: 600,
-              textTransform: "none",
-              "&:hover": {
-                borderColor: "#4682B4",
-                backgroundColor: "rgba(135, 206, 235, 0.1)",
-                transform: "translateY(-2px)",
-                boxShadow: "0 6px 20px rgba(70, 130, 180, 0.3)",
-              },
-              transition: "all 0.3s ease",
-            }}
-          >
-            Carica PDF
-          </Button>
-        </Box>
+            <Button
+              variant="contained"
+              startIcon={<CreateNewFolderIcon />}
+              onClick={() => setCreateFolderDialog(true)}
+              sx={{
+                background: "linear-gradient(45deg, #2E8B57 30%, #32CD32 90%)",
+                borderRadius: 3,
+                boxShadow: "0 6px 20px rgba(46, 139, 87, 0.4)",
+                px: 4,
+                py: 1.5,
+                fontSize: "1.1rem",
+                fontWeight: 600,
+                textTransform: "none",
+                "&:hover": {
+                  background: "linear-gradient(45deg, #1F5F3F 30%, #228B22 90%)",
+                  transform: "translateY(-2px)",
+                  boxShadow: "0 8px 25px rgba(46, 139, 87, 0.6)",
+                },
+                transition: "all 0.3s ease",
+              }}
+            >
+              Nuova Cartella
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<UploadIcon />}
+              onClick={() => setUploadDialog(true)}
+              sx={{
+                borderColor: "#87CEEB",
+                color: "#4682B4",
+                borderWidth: 2,
+                borderRadius: 3,
+                px: 4,
+                py: 1.5,
+                fontSize: "1.1rem",
+                fontWeight: 600,
+                textTransform: "none",
+                "&:hover": {
+                  borderColor: "#4682B4",
+                  backgroundColor: "rgba(135, 206, 235, 0.1)",
+                  transform: "translateY(-2px)",
+                  boxShadow: "0 6px 20px rgba(70, 130, 180, 0.3)",
+                },
+                transition: "all 0.3s ease",
+              }}
+            >
+              Carica PDF
+            </Button>
+          </Box>
+        )}
 
         {/* Content Grid */}
         {loading ? (
@@ -524,10 +558,11 @@ const Documenti = () => {
                         },
                       }}
                       onClick={() => {
-                        if (!item.metadata?.mimetype) {
-                          navigateToFolder(item.name);
+                        if (item.metadata?.mimetype === "application/pdf") {
+                          setPendingFile(item);
+                          setFileActionDialog(true);
                         } else {
-                          downloadFile(item.name);
+                          navigateToFolder(item.name);
                         }
                       }}
                     >
@@ -587,33 +622,7 @@ const Documenti = () => {
                           </Typography>
                         )}
                       </CardContent>
-                      <CardActions
-                        sx={{
-                          justifyContent: "flex-end",
-                          p: 2,
-                          pt: 0,
-                        }}
-                      >
-                        <IconButton
-                          size="small"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedItem(item);
-                            setAnchorEl(e.currentTarget);
-                          }}
-                          sx={{
-                            backgroundColor: "rgba(255, 255, 255, 0.7)",
-                            backdropFilter: "blur(10px)",
-                            "&:hover": {
-                              backgroundColor: "rgba(255, 255, 255, 0.9)",
-                              transform: "scale(1.1)",
-                            },
-                            transition: "all 0.3s ease",
-                          }}
-                        >
-                          <MoreVertIcon />
-                        </IconButton>
-                      </CardActions>
+                      {/* RIMOSSO CardActions con IconButton MoreVert */}
                     </Card>
                   </motion.div>
                 </Grid>
@@ -622,288 +631,336 @@ const Documenti = () => {
           </Grid>
         )}
 
-        {/* Context Menu */}
-        <Menu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={() => setAnchorEl(null)}
-          sx={{
-            "& .MuiPaper-root": {
-              background: "rgba(255, 255, 255, 0.9)",
-              backdropFilter: "blur(10px)",
-              border: "1px solid rgba(255, 255, 255, 0.3)",
-              borderRadius: 2,
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
-            },
-          }}
-        >
-          {/* Only show rename option for files (items with mimetype) */}
-          {selectedItem?.metadata?.mimetype && (
-            <MenuItem
-              onClick={() => {
-                setEditName(selectedItem?.name || "");
-                setEditDialog(true);
-                setAnchorEl(null);
-              }}
-              sx={{
-                "&:hover": {
-                  backgroundColor: "rgba(46, 139, 87, 0.1)",
-                },
-              }}
-            >
-              <ListItemIcon>
-                <EditIcon fontSize="small" sx={{ color: "#2E8B57" }} />
-              </ListItemIcon>
-              <ListItemText>Rinomina</ListItemText>
-            </MenuItem>
-          )}
-          <MenuItem
-            onClick={() => deleteItem(selectedItem)}
-            sx={{
-              color: "#d32f2f",
-              "&:hover": {
-                backgroundColor: "rgba(211, 47, 47, 0.1)",
+        {/* Create Folder Dialog */}
+        {!isOperator && (
+          <Dialog
+            open={createFolderDialog}
+            onClose={() => setCreateFolderDialog(false)}
+            PaperProps={{
+              sx: {
+                background: "rgba(255, 255, 255, 0.95)",
+                backdropFilter: "blur(20px)",
+                borderRadius: 3,
+                border: "1px solid rgba(255, 255, 255, 0.3)",
               },
             }}
           >
-            <ListItemIcon>
-              <DeleteIcon fontSize="small" color="error" />
-            </ListItemIcon>
-            <ListItemText>Elimina</ListItemText>
-          </MenuItem>
-        </Menu>
-
-        {/* Create Folder Dialog */}
-        <Dialog
-          open={createFolderDialog}
-          onClose={() => setCreateFolderDialog(false)}
-          PaperProps={{
-            sx: {
-              background: "rgba(255, 255, 255, 0.95)",
-              backdropFilter: "blur(20px)",
-              borderRadius: 3,
-              border: "1px solid rgba(255, 255, 255, 0.3)",
-            },
-          }}
-        >
-          <DialogTitle sx={{ color: "#2E8B57", fontWeight: 600 }}>
-            Crea Nuova Cartella
-          </DialogTitle>
-          <DialogContent>
-            <TextField
-              autoFocus
-              margin="dense"
-              label="Nome cartella"
-              fullWidth
-              variant="outlined"
-              value={newFolderName}
-              onChange={(e) => setNewFolderName(e.target.value)}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,
-                  "&:hover fieldset": {
-                    borderColor: "#2E8B57",
+            <DialogTitle sx={{ color: "#2E8B57", fontWeight: 600 }}>
+              Crea Nuova Cartella
+            </DialogTitle>
+            <DialogContent>
+              <TextField
+                autoFocus
+                margin="dense"
+                label="Nome cartella"
+                fullWidth
+                variant="outlined"
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value)}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 2,
+                    "&:hover fieldset": {
+                      borderColor: "#2E8B57",
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: "#2E8B57",
+                    },
                   },
-                  "&.Mui-focused fieldset": {
-                    borderColor: "#2E8B57",
+                  "& .MuiInputLabel-root.Mui-focused": {
+                    color: "#2E8B57",
                   },
-                },
-                "& .MuiInputLabel-root.Mui-focused": {
-                  color: "#2E8B57",
-                },
-              }}
-            />
-          </DialogContent>
-          <DialogActions sx={{ p: 3, gap: 2 }}>
-            <Button
-              onClick={() => setCreateFolderDialog(false)}
-              sx={{
-                color: "#666",
-                "&:hover": {
-                  backgroundColor: "rgba(102, 102, 102, 0.1)",
-                },
-              }}
-            >
-              Annulla
-            </Button>
-            <Button
-              onClick={createFolder}
-              variant="contained"
-              sx={{
-                background: "linear-gradient(45deg, #2E8B57 30%, #32CD32 90%)",
-                borderRadius: 2,
-                "&:hover": {
-                  background:
-                    "linear-gradient(45deg, #1F5F3F 30%, #228B22 90%)",
-                },
-              }}
-            >
-              Crea
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        {/* Upload Dialog */}
-        <Dialog
-          open={uploadDialog}
-          onClose={() => setUploadDialog(false)}
-          PaperProps={{
-            sx: {
-              background: "rgba(255, 255, 255, 0.95)",
-              backdropFilter: "blur(20px)",
-              borderRadius: 3,
-              border: "1px solid rgba(255, 255, 255, 0.3)",
-            },
-          }}
-        >
-          <DialogTitle sx={{ color: "#87CEEB", fontWeight: 600 }}>
-            Carica PDF
-          </DialogTitle>
-          <DialogContent>
-            <Box
-              sx={{
-                border: "2px dashed #87CEEB",
-                borderRadius: 2,
-                p: 3,
-                mt: 2,
-                textAlign: "center",
-                backgroundColor: "rgba(135, 206, 235, 0.05)",
-                transition: "all 0.3s ease",
-                "&:hover": {
-                  backgroundColor: "rgba(135, 206, 235, 0.1)",
-                  borderColor: "#4682B4",
-                },
-              }}
-            >
-              <input
-                type="file"
-                accept=".pdf"
-                onChange={(e) => setSelectedFile(e.target.files[0])}
-                style={{
-                  padding: 16,
-                  fontSize: "16px",
-                  width: "100%",
                 }}
               />
-            </Box>
-            {selectedFile && (
-              <Typography
-                variant="body2"
+            </DialogContent>
+            <DialogActions sx={{ p: 3, gap: 2 }}>
+              <Button
+                onClick={() => setCreateFolderDialog(false)}
                 sx={{
-                  mt: 2,
-                  p: 2,
-                  backgroundColor: "rgba(46, 139, 87, 0.1)",
-                  borderRadius: 2,
-                  color: "#2E8B57",
-                  fontWeight: 500,
+                  color: "#666",
+                  "&:hover": {
+                    backgroundColor: "rgba(102, 102, 102, 0.1)",
+                  },
                 }}
               >
-                File selezionato: {selectedFile.name} (
-                {(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
-              </Typography>
-            )}
+                Annulla
+              </Button>
+              <Button
+                onClick={createFolder}
+                variant="contained"
+                sx={{
+                  background: "linear-gradient(45deg, #2E8B57 30%, #32CD32 90%)",
+                  borderRadius: 2,
+                  "&:hover": {
+                    background:
+                      "linear-gradient(45deg, #1F5F3F 30%, #228B22 90%)",
+                  },
+                }}
+              >
+                Crea
+              </Button>
+            </DialogActions>
+          </Dialog>
+        )}
+
+        {/* Upload Dialog */}
+        {!isOperator && (
+          <Dialog
+            open={uploadDialog}
+            onClose={() => setUploadDialog(false)}
+            PaperProps={{
+              sx: {
+                background: "rgba(255, 255, 255, 0.95)",
+                backdropFilter: "blur(20px)",
+                borderRadius: 3,
+                border: "1px solid rgba(255, 255, 255, 0.3)",
+              },
+            }}
+          >
+            <DialogTitle sx={{ color: "#87CEEB", fontWeight: 600 }}>
+              Carica PDF
+            </DialogTitle>
+            <DialogContent>
+              <Box
+                sx={{
+                  border: "2px dashed #87CEEB",
+                  borderRadius: 2,
+                  p: 3,
+                  mt: 2,
+                  textAlign: "center",
+                  backgroundColor: "rgba(135, 206, 235, 0.05)",
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    backgroundColor: "rgba(135, 206, 235, 0.1)",
+                    borderColor: "#4682B4",
+                  },
+                }}
+              >
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => setSelectedFile(e.target.files[0])}
+                  style={{
+                    padding: 16,
+                    fontSize: "16px",
+                    width: "100%",
+                  }}
+                />
+              </Box>
+              {selectedFile && (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    mt: 2,
+                    p: 2,
+                    backgroundColor: "rgba(46, 139, 87, 0.1)",
+                    borderRadius: 2,
+                    color: "#2E8B57",
+                    fontWeight: 500,
+                  }}
+                >
+                  File selezionato: {selectedFile.name} (
+                  {(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                </Typography>
+              )}
+            </DialogContent>
+            <DialogActions sx={{ p: 3, gap: 2 }}>
+              <Button
+                onClick={() => setUploadDialog(false)}
+                sx={{
+                  color: "#666",
+                  "&:hover": {
+                    backgroundColor: "rgba(102, 102, 102, 0.1)",
+                  },
+                }}
+              >
+                Annulla
+              </Button>
+              <Button
+                onClick={uploadFile}
+                variant="contained"
+                disabled={!selectedFile}
+                sx={{
+                  background: "linear-gradient(45deg, #87CEEB 30%, #4682B4 90%)",
+                  borderRadius: 2,
+                  "&:hover": {
+                    background:
+                      "linear-gradient(45deg, #4682B4 30%, #1E90FF 90%)",
+                  },
+                  "&:disabled": {
+                    background: "rgba(135, 206, 235, 0.3)",
+                  },
+                }}
+              >
+                Carica
+              </Button>
+            </DialogActions>
+          </Dialog>
+        )}
+
+        {/* Edit Dialog */}
+        {!isOperator && (
+          <Dialog
+            open={editDialog}
+            onClose={() => setEditDialog(false)}
+            PaperProps={{
+              sx: {
+                background: "rgba(255, 255, 255, 0.95)",
+                backdropFilter: "blur(20px)",
+                borderRadius: 3,
+                border: "1px solid rgba(255, 255, 255, 0.3)",
+              },
+            }}
+          >
+            <DialogTitle sx={{ color: "#2E8B57", fontWeight: 600 }}>
+              Rinomina
+            </DialogTitle>
+            <DialogContent>
+              <TextField
+                autoFocus
+                margin="dense"
+                label="Nuovo nome"
+                fullWidth
+                variant="outlined"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 2,
+                    "&:hover fieldset": {
+                      borderColor: "#2E8B57",
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: "#2E8B57",
+                    },
+                  },
+                  "& .MuiInputLabel-root.Mui-focused": {
+                    color: "#2E8B57",
+                  },
+                }}
+              />
+            </DialogContent>
+            <DialogActions sx={{ p: 3, gap: 2 }}>
+              <Button
+                onClick={() => setEditDialog(false)}
+                sx={{
+                  color: "#666",
+                  "&:hover": {
+                    backgroundColor: "rgba(102, 102, 102, 0.1)",
+                  },
+                }}
+              >
+                Annulla
+              </Button>
+              <Button
+                onClick={renameItem}
+                variant="contained"
+                sx={{
+                  background: "linear-gradient(45deg, #2E8B57 30%, #32CD32 90%)",
+                  borderRadius: 2,
+                  "&:hover": {
+                    background:
+                      "linear-gradient(45deg, #1F5F3F 30%, #228B22 90%)",
+                  },
+                }}
+              >
+                Rinomina
+              </Button>
+            </DialogActions>
+          </Dialog>
+        )}
+
+        {/* --- DIALOG SCELTA AZIONE FILE PDF --- */}
+        <Dialog
+          open={fileActionDialog}
+          onClose={() => {
+            setFileActionDialog(false);
+            setPendingFile(null);
+          }}
+          PaperProps={{
+            sx: {
+              background: "rgba(255,255,255,0.97)",
+              borderRadius: 3,
+              minWidth: 320,
+              p: 2,
+            },
+          }}
+        >
+          <DialogTitle sx={{ fontWeight: 600, color: "#2E8B57" }}>
+            Cosa vuoi fare con il file?
+          </DialogTitle>
+          <DialogContent>
+            <Typography sx={{ mb: 2 }}>
+              Scegli se scaricare il file PDF o visualizzarlo direttamente.
+            </Typography>
           </DialogContent>
-          <DialogActions sx={{ p: 3, gap: 2 }}>
+          <DialogActions sx={{ gap: 2, p: 2 }}>
             <Button
-              onClick={() => setUploadDialog(false)}
-              sx={{
-                color: "#666",
-                "&:hover": {
-                  backgroundColor: "rgba(102, 102, 102, 0.1)",
-                },
-              }}
+              variant="contained"
+              color="primary"
+              onClick={() => handleDownloadFile(pendingFile)}
+              sx={{ borderRadius: 2 }}
             >
-              Annulla
+              Scarica
             </Button>
             <Button
-              onClick={uploadFile}
-              variant="contained"
-              disabled={!selectedFile}
-              sx={{
-                background: "linear-gradient(45deg, #87CEEB 30%, #4682B4 90%)",
-                borderRadius: 2,
-                "&:hover": {
-                  background:
-                    "linear-gradient(45deg, #4682B4 30%, #1E90FF 90%)",
-                },
-                "&:disabled": {
-                  background: "rgba(135, 206, 235, 0.3)",
-                },
-              }}
+              variant="outlined"
+              color="secondary"
+              onClick={() => handleViewPdf(pendingFile)}
+              sx={{ borderRadius: 2 }}
             >
-              Carica
+              Visualizza
+            </Button>
+            <Button
+              onClick={() => {
+                setFileActionDialog(false);
+                setPendingFile(null);
+              }}
+              sx={{ color: "#666" }}
+            >
+              Annulla
             </Button>
           </DialogActions>
         </Dialog>
 
-        {/* Edit Dialog */}
+        {/* --- MODAL VISUALIZZAZIONE PDF --- */}
         <Dialog
-          open={editDialog}
-          onClose={() => setEditDialog(false)}
+          open={pdfDialogOpen}
+          onClose={() => {
+            setPdfDialogOpen(false);
+            setPdfUrl("");
+          }}
+          maxWidth="xl"
           PaperProps={{
             sx: {
-              background: "rgba(255, 255, 255, 0.95)",
-              backdropFilter: "blur(20px)",
-              borderRadius: 3,
-              border: "1px solid rgba(255, 255, 255, 0.3)",
+              width: "90vw",
+              height: "90vh",
+              background: "#fff",
+              borderRadius: 2,
+              boxShadow: 24,
+              p: 0,
+              display: "flex",
+              flexDirection: "column",
             },
           }}
         >
-          <DialogTitle sx={{ color: "#2E8B57", fontWeight: 600 }}>
-            Rinomina
+          <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 2 }}>
+            <span>Visualizza PDF</span>
+            <Button onClick={() => { setPdfDialogOpen(false); setPdfUrl(""); }} color="error" variant="outlined" sx={{ ml: 2, borderRadius: 2 }}>
+              Chiudi
+            </Button>
           </DialogTitle>
-          <DialogContent>
-            <TextField
-              autoFocus
-              margin="dense"
-              label="Nuovo nome"
-              fullWidth
-              variant="outlined"
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,
-                  "&:hover fieldset": {
-                    borderColor: "#2E8B57",
-                  },
-                  "&.Mui-focused fieldset": {
-                    borderColor: "#2E8B57",
-                  },
-                },
-                "& .MuiInputLabel-root.Mui-focused": {
-                  color: "#2E8B57",
-                },
-              }}
-            />
+          <DialogContent sx={{ flex: 1, p: 0, overflow: "hidden" }}>
+            {pdfUrl && (
+              <iframe
+                src={pdfUrl}
+                width="100%"
+                height="100%"
+                style={{ border: "none", minHeight: "80vh" }}
+                title="PDF Viewer"
+              />
+            )}
           </DialogContent>
-          <DialogActions sx={{ p: 3, gap: 2 }}>
-            <Button
-              onClick={() => setEditDialog(false)}
-              sx={{
-                color: "#666",
-                "&:hover": {
-                  backgroundColor: "rgba(102, 102, 102, 0.1)",
-                },
-              }}
-            >
-              Annulla
-            </Button>
-            <Button
-              onClick={renameItem}
-              variant="contained"
-              sx={{
-                background: "linear-gradient(45deg, #2E8B57 30%, #32CD32 90%)",
-                borderRadius: 2,
-                "&:hover": {
-                  background:
-                    "linear-gradient(45deg, #1F5F3F 30%, #228B22 90%)",
-                },
-              }}
-            >
-              Rinomina
-            </Button>
-          </DialogActions>
         </Dialog>
       </Box>
     </WidgetCard>

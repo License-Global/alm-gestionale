@@ -22,8 +22,7 @@ import { TwitterPicker } from "react-color";
 import { toast, Zoom } from "react-toastify";
 import dayjs from "dayjs";
 import { activityOrderSchema } from "../../utils/validations/validationSchemes";
-import { createOrder, createSchema } from "../../services/activitiesService";
-import { createFolder } from "../../services/bucketServices";
+import { createSchema } from "../../services/activitiesService";
 import { useNavigate } from "react-router-dom";
 import {
   activitiesById,
@@ -32,11 +31,19 @@ import {
 import useSession from "../../hooks/useSession";
 import CalendarTool from "../Calendar/CalendarTool";
 
-const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
+const DynamicTable = ({ 
+  formikValues, 
+  personale, 
+  formStep, 
+  setFormStep,
+  activities = [],
+  onActivitiesChange = () => {},
+  onFinalSubmit = () => {},
+  loading = false
+}) => {
   const { session } = useSession();
   const [isValid, setIsValid] = useState(false);
   const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
   const [saveNewSchema, setSaveNewSchema] = useState(false);
   const [newSchemaName, setNewSchemaName] = useState("");
   const [selectedOperatorActivities, setSelectedOperatorActivities] = useState(
@@ -65,7 +72,7 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
       transition: Zoom,
     });
 
-  const [rows, setRows] = useState([]);
+  const [rows, setRows] = useState(activities || []);
   const [newRow, setNewRow] = useState({
     name: "",
     inCalendar: false,
@@ -74,6 +81,13 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
     startDate: dayjs().add(5, "minute"),
     endDate: dayjs().add(15, "minute"),
   });
+
+  // Sincronizza le attività con il componente padre
+  useEffect(() => {
+    if (JSON.stringify(rows) !== JSON.stringify(activities)) {
+      onActivitiesChange(rows);
+    }
+  }, [rows, onActivitiesChange, activities]);
 
   // --- UTILITY per controllare il conflitto con le attività nella stessa commessa
   const isTimeConflict = (start, end, rows) => {
@@ -161,33 +175,18 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
     }
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (saveNewSchema && newSchemaName.trim() === "") {
       notifyWarn("Inserisci un nome per il nuovo schema");
       return;
     }
+    
     if (saveNewSchema) {
-      submitNewSchema(newSchemaName, schemaActivities());
+      await submitNewSchema(newSchemaName, schemaActivities());
     }
-    const data = {
-      ...formikValues,
-      activities: formatRows(rows),
-      user_id: session.user.id,
-    };
-    try {
-      createOrder(data);
-      createFolder(
-        session.user.id,
-        formikValues.orderName + formikValues.clientId
-      );
-      console.log(data);
-    } catch (e) {
-      console.error(e);
-    }
-    setLoading(true);
-    setTimeout(() => {
-      navigate("/");
-    }, 1000);
+    
+    // Utilizza la funzione di submit dal componente padre
+    await onFinalSubmit();
   };
 
   // Carichiamo le attività dell’operatore selezionato da DB, per controllare la disponibilità
@@ -471,7 +470,7 @@ const DynamicTable = ({ formikValues, personale, formStep, setFormStep }) => {
       <Box sx={{ textAlign: "center", my: 2 }}>
         <Button
           type="button"
-          disabled={!rows.length > 0}
+          disabled={!rows.length > 0 || loading}
           size="large"
           variant="contained"
           color="secondary"

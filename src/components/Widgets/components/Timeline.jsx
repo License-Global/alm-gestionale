@@ -15,6 +15,8 @@ import {
   Typography,
 } from "@mui/material";
 
+import { useArchivedOrders } from "../../../hooks/useArchivedOrder";
+
 const months = [
   "Gennaio",
   "Febbraio",
@@ -53,29 +55,23 @@ function getAvailableYears(orders) {
   return Array.from(years).sort((a, b) => b - a);
 }
 
-function getTimelineData(orders, year) {
+function getTimelineData(inseriteOrders, completateOrders, year) {
   const inserite = Array(12).fill(0);
   const completate = Array(12).fill(0);
 
-  orders?.forEach((order) => {
+  inseriteOrders?.forEach((order) => {
     const created = new Date(order.created_at);
     if (created.getFullYear() === year) {
       inserite[created.getMonth()]++;
     }
-    // Completate: tutte le attività devono avere status === "Completato"
-    if (
-      order.activities &&
-      order.activities.length > 0 &&
-      order.activities.every((a) => a.status === "Completato")
-    ) {
-      // Usa la data di fine più recente tra le attività
-      const lastEnd = order.activities.reduce((max, a) => {
-        const d = a.endDate ? new Date(a.endDate) : null;
-        return d && (!max || d > max) ? d : max;
-      }, null);
-      if (lastEnd && lastEnd.getFullYear() === year) {
-        completate[lastEnd.getMonth()]++;
-      }
+  });
+
+  completateOrders?.forEach((order) => {
+    // Usa la data di archiviazione come data di completamento
+    const archivedAt = order.archived_at || order.updated_at || order.created_at;
+    const completed = new Date(archivedAt);
+    if (completed.getFullYear() === year) {
+      completate[completed.getMonth()]++;
     }
   });
 
@@ -86,7 +82,15 @@ function getTimelineData(orders, year) {
 }
 
 export default function Timeline({ orders = [] }) {
-  const years = getAvailableYears(orders);
+  const { orders: archivedOrders, loading } = useArchivedOrders();
+
+  // Calcola gli anni disponibili sia da inserite che da completate
+  const years = React.useMemo(() => {
+    const inseriteYears = getAvailableYears(orders);
+    const completateYears = getAvailableYears(archivedOrders);
+    return Array.from(new Set([...inseriteYears, ...completateYears])).sort((a, b) => b - a);
+  }, [orders, archivedOrders]);
+
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = React.useState(
     years.includes(currentYear) ? currentYear : years[0] || currentYear
@@ -97,9 +101,9 @@ export default function Timeline({ orders = [] }) {
       setSelectedYear(years[0]);
     }
     // eslint-disable-next-line
-  }, [orders]);
+  }, [orders, archivedOrders]);
 
-  const timelineData = getTimelineData(orders, selectedYear);
+  const timelineData = getTimelineData(orders, archivedOrders, selectedYear);
 
   // Calcola se ci sono dati per l'anno selezionato
   const hasData =
@@ -109,6 +113,16 @@ export default function Timeline({ orders = [] }) {
   const now = new Date();
   const isCurrentYear = selectedYear === now.getFullYear();
   const currentMonth = now.getMonth();
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" sx={{ p: 4 }}>
+        <Typography variant="body2" color="text.secondary">
+          Caricamento commesse archiviate...
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box>
@@ -181,22 +195,21 @@ export default function Timeline({ orders = [] }) {
                   INSERITE
                 </TableCell>
                 {timelineData.inserite.map((val, idx) => (
-
-                    <TableCell
-                      key={idx}
-                      align="center"
-                      sx={{
-                        color: "#e6b800",
-                        fontWeight: 500,
-                        fontSize: 18,
-                        backgroundColor:
-                          isCurrentYear && idx === currentMonth
-                            ? "rgba(245, 206, 66, 0.13)"
-                            : "inherit",
-                      }}
-                    >
-                      {val || ""}
-                    </TableCell>
+                  <TableCell
+                    key={idx}
+                    align="center"
+                    sx={{
+                      color: "#e6b800",
+                      fontWeight: 500,
+                      fontSize: 18,
+                      backgroundColor:
+                        isCurrentYear && idx === currentMonth
+                          ? "rgba(245, 206, 66, 0.13)"
+                          : "inherit",
+                    }}
+                  >
+                    {val || ""}
+                  </TableCell>
                 ))}
               </TableRow>
               <TableRow>
@@ -204,21 +217,21 @@ export default function Timeline({ orders = [] }) {
                   COMPLETATE
                 </TableCell>
                 {timelineData.completate.map((val, idx) => (
-                    <TableCell
-                      key={idx}
-                      align="center"
-                      sx={{
-                        color: "green",
-                        fontWeight: 500,
-                        fontSize: 18,
-                        backgroundColor:
-                          isCurrentYear && idx === currentMonth
-                            ? "rgba(56, 142, 60, 0.13)"
-                            : "inherit",
-                      }}
-                    >
-                      {val || ""}
-                    </TableCell>
+                  <TableCell
+                    key={idx}
+                    align="center"
+                    sx={{
+                      color: "green",
+                      fontWeight: 500,
+                      fontSize: 18,
+                      backgroundColor:
+                        isCurrentYear && idx === currentMonth
+                          ? "rgba(56, 142, 60, 0.13)"
+                          : "inherit",
+                    }}
+                  >
+                    {val || ""}
+                  </TableCell>
                 ))}
               </TableRow>
             </TableBody>

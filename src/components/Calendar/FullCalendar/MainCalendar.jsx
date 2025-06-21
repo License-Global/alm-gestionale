@@ -10,6 +10,8 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import "dayjs/locale/it";
 import { supabase } from "../../../supabase/supabaseClient";
+import { Select, MenuItem, InputLabel, FormControl } from "@mui/material";
+import { useRole } from '../../../context/RoleContext';
 
 import "./MainCalendar.css";
 
@@ -20,6 +22,7 @@ const MainCalendar = ({ orders, onActivityUpdate }) => {
   };
 
   const [viewMode, setViewMode] = useState(getInitialViewMode());
+  const [employeeFilter, setEmployeeFilter] = useState("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [formData, setFormData] = useState({
@@ -33,6 +36,8 @@ const MainCalendar = ({ orders, onActivityUpdate }) => {
     dateOrder: "",
   });
   const { personale } = usePersonale();
+  const { role } = useRole();
+  const isOperator = role && atob(role) === 'operator';
 
   // Funzione di validazione delle date
   const validateDates = useCallback(() => {
@@ -369,7 +374,23 @@ const MainCalendar = ({ orders, onActivityUpdate }) => {
     mouseEnterInfo.el.title = `${mouseEnterInfo.event.extendedProps.orderName} - ${mouseEnterInfo.event.extendedProps.status}`;
   };
 
-  const events = transformOrdersToEvents(orders);
+  // Filtra gli ordini/attività in base al dipendente selezionato
+  const filteredOrders =
+    employeeFilter === "all"
+      ? orders
+      : orders
+          .map((order) => ({
+            ...order,
+            activities: Array.isArray(order.activities)
+              ? order.activities.filter(
+                  (act) =>
+                    act.responsible && (act.responsible.id || act.responsible) === employeeFilter
+                )
+              : [],
+          }))
+          .filter((order) => order.activities && order.activities.length > 0);
+
+  const events = transformOrdersToEvents(filteredOrders);
 
   // Aggiorna localStorage quando cambia la modalità
   useEffect(() => {
@@ -378,18 +399,41 @@ const MainCalendar = ({ orders, onActivityUpdate }) => {
 
   return (
     <div className="main-calendar-container">
-      <div className="calendar-controls">
-        <div className="view-selector">
-          <label htmlFor="view-mode">Modalità visualizzazione:</label>
-          <select
-            id="view-mode"
-            value={viewMode}
-            onChange={(e) => setViewMode(e.target.value)}
-            className="view-mode-select"
-          >
-            <option value="activities">Attività</option>
-            <option value="orders">Ordini</option>
-          </select>
+      <div className="calendar-controls" style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 16 }}>
+        <div className="view-selector" style={{ minWidth: 220 }}>
+          <FormControl size="small" fullWidth variant="outlined">
+            <InputLabel id="view-mode-label">Modalità visualizzazione</InputLabel>
+            <Select
+              labelId="view-mode-label"
+              id="view-mode"
+              value={viewMode}
+              label="Modalità visualizzazione"
+              onChange={(e) => setViewMode(e.target.value)}
+            >
+              <MenuItem value="activities">Attività</MenuItem>
+              <MenuItem value="orders">Ordini</MenuItem>
+            </Select>
+          </FormControl>
+        </div>
+        <div className="view-selector" style={{ minWidth: 220 }}>
+          <FormControl size="small" fullWidth variant="outlined">
+            <InputLabel id="employee-filter-label">Per dipendente</InputLabel>
+            <Select
+              labelId="employee-filter-label"
+              id="employee-filter"
+              value={employeeFilter}
+              label="Per dipendente"
+              onChange={(e) => setEmployeeFilter(e.target.value)}
+            >
+              <MenuItem value="all">Tutti</MenuItem>
+              {personale &&
+                personale.map((p) => (
+                  <MenuItem key={p.id} value={p.id}>
+                    {p.workerName}
+                  </MenuItem>
+                ))}
+            </Select>
+          </FormControl>
         </div>
       </div>
 
@@ -425,7 +469,7 @@ const MainCalendar = ({ orders, onActivityUpdate }) => {
       />
 
       {/* Modal for editing event dates */}
-      {isModalOpen && (
+      {isModalOpen && !isOperator && (
         <div className="modal-overlay" onClick={handleModalClose}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -611,6 +655,37 @@ const MainCalendar = ({ orders, onActivityUpdate }) => {
               >
                 {saving ? "Salvando..." : "Salva Modifiche"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Se operatore, mostra solo i dettagli senza form di modifica */}
+      {isModalOpen && isOperator && selectedEvent && (
+        <div className="modal-overlay" onClick={handleModalClose}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Dettaglio evento</h3>
+              <button className="modal-close" onClick={handleModalClose}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="event-info">
+                <h4>{selectedEvent.type === "activity" ? "Attività" : "Ordine"}: {selectedEvent.type === "activity" ? selectedEvent.activityName : selectedEvent.orderName}</h4>
+                <p><strong>ID:</strong> {selectedEvent.internal_id}</p>
+                <p><strong>Cliente:</strong> {selectedEvent.client?.customer_name || "N/A"}</p>
+                {selectedEvent.type === "activity" && (
+                  <>
+                    <p><strong>Stato:</strong> {selectedEvent.status}</p>
+                    <p><strong>Responsabile:</strong> {getWorkerName(selectedEvent.responsible)}</p>
+                    <p><strong>Ordine:</strong> {selectedEvent.orderName}</p>
+                  </>
+                )}
+                <p><strong>Urgenza:</strong> {selectedEvent.urgency}</p>
+                <p><strong>Inizio:</strong> {selectedEvent.currentStart ? dayjs(selectedEvent.currentStart).format('DD/MM/YYYY HH:mm') : '-'}</p>
+                <p><strong>Fine:</strong> {selectedEvent.currentEnd ? dayjs(selectedEvent.currentEnd).format('DD/MM/YYYY HH:mm') : '-'}</p>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={handleModalClose}>Chiudi</button>
             </div>
           </div>
         </div>

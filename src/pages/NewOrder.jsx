@@ -1,57 +1,67 @@
 import React, { useState, useEffect } from "react";
 import {
   Box,
-  TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
   Button,
-  Grid,
-  Typography,
   Paper,
-  InputAdornment,
-  alpha,
-  Card,
-  CardContent,
 } from "@mui/material";
-import { Inventory2, Construction } from "@mui/icons-material";
 import { motion, AnimatePresence } from "framer-motion";
-import { DatePicker } from "@mui/x-date-pickers";
-import dayjs from "dayjs";
 import { usePersonale } from "../hooks/usePersonale";
 import DynamicTable from "../components/Tables/DynamicTable";
-import theme from "../theme";
 import { fetchActivitiesSchemes } from "../services/activitiesService";
 import { PageContainer, SectionTitle } from "../styles/ArchiveDashboardStyles";
 import { ToastContainer } from "react-toastify";
-import { useFormik } from "formik";
 import ActivityTable from "../components/Tables/ActivityTable";
-import * as Yup from "yup";
-import { useAllOrders } from "../hooks/useOrders";
 import { fetchCustomers } from "../services/customerService";
+import { createOrder } from "../services/activitiesService";
+import { createFolder } from "../services/bucketServices";
+import { useNavigate } from "react-router-dom";
+import dayjs from "dayjs";
 
-const NewOrder = () => {
-  const [formStep, setFormStep] = useState(1);
+// Nuovi componenti step
+import OrderDetailsStep from "../components/NewOrder/OrderDetailsStep";
+import TemplateSelectionStep from "../components/NewOrder/TemplateSelectionStep";
+
+// Nuovo sistema di gestione stato
+import { NewOrderFormProvider, useNewOrderForm } from "../context/NewOrderFormContext";
+import { useFormValidation } from "../hooks/useFormValidation";
+import useSession from "../hooks/useSession";
+
+/**
+ * Componente interno che utilizza il contesto del form
+ */
+const NewOrderContent = () => {
+  const { state, actions } = useNewOrderForm();
+  const { isFirstStepCompleted } = useFormValidation();
+  const { session } = useSession();
+  const { personale } = usePersonale();
+  const navigate = useNavigate();
+
+  // Stati locali per dati esterni
   const [activitiesSchemes, setActivitiesSchemes] = useState([]);
-  const [selectedSchema, setSelectedSchema] = useState(null);
   const [customers, setCustomers] = useState([]);
   const [customersList, setCustomersList] = useState([]);
-  const { personale } = usePersonale();
-  const { orders } = useAllOrders();
+  const [loading, setLoading] = useState(false);
 
-  const MotionCard = motion(Card);
-  const MotionGrid = motion(Grid);
-
+  // Carica i dati esterni
   useEffect(() => {
-    const fetchCustomersData = async () => {
-      const data = await fetchCustomers();
-      setCustomers(data);
+    const fetchData = async () => {
+      try {
+        const [customersData, schemesData] = await Promise.all([
+          fetchCustomers(),
+          fetchActivitiesSchemes()
+        ]);
+        
+        setCustomers(customersData);
+        setActivitiesSchemes(schemesData);
+      } catch (error) {
+        console.error('Errore nel caricamento dei dati:', error);
+      }
     };
 
-    fetchCustomersData();
+    fetchData();
   }, []);
 
+  // Prepara la lista clienti
   useEffect(() => {
     setCustomersList(
       customers.map((customer) => ({
@@ -61,91 +71,110 @@ const NewOrder = () => {
     );
   }, [customers]);
 
-  useEffect(() => {
-    console.log(customersList);
-  }, [customersList]);
+  // Sistema di navigazione semplificato
+  const handleRestart = () => {
+    actions.resetForm();
+  };
 
-  const mainOrderSchema = Yup.object({
-    orderName: Yup.string()
-      .matches(/^[a-zA-ZÀ-ÿ ]+$/, "Sono ammesse solo lettere e spazi")
-      .max(30, "Non deve superare i 30 caratteri")
-      .test(
-        "uniqueOrderNamePerClient",
-        "Nome commessa già esistente per questo cliente",
-        function (value) {
-          const clientId = this.parent.clientId;
+  const goToStep = (step) => {
+    actions.setFormStep(step);
+  };
 
-          // Confronta clientId come numero per gestire il caso in cui uno sia stringa e uno numero
-          const isDuplicate = orders.some(
-            (order) =>
-              order.orderName === value &&
-              Number(order.clientId) === Number(clientId)
-          );
-
-          return !isDuplicate;
-        }
-      )
-      .required("Campo obbligatorio"),
-    clientId: Yup.string().required("Campo obbligatorio"),
-    startDate: Yup.date().required("Campo obbligatorio"),
-    endDate: Yup.date().required("Campo obbligatorio"),
-    materialShelf: Yup.string().required("Campo obbligatorio"),
-    urgency: Yup.string().required("Campo obbligatorio"),
-    accessories: Yup.string().required("Campo obbligatorio"),
-    orderManager: Yup.string().required("Campo obbligatorio"),
-  });
-
-  const formik = useFormik({
-    initialValues: {
-      orderName: "",
-      clientId: "",
-      startDate: dayjs().add(2, "minute"),
-      endDate: dayjs().add(1, "day"),
-      materialShelf: "",
-      urgency: "",
-      accessories: "",
-      orderManager: "",
-      activities: [],
-    },
-    validationSchema: mainOrderSchema,
-    onSubmit: (values) => {
-      console.log(values);
-    },
-  });
-
-  const isFirstStepCompleted = () => {
-    if (
-      formik.values.orderName &&
-      formik.values.startDate &&
-      formik.values.endDate &&
-      formik.values.materialShelf &&
-      formik.values.urgency &&
-      formik.values.accessories &&
-      formik.values.orderManager &&
-      formik.values.clientId &&
-      formik.isValid
-    ) {
-      return true;
-    } else {
-      return false;
+  const goBack = () => {
+    if (state.formStep > 1) {
+      // Da qualsiasi step torniamo sempre al precedente logico
+      if (state.formStep === 3 || state.formStep === 4) {
+        actions.setFormStep(2); // Dalla creazione attività o selezione modello torna alla scelta
+      } else if (state.formStep === 5) {
+        actions.setFormStep(4); // Dal conferma modello torna alla selezione modello
+      } else {
+        actions.setFormStep(state.formStep - 1);
+      }
     }
   };
-  const handleRestart = () => {
-    formik.resetForm();
-    setFormStep(1);
-  };
-  useEffect(() => {
-    const getActivitiesSchemes = async () => {
-      try {
-        const schemes = await fetchActivitiesSchemes();
-        setActivitiesSchemes(schemes);
-      } catch (err) {
-        console.log(err.message);
-      }
-    };
-    getActivitiesSchemes();
-  }, []);
 
+  // Determina il percorso attuale
+  const getCurrentPath = () => {
+    if (state.activities.length > 0 && !state.selectedSchema) {
+      return 'custom'; // Percorso attività personalizzate
+    }
+    if (state.selectedSchema) {
+      return 'template'; // Percorso da modello
+    }
+    return 'none'; // Nessun percorso scelto
+  };
+
+  // Gestione delle scelte del percorso
+  const chooseCustomActivities = () => {
+    // Reset del modello se presente
+    if (state.selectedSchema) {
+      actions.setSelectedSchema(null);
+    }
+    actions.setFormStep(3);
+  };
+
+  const chooseTemplate = () => {
+    // Reset delle attività se presenti
+    if (state.activities.length > 0) {
+      actions.updateActivities([]);
+    }
+    actions.setFormStep(4);
+  };
+
+  // Gestione attività personalizzate
+  const handleActivitiesChange = (newActivities) => {
+    actions.updateActivities(newActivities);
+  };
+
+  // Formatta le attività per l'invio
+  const formatActivitiesForSubmission = (activities) => {
+    return activities.map((activity) => ({
+      ...activity,
+      startDate: activity.startDate ? dayjs(activity.startDate).toDate() : null,
+      endDate: activity.endDate ? dayjs(activity.endDate).toDate() : null,
+      status: "Standby",
+      completed: null,
+      note: [],
+    }));
+  };
+
+  // Gestisce il submit finale
+  const handleFinalSubmit = async () => {
+    if (!session?.user?.id) {
+      console.error('Sessione utente non valida');
+      return;
+    }
+
+    const orderData = {
+      orderName: state.orderName,
+      clientId: state.clientId,
+      startDate: state.startDate,
+      endDate: state.endDate,
+      materialShelf: state.materialShelf,
+      urgency: state.urgency,
+      accessories: state.accessories,
+      orderManager: state.orderManager,
+      activities: formatActivitiesForSubmission(state.activities),
+      user_id: session.user.id,
+    };
+
+    try {
+      setLoading(true);
+      
+      await createOrder(orderData);
+      await createFolder(session.user.id, state.orderName + state.clientId);
+      
+      // Cancella i dati persistenti e reindirizza
+      actions.clearPersistedData();
+      navigate("/");
+    } catch (error) {
+      console.error('Errore durante la creazione della commessa:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Mostra il contenuto direttamente senza dipendere da isLoaded
   return (
     <PageContainer>
       <ToastContainer
@@ -160,442 +189,542 @@ const NewOrder = () => {
         draggable
         pauseOnHover={false}
         theme="light"
-        transition={"Zoom"}
+        transition="Zoom"
       />
-      <form onSubmit={formik.handleSubmit}>
-        <Paper sx={{ p: 3, mb: 3, boxShadow: " 15px 15px 15px #ccc" }}>
-          <SectionTitle variant="h4">Nuova commessa</SectionTitle>
-          <AnimatePresence mode="wait">
-            {formStep === 1 && (
-              <motion.div
-                key="step1"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                layout
-              >
-                <Grid container spacing={2} sx={{ mb: 3 }}>
-                  <Grid item xs={12} sm={4}>
-                    <TextField
-                      id="orderName"
-                      name="orderName"
-                      fullWidth
-                      label="Nome commessa"
-                      required
-                      value={formik.values.orderName}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      error={
-                        formik.touched.orderName &&
-                        Boolean(formik.errors.orderName)
-                      }
-                      helperText={
-                        formik.touched.orderName && formik.errors.orderName
-                      }
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
-                    <FormControl fullWidth>
-                      <InputLabel id="clientId">Cliente</InputLabel>
-                      <Select
-                        fullWidth
-                        id="clientId"
-                        name="clientId"
-                        label="Cliente"
-                        value={formik.values.clientId}
-                        onChange={formik.handleChange}
-                        onBlur={formik.handleBlur}
-                        error={
-                          formik.touched.clientId &&
-                          Boolean(formik.errors.clientId)
-                        }
-                        helperText={
-                          formik.touched.clientId && formik.errors.clientId
-                        }
-                      >
-                        {customersList.map((customer) => (
-                          <MenuItem key={customer.id} value={customer.id}>
-                            {customer.label}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
-                    <DatePicker
-                      id="startDate"
-                      name="startDate"
-                      disablePast
-                      sx={{ width: "100%" }}
-                      label="Inizio commessa"
-                      value={formik.values.startDate}
-                      onChange={(value) =>
-                        formik.setFieldValue("startDate", value)
-                      }
-                      onBlur={formik.handleBlur}
-                      error={
-                        formik.touched.startDate &&
-                        Boolean(formik.errors.startDate)
-                      }
-                      helperText={
-                        formik.touched.startDate && formik.errors.startDate
-                      }
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
-                    <DatePicker
-                      id="endDate"
-                      name="endDate"
-                      disablePast
-                      minDate={formik.values.startDate}
-                      sx={{ width: "100%" }}
-                      label="Fine commessa"
-                      value={formik.values.endDate}
-                      onChange={(value) =>
-                        formik.setFieldValue("endDate", value)
-                      }
-                      onBlur={formik.handleBlur}
-                      error={
-                        formik.touched.endDate && Boolean(formik.errors.endDate)
-                      }
-                      helperText={
-                        formik.touched.endDate && formik.errors.endDate
-                      }
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
-                    <TextField
-                      id="accessories"
-                      name="accessories"
-                      fullWidth
-                      label="Scaffale accessori"
-                      required
-                      value={formik.values.accessories}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      error={
-                        formik.touched.accessories &&
-                        Boolean(formik.errors.accessories)
-                      }
-                      helperText={
-                        formik.touched.accessories && formik.errors.accessories
-                      }
-                      slotProps={{
-                        input: {
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <Construction />
-                            </InputAdornment>
-                          ),
-                        },
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
-                    <TextField
-                      id="materialShelf"
-                      name="materialShelf"
-                      fullWidth
-                      label={"Scaffale materiale"}
-                      required
-                      slotProps={{
-                        input: {
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <Inventory2 />
-                            </InputAdornment>
-                          ),
-                        },
-                      }}
-                      value={formik.values.materialShelf}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      error={
-                        formik.touched.materialShelf &&
-                        Boolean(formik.errors.materialShelf)
-                      }
-                      helperText={
-                        formik.touched.materialShelf &&
-                        formik.errors.materialShelf
-                      }
-                    />
-                  </Grid>
-                </Grid>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <FormControl fullWidth>
-                      <InputLabel id="orderPriority-label">Priorità</InputLabel>
-                      <Select
-                        id="urgency"
-                        name="urgency"
-                        labelId="orderPriority-label"
-                        required
-                        label="Priorità"
-                        value={formik.values.urgency}
-                        onChange={formik.handleChange}
-                        onBlur={formik.handleBlur}
-                        error={
-                          formik.touched.urgency &&
-                          Boolean(formik.errors.urgency)
-                        }
-                        helperText={
-                          formik.touched.urgency && formik.errors.urgency
-                        }
-                      >
-                        <MenuItem value="Urgente">Urgente</MenuItem>
-                        <MenuItem value="Alta">Alta</MenuItem>
-                        <MenuItem value="Media">Media</MenuItem>
-                        <MenuItem value="Bassa">Bassa</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <FormControl fullWidth>
-                      <InputLabel id="orderManager-label">
-                        Responsabile
-                      </InputLabel>
-                      <Select
-                        id="orderManager"
-                        name="orderManager"
-                        required
-                        labelId="orderManager-label"
-                        label="Responsabile"
-                        value={formik.values.orderManager}
-                        onChange={formik.handleChange}
-                        onBlur={formik.handleBlur}
-                        error={
-                          formik.touched.orderManager &&
-                          Boolean(formik.errors.orderManager)
-                        }
-                        helperText={
-                          formik.touched.orderManager &&
-                          formik.errors.orderManager
-                        }
-                      >
-                        {personale.map((worker, index) => (
-                          <MenuItem key={index} value={worker.id}>
-                            {worker.workerName}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                </Grid>
-              </motion.div>
+      
+      <Paper sx={{ p: 3, mb: 3, boxShadow: "15px 15px 15px #ccc" }}>
+        <SectionTitle variant="h4">Nuova commessa</SectionTitle>
+        
+        {/* Indicatore di progresso compatto */}
+        <Box sx={{ mb: 3, textAlign: 'center' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1.5, mb: 2 }}>
+            <Box sx={{ 
+              width: 36, 
+              height: 36, 
+              borderRadius: '50%', 
+              background: state.formStep >= 1 
+                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+                : 'linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%)',
+              color: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 'bold',
+              fontSize: '1rem',
+              boxShadow: state.formStep >= 1 ? '0 3px 12px rgba(102, 126, 234, 0.25)' : 'none',
+              transition: 'all 0.3s ease'
+            }}>
+              1
+            </Box>
+            <Box sx={{ 
+              width: 40, 
+              height: 3, 
+              borderRadius: 2,
+              background: state.formStep >= 2 
+                ? 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)' 
+                : 'linear-gradient(90deg, #e0e0e0 0%, #bdbdbd 100%)',
+              transition: 'all 0.5s ease'
+            }} />
+            <Box sx={{ 
+              width: 36, 
+              height: 36, 
+              borderRadius: '50%', 
+              background: state.formStep >= 2 
+                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+                : 'linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%)',
+              color: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 'bold',
+              fontSize: '1rem',
+              boxShadow: state.formStep >= 2 ? '0 3px 12px rgba(102, 126, 234, 0.25)' : 'none',
+              transition: 'all 0.3s ease'
+            }}>
+              2
+            </Box>
+            {getCurrentPath() !== 'none' && (
+              <>
+                <Box sx={{ 
+                  width: 40, 
+                  height: 3, 
+                  borderRadius: 2,
+                  background: state.formStep >= 3 
+                    ? 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)' 
+                    : 'linear-gradient(90deg, #e0e0e0 0%, #bdbdbd 100%)',
+                  transition: 'all 0.5s ease'
+                }} />
+                <Box sx={{ 
+                  width: 36, 
+                  height: 36, 
+                  borderRadius: '50%', 
+                  background: state.formStep >= 3 
+                    ? getCurrentPath() === 'custom' 
+                      ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+                      : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
+                    : 'linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%)',
+                  color: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 'bold',
+                  fontSize: '1rem',
+                  boxShadow: state.formStep >= 3 ? '0 3px 12px rgba(102, 126, 234, 0.25)' : 'none',
+                  transition: 'all 0.3s ease'
+                }}>
+                  3
+                </Box>
+                {getCurrentPath() === 'template' && state.formStep >= 4 && (
+                  <>
+                    <Box sx={{ 
+                      width: 40, 
+                      height: 3, 
+                      borderRadius: 2,
+                      background: state.formStep >= 4 
+                        ? 'linear-gradient(90deg, #f093fb 0%, #f5576c 100%)' 
+                        : 'linear-gradient(90deg, #e0e0e0 0%, #bdbdbd 100%)',
+                      transition: 'all 0.5s ease'
+                    }} />
+                    <Box sx={{ 
+                      width: 36, 
+                      height: 36, 
+                      borderRadius: '50%', 
+                      background: state.formStep >= 4 
+                        ? 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' 
+                        : 'linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%)',
+                      color: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 'bold',
+                      fontSize: '1rem',
+                      boxShadow: state.formStep >= 4 ? '0 3px 12px rgba(240, 147, 251, 0.25)' : 'none',
+                      transition: 'all 0.3s ease'
+                    }}>
+                      4
+                    </Box>
+                  </>
+                )}
+              </>
             )}
-            {formStep === 2 && (
-              <motion.div
-                key="step2"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                layout
-              >
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    my: 3,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Typography variant="h4">
-                      Vuoi scegliere un modello?
-                    </Typography>
-                    <div>
-                      <Button
-                        type="button"
-                        size="large"
-                        variant="contained"
-                        color="primary"
-                        onClick={() => setFormStep(3)}
-                        style={{ margin: "20px" }}
-                      >
-                        Nuova
-                      </Button>
-                      <Button
-                        type="button"
-                        size="large"
-                        variant="contained"
-                        color="secondary"
-                        onClick={() => setFormStep(4)}
-                        style={{ margin: "20px" }}
-                      >
-                        Scegli un modello
-                      </Button>
-                    </div>
+          </Box>
+          
+          {/* Titolo step corrente compatto */}
+          <Box sx={{ 
+            fontSize: '1.1rem', 
+            fontWeight: 'bold', 
+            background: 'linear-gradient(45deg, #667eea, #764ba2)',
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent'
+          }}>
+            {state.formStep === 1 && '✨ Dettagli della commessa'}
+            {state.formStep === 2 && '🎨 Scegli il tipo di attività'}
+            {state.formStep === 3 && '🎯 Crea le tue attività'}
+            {state.formStep === 4 && '📋 Seleziona un modello'}
+            {state.formStep === 5 && '✅ Conferma le attività del modello'}
+          </Box>
+        </Box>
+        
+        <AnimatePresence mode="wait">
+          {/* Step 1: Dettagli ordine */}
+          {state.formStep === 1 && (
+            <motion.div
+              key="step1"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <OrderDetailsStep 
+                customersList={customersList} 
+                personale={personale} 
+              />
+            </motion.div>
+          )}
+
+          {/* Step 2: Scelta tipo attività */}
+          {state.formStep === 2 && (
+            <motion.div
+              key="step2"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Box sx={{ textAlign: 'center', py: 2 }}>
+                <Box sx={{ mb: 3 }}>
+                  <Box sx={{ 
+                    fontSize: '1.3rem', 
+                    fontWeight: 'bold', 
+                    mb: 1.5, 
+                    color: 'primary.main',
+                    background: 'linear-gradient(45deg, #1976d2, #42a5f5)',
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent'
+                  }}>
+                    Come vuoi gestire le attività?
+                  </Box>
+                  <Box sx={{ 
+                    fontSize: '0.9rem', 
+                    color: 'text.secondary',
+                    maxWidth: 450,
+                    mx: 'auto',
+                    lineHeight: 1.5
+                  }}>
+                    Scegli se creare attività personalizzate oppure utilizzare un modello predefinito
                   </Box>
                 </Box>
-              </motion.div>
-            )}
-            {formStep === 3 && (
-              <motion.div
-                key="step3"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                layout
-              >
-                <DynamicTable
-                  formikValues={formik.values}
-                  personale={personale}
-                  setFormStep={setFormStep}
-                  formStep={formStep}
-                />
-              </motion.div>
-            )}
-            {formStep === 4 && (
-              <motion.div
-                key="step4"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                layout
-              >
-                <motion.div
-                  key="step2"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  layout
-                >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      my: 3,
+                
+                <Box sx={{ display: 'flex', gap: 3, justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <Paper 
+                    elevation={3}
+                    sx={{ 
+                      p: 3, 
+                      cursor: 'pointer', 
+                      minWidth: 240,
+                      maxWidth: 280,
+                      borderRadius: 3,
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      color: 'white',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      '&:hover': { 
+                        transform: 'translateY(-6px) scale(1.02)', 
+                        boxShadow: '0 15px 30px rgba(102, 126, 234, 0.4)',
+                      },
+                      '&:active': {
+                        transform: 'translateY(-3px) scale(1.01)',
+                      },
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        opacity: 0,
+                        transition: 'opacity 0.3s',
+                      },
+                      '&:hover::before': {
+                        opacity: 1,
+                      }
                     }}
+                    onClick={chooseCustomActivities}
                   >
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                      }}
-                    >
-                      <Typography variant="h4">Seleziona un modello</Typography>
-                      <Box sx={{ my: 3 }}>
-                        {activitiesSchemes.map((schema, index) => (
-                          <div key={index}>
-                            <MotionGrid
-                              item
-                              xs={12}
-                              sm={6}
-                              md={4}
-                              key={schema.id}
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: -20 }}
-                              transition={{ duration: 0.3 }}
-                            >
-                              <MotionCard
-                                onClick={() => {
-                                  setSelectedSchema(schema);
-                                  setFormStep(5);
-                                }}
-                                whileHover={{
-                                  y: -5,
-                                  boxShadow:
-                                    theme.shadows[4] ||
-                                    "0px 4px 10px rgba(0,0,0,0.2)",
-                                }}
-                                transition={{ type: "spring", stiffness: 300 }}
-                                sx={{
-                                  bgcolor: "background.paper",
-                                  borderRadius: 2,
-                                  overflow: "hidden",
-                                  boxShadow: theme.shadows[1],
-                                  border: `1px solid ${alpha(
-                                    theme.palette.primary.main,
-                                    0.1
-                                  )}`,
-                                }}
-                              >
-                                <CardContent
-                                  sx={{
-                                    display: "flex",
-                                    justifyContent: "center",
-                                    alignItems: "center",
-                                    cursor: "pointer",
-                                    py: 2.5,
-                                    px: 3,
-                                    "&:last-child": { pb: 2.5 },
-                                  }}
-                                >
-                                  <Typography
-                                    variant="subtitle1"
-                                    sx={{
-                                      fontWeight: 600,
-
-                                      color: "text.primary",
-                                    }}
-                                  >
-                                    <i> {schema.schemaName}</i>
-                                  </Typography>
-                                </CardContent>
-                              </MotionCard>
-                            </MotionGrid>
-                          </div>
-                        ))}
-                      </Box>
+                    <Box sx={{ 
+                      fontSize: '3rem', 
+                      mb: 1.5,
+                      filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.2))'
+                    }}>
+                      🎯
                     </Box>
-                  </Box>
-                </motion.div>
-              </motion.div>
-            )}
-            {formStep === 5 && (
-              <motion.div
-                key="step3"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                layout
-              >
-                <ActivityTable
-                  formikValues={formik.values}
-                  personale={personale}
-                  selectedSchema={selectedSchema}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </Paper>
-        <Box sx={{ textAlign: "center", gap: 2 }}>
+                    <Box sx={{ 
+                      fontSize: '1.2rem', 
+                      fontWeight: 'bold', 
+                      mb: 1.5,
+                      textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                    }}>
+                      Crea Attività
+                    </Box>
+                    <Box sx={{ 
+                      fontSize: '0.85rem', 
+                      opacity: 0.9,
+                      lineHeight: 1.4,
+                      textShadow: '0 1px 2px rgba(0,0,0,0.2)'
+                    }}>
+                      Progetta attività completamente personalizzate per questa commessa
+                    </Box>
+                    <Box sx={{
+                      position: 'absolute',
+                      bottom: 8,
+                      right: 12,
+                      fontSize: '1.1rem',
+                      opacity: 0.7
+                    }}>
+                      →
+                    </Box>
+                  </Paper>
+                  
+                  <Paper 
+                    elevation={3}
+                    sx={{ 
+                      p: 3, 
+                      cursor: 'pointer', 
+                      minWidth: 240,
+                      maxWidth: 280,
+                      borderRadius: 3,
+                      background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                      color: 'white',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      '&:hover': { 
+                        transform: 'translateY(-6px) scale(1.02)', 
+                        boxShadow: '0 15px 30px rgba(240, 147, 251, 0.4)',
+                      },
+                      '&:active': {
+                        transform: 'translateY(-3px) scale(1.01)',
+                      },
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        opacity: 0,
+                        transition: 'opacity 0.3s',
+                      },
+                      '&:hover::before': {
+                        opacity: 1,
+                      }
+                    }}
+                    onClick={chooseTemplate}
+                  >
+                    <Box sx={{ 
+                      fontSize: '3rem', 
+                      mb: 1.5,
+                      filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.2))'
+                    }}>
+                      📋
+                    </Box>
+                    <Box sx={{ 
+                      fontSize: '1.2rem', 
+                      fontWeight: 'bold', 
+                      mb: 1.5,
+                      textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                    }}>
+                      Usa Modello
+                    </Box>
+                    <Box sx={{ 
+                      fontSize: '0.85rem', 
+                      opacity: 0.9,
+                      lineHeight: 1.4,
+                      textShadow: '0 1px 2px rgba(0,0,0,0.2)'
+                    }}>
+                      Parti da un modello di attività già predefinito e risparmia tempo
+                    </Box>
+                    <Box sx={{
+                      position: 'absolute',
+                      bottom: 8,
+                      right: 12,
+                      fontSize: '1.1rem',
+                      opacity: 0.7
+                    }}>
+                      →
+                    </Box>
+                  </Paper>
+                </Box>
+              </Box>
+            </motion.div>
+          )}
+
+          {/* Step 3: Tabella dinamica per nuove attività */}
+          {state.formStep === 3 && (
+            <motion.div
+              key="step3"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <DynamicTable
+                formikValues={state}
+                personale={personale}
+                setFormStep={actions.setFormStep}
+                formStep={state.formStep}
+                activities={state.activities}
+                onActivitiesChange={handleActivitiesChange}
+                onFinalSubmit={handleFinalSubmit}
+                loading={loading}
+              />
+            </motion.div>
+          )}
+
+          {/* Step 4: Selezione template */}
+          {state.formStep === 4 && (
+            <motion.div
+              key="step4"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <TemplateSelectionStep activitiesSchemes={activitiesSchemes} />
+            </motion.div>
+          )}
+
+          {/* Step 5: Tabella attività da template */}
+          {state.formStep === 5 && (
+            <motion.div
+              key="step5"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <ActivityTable
+                formikValues={state}
+                personale={personale}
+                selectedSchema={state.selectedSchema}
+                activities={state.activities}
+                onActivitiesChange={handleActivitiesChange}
+                onFinalSubmit={handleFinalSubmit}
+                loading={loading}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </Paper>
+
+      {/* Controlli di navigazione compatti */}
+      <Box sx={{ 
+        display: "flex", 
+        justifyContent: "space-between", 
+        alignItems: "center",
+        maxWidth: 600,
+        mx: 'auto',
+        gap: 2,
+        mt: 3
+      }}>
+        {/* Pulsante Indietro */}
+        <Button
+          variant="outlined"
+          color="primary"
+          onClick={goBack}
+          disabled={loading || state.formStep === 1}
+          sx={{ 
+            minWidth: 120,
+            height: 42,
+            borderRadius: 3,
+            borderWidth: 2,
+            fontWeight: 'bold',
+            fontSize: '0.9rem',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            '&:hover': {
+              borderWidth: 2,
+              transform: 'translateY(-2px)',
+              boxShadow: '0 6px 20px rgba(25, 118, 210, 0.25)',
+            },
+            '&:disabled': {
+              opacity: 0.4,
+            }
+          }}
+        >
+          ← Indietro
+        </Button>
+
+        {/* Pulsante Ricomincia */}
+        <Button
+          variant="contained"
+          color="warning"
+          onClick={handleRestart}
+          disabled={loading}
+          sx={{ 
+            minWidth: 120,
+            height: 42,
+            borderRadius: 3,
+            fontWeight: 'bold',
+            fontSize: '0.9rem',
+            background: 'linear-gradient(45deg, #ff9800, #f57c00)',
+            boxShadow: '0 3px 12px rgba(255, 152, 0, 0.3)',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            '&:hover': {
+              background: 'linear-gradient(45deg, #f57c00, #ef6c00)',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 6px 20px rgba(255, 152, 0, 0.4)',
+            },
+            '&:disabled': {
+              opacity: 0.5,
+            }
+          }}
+        >
+          🔄 Ricomincia
+        </Button>
+        
+        {/* Pulsante Continua */}
+        {state.formStep === 1 && (
           <Button
-            type="reset"
-            size="large"
             variant="contained"
-            color="warning"
-            onClick={() => handleRestart()}
-            style={{ margin: "20px" }}
-          >
-            Ricomincia
-          </Button>
-          <Button
-            type="button"
-            disabled={!isFirstStepCompleted()}
-            size="large"
-            variant="contained"
-            color="secondary"
-            onClick={() => setFormStep(2)}
-            style={{
-              display: `${formStep !== 1 ? "none" : ""}`,
-              margin: "20px",
+            color="primary"
+            onClick={() => goToStep(2)}
+            disabled={!isFirstStepCompleted || loading}
+            sx={{ 
+              minWidth: 120,
+              height: 42,
+              borderRadius: 3,
+              fontWeight: 'bold',
+              fontSize: '0.9rem',
+              background: 'linear-gradient(45deg, #1976d2, #42a5f5)',
+              boxShadow: '0 3px 12px rgba(25, 118, 210, 0.3)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              '&:hover': {
+                background: 'linear-gradient(45deg, #1565c0, #1976d2)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 6px 20px rgba(25, 118, 210, 0.4)',
+              },
+              '&:disabled': {
+                opacity: 0.5,
+                background: 'grey.400',
+              }
             }}
           >
-            Continua
+            Continua →
           </Button>
-        </Box>
-      </form>
+        )}
+
+        {state.formStep === 4 && (
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => goToStep(5)}
+            disabled={!state.selectedSchema || loading}
+            sx={{ 
+              minWidth: 120,
+              height: 42,
+              borderRadius: 3,
+              fontWeight: 'bold',
+              fontSize: '0.9rem',
+              background: 'linear-gradient(45deg, #1976d2, #42a5f5)',
+              boxShadow: '0 3px 12px rgba(25, 118, 210, 0.3)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              '&:hover': {
+                background: 'linear-gradient(45deg, #1565c0, #1976d2)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 6px 20px rgba(25, 118, 210, 0.4)',
+              },
+              '&:disabled': {
+                opacity: 0.5,
+                background: 'grey.400',
+              }
+            }}
+          >
+            Continua →
+          </Button>
+        )}
+
+        {/* Spazio vuoto per gli step dove la navigazione è gestita dalle tabelle */}
+        {(state.formStep === 2 || state.formStep === 3 || state.formStep === 5) && (
+          <Box sx={{ minWidth: 120 }} /> 
+        )}
+      </Box>
     </PageContainer>
+  );
+};
+
+/**
+ * Componente principale che fornisce il contesto
+ */
+const NewOrder = () => {
+  return (
+    <NewOrderFormProvider>
+      <NewOrderContent />
+    </NewOrderFormProvider>
   );
 };
 
