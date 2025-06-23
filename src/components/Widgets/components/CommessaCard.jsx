@@ -9,7 +9,6 @@ import {
   Badge,
   IconButton,
   Stack,
-  Tooltip,
   Divider,
   Avatar,
 } from "@mui/material";
@@ -292,54 +291,48 @@ const CommessaCard = ({ order, customers }) => {
                   alignItems="center"
                   justifyContent="center"
                 >
-                  <Tooltip title="Stato critico">
-                    <Box
-                      sx={{
-                        width: 18,
-                        height: 18,
-                        borderRadius: "50%",
-                        bgcolor: ledStatus === "red" ? "red" : "#f2bcbc",
-                        boxShadow:
-                          ledStatus === "red"
-                            ? "0 0 8px 2px #ff1744"
-                            : "0 0 0 2px #fff",
-                        border: "2px solid #fff",
-                        transition: "box-shadow 0.2s, background 0.2s",
-                      }}
-                    />
-                  </Tooltip>
-                  <Tooltip title="Attenzione">
-                    <Box
-                      sx={{
-                        width: 18,
-                        height: 18,
-                        borderRadius: "50%",
-                        bgcolor: ledStatus === "orange" ? "orange" : "#ffe0b2",
-                        boxShadow:
-                          ledStatus === "orange"
-                            ? "0 0 8px 2px #ff9800"
-                            : "0 0 0 2px #fff",
-                        border: "2px solid #fff",
-                        transition: "box-shadow 0.2s, background 0.2s",
-                      }}
-                    />
-                  </Tooltip>
-                  <Tooltip title="OK">
-                    <Box
-                      sx={{
-                        width: 18,
-                        height: 18,
-                        borderRadius: "50%",
-                        bgcolor: ledStatus === "green" ? "green" : "#b9f6ca",
-                        boxShadow:
-                          ledStatus === "green"
-                            ? "0 0 8px 2px #00e676"
-                            : "0 0 0 2px #fff",
-                        border: "2px solid #fff",
-                        transition: "box-shadow 0.2s, background 0.2s",
-                      }}
-                    />
-                  </Tooltip>
+                  <Box
+                    sx={{
+                      width: 18,
+                      height: 18,
+                      borderRadius: "50%",
+                      bgcolor: ledStatus === "red" ? "red" : "#f2bcbc",
+                      boxShadow:
+                        ledStatus === "red"
+                          ? "0 0 8px 2px #ff1744"
+                          : "0 0 0 2px #fff",
+                      border: "2px solid #fff",
+                      transition: "box-shadow 0.2s, background 0.2s",
+                    }}
+                  />
+                  <Box
+                    sx={{
+                      width: 18,
+                      height: 18,
+                      borderRadius: "50%",
+                      bgcolor: ledStatus === "orange" ? "orange" : "#ffe0b2",
+                      boxShadow:
+                        ledStatus === "orange"
+                          ? "0 0 8px 2px #ff9800"
+                          : "0 0 0 2px #fff",
+                      border: "2px solid #fff",
+                      transition: "box-shadow 0.2s, background 0.2s",
+                    }}
+                  />
+                  <Box
+                    sx={{
+                      width: 18,
+                      height: 18,
+                      borderRadius: "50%",
+                      bgcolor: ledStatus === "green" ? "green" : "#b9f6ca",
+                      boxShadow:
+                        ledStatus === "green"
+                          ? "0 0 8px 2px #00e676"
+                          : "0 0 0 2px #fff",
+                      border: "2px solid #fff",
+                      transition: "box-shadow 0.2s, background 0.2s",
+                    }}
+                  />
                 </Stack>
                 <Stack direction="row" alignItems="center" spacing={1}>
                   <Typography variant="body2" color="text.secondary">

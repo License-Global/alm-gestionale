@@ -69,9 +69,9 @@ export default function OperatorAgenda({ operatorId }) {
     if (!orders || orders.length === 0) return "Caricamento...";
     const order = orders.find((o) => o.id === id);
     return order
-      ? customers.find((c) => c.id === order.clientId)?.customer_name +
-          " - " +
-          order.orderName
+      ? `${
+          customers.find((c) => c.id === order.clientId)?.customer_name || ""
+        } - ${order.orderName}`
       : "Ordine non trovato";
   };
 

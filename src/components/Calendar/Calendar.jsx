@@ -174,9 +174,7 @@ export default function CalendarComponent() {
         style={{ height: "110vh" }}
       />
 
-      {/* Dialog */}
-      {/*
-      }
+      {/* Dialog
       <Dialog
         open={isEventDialogOpen}
         onClose={handleCloseEventDialog}
@@ -303,7 +301,7 @@ export default function CalendarComponent() {
           </Button>
         </DialogActions>
       </Dialog>
-*/}
+      */}
     </div>
   );
 }
