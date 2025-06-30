@@ -12,6 +12,7 @@ import "dayjs/locale/it";
 import { supabase } from "../../../supabase/supabaseClient";
 import { Select, MenuItem, InputLabel, FormControl } from "@mui/material";
 import { useRole } from '../../../context/RoleContext';
+import { useNavigate } from 'react-router-dom';
 
 import "./MainCalendar.css";
 
@@ -38,6 +39,7 @@ const MainCalendar = ({ orders, onActivityUpdate }) => {
   const { personale } = usePersonale();
   const { role } = useRole();
   const isOperator = role && atob(role) === 'operator';
+  const navigate = useNavigate();
 
   // Funzione di validazione delle date
   const validateDates = useCallback(() => {
@@ -252,6 +254,12 @@ const MainCalendar = ({ orders, onActivityUpdate }) => {
     setFormData({ startDate: null, endDate: null });
     setValidationErrors({ startDate: "", endDate: "", dateOrder: "" });
   };
+
+  const handleGoToOrder = () => {
+    if (selectedEvent?.orderId) {
+      navigate(`/${selectedEvent.orderId}`);
+    }
+  };
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -360,7 +368,6 @@ const MainCalendar = ({ orders, onActivityUpdate }) => {
         }
       }
       handleModalClose();
-      window.location.reload(); // Refresh the page after saving
     } catch (error) {
       console.error("Unexpected error:", error);
       alert("Errore imprevisto durante il salvataggio");
@@ -635,6 +642,13 @@ const MainCalendar = ({ orders, onActivityUpdate }) => {
             </div>{" "}
             <div className="modal-footer">
               <button
+                className="btn btn-info"
+                onClick={handleGoToOrder}
+                style={{ marginRight: 'auto' }}
+              >
+                Vai a...
+              </button>
+              <button
                 className="btn btn-secondary"
                 onClick={handleModalClose}
                 disabled={saving}
@@ -685,6 +699,13 @@ const MainCalendar = ({ orders, onActivityUpdate }) => {
               </div>
             </div>
             <div className="modal-footer">
+              <button
+                className="btn btn-info"
+                onClick={handleGoToOrder}
+                style={{ marginRight: 'auto' }}
+              >
+                Vai a...
+              </button>
               <button className="btn btn-secondary" onClick={handleModalClose}>Chiudi</button>
             </div>
           </div>

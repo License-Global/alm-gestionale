@@ -141,7 +141,6 @@ const OrderDetailsStep = ({ customersList, personale }) => {
             name="accessories"
             fullWidth
             label="Scaffale accessori"
-            required
             value={state.accessories}
             onChange={(e) => handleFieldChange('accessories', e.target.value)}
             onBlur={() => handleFieldBlur('accessories')}
@@ -166,7 +165,6 @@ const OrderDetailsStep = ({ customersList, personale }) => {
             name="materialShelf"
             fullWidth
             label="Scaffale materiale"
-            required
             value={state.materialShelf}
             onChange={(e) => handleFieldChange('materialShelf', e.target.value)}
             onBlur={() => handleFieldBlur('materialShelf')}

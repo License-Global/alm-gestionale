@@ -543,7 +543,7 @@ const MainTable = ({ order }) => {
                   }}
                 >
                   <b>ID: </b>
-                  <i>{currentOrder?.internal_id || "N/A"}</i>
+                  <i>{currentOrder?.internal_id || "/"}</i>
                 </Typography>
               </ClientInfo>
             </HeaderRightSection>
@@ -563,7 +563,7 @@ const MainTable = ({ order }) => {
                 <OrderInfoItem>
                   <Assignment fontSize="large" />
                   <Typography variant="subtitle1">
-                    <b>Ordine:</b> <br /> {currentOrder?.orderName || "N/A"}
+                    <b>Ordine:</b> <br /> {currentOrder?.orderName || "/"}
                   </Typography>
                 </OrderInfoItem>
               </Grid>
@@ -573,7 +573,7 @@ const MainTable = ({ order }) => {
                   <Inventory2 fontSize="large" />
                   <Typography variant="body1">
                     <b>Scaffale: </b> <br />{" "}
-                    {currentOrder?.materialShelf || "N/A"}
+                    {currentOrder?.materialShelf || "/"}
                   </Typography>
                 </OrderInfoItem>
               </Grid>
@@ -590,7 +590,7 @@ const MainTable = ({ order }) => {
                         fontSize: { xs: "0.75rem", sm: "0.875rem" },
                         height: { xs: 24, sm: 32 },
                       }}
-                      label={currentOrder?.urgency || "N/A"}
+                      label={currentOrder?.urgency || "/"}
                     />
                   </Typography>
                 </OrderInfoItem>
@@ -609,7 +609,7 @@ const MainTable = ({ order }) => {
                   <Construction fontSize="large" />
                   <Typography variant="body1">
                     <b>Accessori:</b> <br />{" "}
-                    {currentOrder?.accessories || "Nessuno"}
+                    {currentOrder?.accessories || "/"}
                   </Typography>
                 </OrderInfoItem>
               </Grid>
@@ -622,7 +622,7 @@ const MainTable = ({ order }) => {
                       ? new Date(currentOrder.startDate).toLocaleDateString(
                           "it-IT"
                         )
-                      : "N/A"}
+                      : "/"}
                   </Typography>
                 </OrderInfoItem>
               </Grid>
@@ -635,7 +635,7 @@ const MainTable = ({ order }) => {
                       ? new Date(currentOrder.endDate).toLocaleDateString(
                           "it-IT"
                         )
-                      : "N/A"}
+                      : "/"}
                   </Typography>
                 </OrderInfoItem>
               </Grid>
@@ -734,7 +734,7 @@ const MainTable = ({ order }) => {
                                   minute: "2-digit",
                                 }
                               )
-                            : "N/A"}
+                            : "/"}
                         </Typography>
                       </StyledTableCell>
                       {!isSmallScreen && (

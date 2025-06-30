@@ -28,9 +28,9 @@ const createMainOrderSchema = (orders) => Yup.object({
   clientId: Yup.string().required('Campo obbligatorio'),
   startDate: Yup.date().required('Campo obbligatorio'),
   endDate: Yup.date().required('Campo obbligatorio'),
-  materialShelf: Yup.string().required('Campo obbligatorio'),
+  materialShelf: Yup.string(),
   urgency: Yup.string().required('Campo obbligatorio'),
-  accessories: Yup.string().required('Campo obbligatorio'),
+  accessories: Yup.string(),
   orderManager: Yup.string().required('Campo obbligatorio'),
 });
 
@@ -84,7 +84,7 @@ export const useFormValidation = () => {
 
   // Controlla se il primo step è completato
   const isFirstStepCompleted = useMemo(() => {
-    const requiredFields = ['orderName', 'clientId', 'startDate', 'endDate', 'materialShelf', 'urgency', 'accessories', 'orderManager'];
+    const requiredFields = ['orderName', 'clientId', 'startDate', 'endDate', 'urgency', 'orderManager'];
     const hasAllFields = requiredFields.every(field => {
       const value = state[field];
       return value !== null && value !== undefined && value !== '';
@@ -97,9 +97,7 @@ export const useFormValidation = () => {
     state.clientId, 
     state.startDate, 
     state.endDate, 
-    state.materialShelf, 
     state.urgency, 
-    state.accessories, 
     state.orderManager,
     state.validationErrors
   ]);
@@ -112,7 +110,7 @@ export const useFormValidation = () => {
       }, 300);
       return () => clearTimeout(timeoutId);
     }
-  }, [state.orderName, state.clientId, state.startDate, state.endDate, state.materialShelf, state.urgency, state.accessories, state.orderManager, state.touched]);
+  }, [state.orderName, state.clientId, state.startDate, state.endDate, state.urgency, state.orderManager, state.touched, validateForm]);
 
   return {
     validationErrors: state.validationErrors,
