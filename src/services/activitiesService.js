@@ -180,6 +180,7 @@ export async function createOrder(newOrder) {
     urgency,
     accessories,
     orderManager, // ID di un dipendente già esistente
+    zone_consegna, // Zona di consegna selezionata
     activities = [], // array di oggetti, ciascuno descrive un'attività
     user_id,
     internal_id,
@@ -201,6 +202,7 @@ export async function createOrder(newOrder) {
           accessories,
           // orderManager è un ID esistente di personale
           orderManager,
+          zone_consegna: zone_consegna || null, // Può essere null se non specificato
           user_id,
           internal_id,
         },
@@ -311,11 +313,17 @@ export const updateActivityStatusInOrder = async (activityId, newStatus) => {
         .select();
 
       if (error) {
-        console.error("Errore nell'aggiornamento dello stato dell'attività:", error);
+        console.error(
+          "Errore nell'aggiornamento dello stato dell'attività:",
+          error
+        );
         throw error;
       }
 
-      console.log("Stato dell'attività aggiornato con successo (Completato):", data);
+      console.log(
+        "Stato dell'attività aggiornato con successo (Completato):",
+        data
+      );
       return { success: true, data };
     } else {
       const { data, error } = await supabase
@@ -325,7 +333,10 @@ export const updateActivityStatusInOrder = async (activityId, newStatus) => {
         .select();
 
       if (error) {
-        console.error("Errore nell'aggiornamento dello stato dell'attività:", error);
+        console.error(
+          "Errore nell'aggiornamento dello stato dell'attività:",
+          error
+        );
         throw error;
       }
 

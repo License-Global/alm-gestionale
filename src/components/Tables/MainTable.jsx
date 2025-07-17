@@ -37,6 +37,7 @@ import {
   Check,
   Clear,
   Construction,
+  LocationOn,
 } from "@mui/icons-material";
 
 import Timer from "../misc/Timer";
@@ -559,7 +560,7 @@ const MainTable = ({ order }) => {
               }}
             >
               {/* Griglia per i dettagli dell'ordine */}
-              <Grid item xs={12} sm={6} md={4} lg={1.5}>
+              <Grid item xs={12} sm={6} md={4} lg={1.4}>
                 <OrderInfoItem>
                   <Assignment fontSize="large" />
                   <Typography variant="subtitle1">
@@ -568,7 +569,7 @@ const MainTable = ({ order }) => {
                 </OrderInfoItem>
               </Grid>
               {/* Altri campi dell'ordine */}
-              <Grid item xs={12} sm={6} md={4} lg={1.5}>
+              <Grid item xs={12} sm={6} md={4} lg={1.4}>
                 <OrderInfoItem>
                   <Inventory2 fontSize="large" />
                   <Typography variant="body1">
@@ -577,7 +578,7 @@ const MainTable = ({ order }) => {
                   </Typography>
                 </OrderInfoItem>
               </Grid>
-              <Grid item xs={12} sm={6} md={4} lg={1.5}>
+              <Grid item xs={12} sm={6} md={4} lg={1.4}>
                 <OrderInfoItem>
                   <PriorityHigh fontSize="large" />
                   <Typography variant="body1">
@@ -595,7 +596,7 @@ const MainTable = ({ order }) => {
                   </Typography>
                 </OrderInfoItem>
               </Grid>
-              <Grid item xs={12} sm={6} md={4} lg={1.5}>
+              <Grid item xs={12} sm={6} md={4} lg={1.4}>
                 <OrderInfoItem>
                   <Person fontSize="large" />
                   <Typography variant="body1">
@@ -604,16 +605,15 @@ const MainTable = ({ order }) => {
                   </Typography>
                 </OrderInfoItem>
               </Grid>
-              <Grid item xs={12} sm={6} md={4} lg={1.5}>
+              <Grid item xs={12} sm={6} md={4} lg={1.4}>
                 <OrderInfoItem>
                   <Construction fontSize="large" />
                   <Typography variant="body1">
-                    <b>Accessori:</b> <br />{" "}
-                    {currentOrder?.accessories || "/"}
+                    <b>Accessori:</b> <br /> {currentOrder?.accessories || "/"}
                   </Typography>
                 </OrderInfoItem>
               </Grid>
-              <Grid item xs={12} sm={6} md={4} lg={1.5}>
+              <Grid item xs={12} sm={6} md={4} lg={1.4}>
                 <OrderInfoItem>
                   <DateRange fontSize="large" />
                   <Typography variant="body1">
@@ -626,7 +626,7 @@ const MainTable = ({ order }) => {
                   </Typography>
                 </OrderInfoItem>
               </Grid>
-              <Grid item xs={12} sm={6} md={4} lg={1.5}>
+              <Grid item xs={12} sm={6} md={4} lg={1.4}>
                 <OrderInfoItem>
                   <DateRange fontSize="large" />
                   <Typography variant="body1">
@@ -636,6 +636,17 @@ const MainTable = ({ order }) => {
                           "it-IT"
                         )
                       : "/"}
+                  </Typography>
+                </OrderInfoItem>
+              </Grid>
+              <Grid item xs={12} sm={6} md={4} lg={1.4}>
+                <OrderInfoItem>
+                  <LocationOn fontSize="large" />
+                  <Typography variant="body1">
+                    <b>Zona consegna:</b> <br />{" "}
+                    <span style={{ fontWeight: 500, color: "#1976d2" }}>
+                      {currentOrder?.zone_consegna || "—"}
+                    </span>
                   </Typography>
                 </OrderInfoItem>
               </Grid>

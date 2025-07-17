@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  Box,
-  Button,
-  Paper,
-} from "@mui/material";
+import { Box, Button, Paper } from "@mui/material";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePersonale } from "../hooks/usePersonale";
 import DynamicTable from "../components/Tables/DynamicTable";
@@ -22,7 +18,10 @@ import OrderDetailsStep from "../components/NewOrder/OrderDetailsStep";
 import TemplateSelectionStep from "../components/NewOrder/TemplateSelectionStep";
 
 // Nuovo sistema di gestione stato
-import { NewOrderFormProvider, useNewOrderForm } from "../context/NewOrderFormContext";
+import {
+  NewOrderFormProvider,
+  useNewOrderForm,
+} from "../context/NewOrderFormContext";
 import { useFormValidation } from "../hooks/useFormValidation";
 import useSession from "../hooks/useSession";
 
@@ -48,13 +47,13 @@ const NewOrderContent = () => {
       try {
         const [customersData, schemesData] = await Promise.all([
           fetchCustomers(),
-          fetchActivitiesSchemes()
+          fetchActivitiesSchemes(),
         ]);
-        
+
         setCustomers(customersData);
         setActivitiesSchemes(schemesData);
       } catch (error) {
-        console.error('Errore nel caricamento dei dati:', error);
+        console.error("Errore nel caricamento dei dati:", error);
       }
     };
 
@@ -96,12 +95,12 @@ const NewOrderContent = () => {
   // Determina il percorso attuale
   const getCurrentPath = () => {
     if (state.activities.length > 0 && !state.selectedSchema) {
-      return 'custom'; // Percorso attività personalizzate
+      return "custom"; // Percorso attività personalizzate
     }
     if (state.selectedSchema) {
-      return 'template'; // Percorso da modello
+      return "template"; // Percorso da modello
     }
-    return 'none'; // Nessun percorso scelto
+    return "none"; // Nessun percorso scelto
   };
 
   // Gestione delle scelte del percorso
@@ -141,7 +140,7 @@ const NewOrderContent = () => {
   // Gestisce il submit finale
   const handleFinalSubmit = async () => {
     if (!session?.user?.id) {
-      console.error('Sessione utente non valida');
+      console.error("Sessione utente non valida");
       return;
     }
 
@@ -154,21 +153,22 @@ const NewOrderContent = () => {
       urgency: state.urgency,
       accessories: state.accessories,
       orderManager: state.orderManager,
+      zone_consegna: state.zone_consegna,
       activities: formatActivitiesForSubmission(state.activities),
       user_id: session.user.id,
     };
 
     try {
       setLoading(true);
-      
+
       await createOrder(orderData);
       await createFolder(session.user.id, state.orderName + state.clientId);
-      
+
       // Cancella i dati persistenti e reindirizza
       actions.clearPersistedData();
       navigate("/");
     } catch (error) {
-      console.error('Errore durante la creazione della commessa:', error);
+      console.error("Errore durante la creazione della commessa:", error);
     } finally {
       setLoading(false);
     }
@@ -191,116 +191,157 @@ const NewOrderContent = () => {
         theme="light"
         transition="Zoom"
       />
-      
+
       <Paper sx={{ p: 3, mb: 3, boxShadow: "15px 15px 15px #ccc" }}>
         <SectionTitle variant="h4">Nuova commessa</SectionTitle>
-        
+
         {/* Indicatore di progresso compatto */}
-        <Box sx={{ mb: 3, textAlign: 'center' }}>
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1.5, mb: 2 }}>
-            <Box sx={{ 
-              width: 36, 
-              height: 36, 
-              borderRadius: '50%', 
-              background: state.formStep >= 1 
-                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
-                : 'linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%)',
-              color: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 'bold',
-              fontSize: '1rem',
-              boxShadow: state.formStep >= 1 ? '0 3px 12px rgba(102, 126, 234, 0.25)' : 'none',
-              transition: 'all 0.3s ease'
-            }}>
+        <Box sx={{ mb: 3, textAlign: "center" }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              gap: 1.5,
+              mb: 2,
+            }}
+          >
+            <Box
+              sx={{
+                width: 36,
+                height: 36,
+                borderRadius: "50%",
+                background:
+                  state.formStep >= 1
+                    ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                    : "linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%)",
+                color: "white",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: "bold",
+                fontSize: "1rem",
+                boxShadow:
+                  state.formStep >= 1
+                    ? "0 3px 12px rgba(102, 126, 234, 0.25)"
+                    : "none",
+                transition: "all 0.3s ease",
+              }}
+            >
               1
             </Box>
-            <Box sx={{ 
-              width: 40, 
-              height: 3, 
-              borderRadius: 2,
-              background: state.formStep >= 2 
-                ? 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)' 
-                : 'linear-gradient(90deg, #e0e0e0 0%, #bdbdbd 100%)',
-              transition: 'all 0.5s ease'
-            }} />
-            <Box sx={{ 
-              width: 36, 
-              height: 36, 
-              borderRadius: '50%', 
-              background: state.formStep >= 2 
-                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
-                : 'linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%)',
-              color: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 'bold',
-              fontSize: '1rem',
-              boxShadow: state.formStep >= 2 ? '0 3px 12px rgba(102, 126, 234, 0.25)' : 'none',
-              transition: 'all 0.3s ease'
-            }}>
+            <Box
+              sx={{
+                width: 40,
+                height: 3,
+                borderRadius: 2,
+                background:
+                  state.formStep >= 2
+                    ? "linear-gradient(90deg, #667eea 0%, #764ba2 100%)"
+                    : "linear-gradient(90deg, #e0e0e0 0%, #bdbdbd 100%)",
+                transition: "all 0.5s ease",
+              }}
+            />
+            <Box
+              sx={{
+                width: 36,
+                height: 36,
+                borderRadius: "50%",
+                background:
+                  state.formStep >= 2
+                    ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                    : "linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%)",
+                color: "white",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: "bold",
+                fontSize: "1rem",
+                boxShadow:
+                  state.formStep >= 2
+                    ? "0 3px 12px rgba(102, 126, 234, 0.25)"
+                    : "none",
+                transition: "all 0.3s ease",
+              }}
+            >
               2
             </Box>
-            {getCurrentPath() !== 'none' && (
+            {getCurrentPath() !== "none" && (
               <>
-                <Box sx={{ 
-                  width: 40, 
-                  height: 3, 
-                  borderRadius: 2,
-                  background: state.formStep >= 3 
-                    ? 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)' 
-                    : 'linear-gradient(90deg, #e0e0e0 0%, #bdbdbd 100%)',
-                  transition: 'all 0.5s ease'
-                }} />
-                <Box sx={{ 
-                  width: 36, 
-                  height: 36, 
-                  borderRadius: '50%', 
-                  background: state.formStep >= 3 
-                    ? getCurrentPath() === 'custom' 
-                      ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
-                      : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
-                    : 'linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%)',
-                  color: 'white',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 'bold',
-                  fontSize: '1rem',
-                  boxShadow: state.formStep >= 3 ? '0 3px 12px rgba(102, 126, 234, 0.25)' : 'none',
-                  transition: 'all 0.3s ease'
-                }}>
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 3,
+                    borderRadius: 2,
+                    background:
+                      state.formStep >= 3
+                        ? "linear-gradient(90deg, #667eea 0%, #764ba2 100%)"
+                        : "linear-gradient(90deg, #e0e0e0 0%, #bdbdbd 100%)",
+                    transition: "all 0.5s ease",
+                  }}
+                />
+                <Box
+                  sx={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: "50%",
+                    background:
+                      state.formStep >= 3
+                        ? getCurrentPath() === "custom"
+                          ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                          : "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
+                        : "linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%)",
+                    color: "white",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: "bold",
+                    fontSize: "1rem",
+                    boxShadow:
+                      state.formStep >= 3
+                        ? "0 3px 12px rgba(102, 126, 234, 0.25)"
+                        : "none",
+                    transition: "all 0.3s ease",
+                  }}
+                >
                   3
                 </Box>
-                {getCurrentPath() === 'template' && state.formStep >= 4 && (
+                {getCurrentPath() === "template" && state.formStep >= 4 && (
                   <>
-                    <Box sx={{ 
-                      width: 40, 
-                      height: 3, 
-                      borderRadius: 2,
-                      background: state.formStep >= 4 
-                        ? 'linear-gradient(90deg, #f093fb 0%, #f5576c 100%)' 
-                        : 'linear-gradient(90deg, #e0e0e0 0%, #bdbdbd 100%)',
-                      transition: 'all 0.5s ease'
-                    }} />
-                    <Box sx={{ 
-                      width: 36, 
-                      height: 36, 
-                      borderRadius: '50%', 
-                      background: state.formStep >= 4 
-                        ? 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' 
-                        : 'linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%)',
-                      color: 'white',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: 'bold',
-                      fontSize: '1rem',
-                      boxShadow: state.formStep >= 4 ? '0 3px 12px rgba(240, 147, 251, 0.25)' : 'none',
-                      transition: 'all 0.3s ease'
-                    }}>
+                    <Box
+                      sx={{
+                        width: 40,
+                        height: 3,
+                        borderRadius: 2,
+                        background:
+                          state.formStep >= 4
+                            ? "linear-gradient(90deg, #f093fb 0%, #f5576c 100%)"
+                            : "linear-gradient(90deg, #e0e0e0 0%, #bdbdbd 100%)",
+                        transition: "all 0.5s ease",
+                      }}
+                    />
+                    <Box
+                      sx={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: "50%",
+                        background:
+                          state.formStep >= 4
+                            ? "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
+                            : "linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%)",
+                        color: "white",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontWeight: "bold",
+                        fontSize: "1rem",
+                        boxShadow:
+                          state.formStep >= 4
+                            ? "0 3px 12px rgba(240, 147, 251, 0.25)"
+                            : "none",
+                        transition: "all 0.3s ease",
+                      }}
+                    >
                       4
                     </Box>
                   </>
@@ -308,24 +349,26 @@ const NewOrderContent = () => {
               </>
             )}
           </Box>
-          
+
           {/* Titolo step corrente compatto */}
-          <Box sx={{ 
-            fontSize: '1.1rem', 
-            fontWeight: 'bold', 
-            background: 'linear-gradient(45deg, #667eea, #764ba2)',
-            backgroundClip: 'text',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent'
-          }}>
-            {state.formStep === 1 && '✨ Dettagli della commessa'}
-            {state.formStep === 2 && '🎨 Scegli il tipo di attività'}
-            {state.formStep === 3 && '🎯 Crea le tue attività'}
-            {state.formStep === 4 && '📋 Seleziona un modello'}
-            {state.formStep === 5 && '✅ Conferma le attività del modello'}
+          <Box
+            sx={{
+              fontSize: "1.1rem",
+              fontWeight: "bold",
+              background: "linear-gradient(45deg, #667eea, #764ba2)",
+              backgroundClip: "text",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}
+          >
+            {state.formStep === 1 && "✨ Dettagli della commessa"}
+            {state.formStep === 2 && "🎨 Scegli il tipo di attività"}
+            {state.formStep === 3 && "🎯 Crea le tue attività"}
+            {state.formStep === 4 && "📋 Seleziona un modello"}
+            {state.formStep === 5 && "✅ Conferma le attività del modello"}
           </Box>
         </Box>
-        
+
         <AnimatePresence mode="wait">
           {/* Step 1: Dettagli ordine */}
           {state.formStep === 1 && (
@@ -336,9 +379,10 @@ const NewOrderContent = () => {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <OrderDetailsStep 
-                customersList={customersList} 
-                personale={personale} 
+              <OrderDetailsStep
+                customersList={customersList}
+                personale={personale}
+                customers={customers}
               />
             </motion.div>
           )}
@@ -352,170 +396,202 @@ const NewOrderContent = () => {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <Box sx={{ textAlign: 'center', py: 2 }}>
+              <Box sx={{ textAlign: "center", py: 2 }}>
                 <Box sx={{ mb: 3 }}>
-                  <Box sx={{ 
-                    fontSize: '1.3rem', 
-                    fontWeight: 'bold', 
-                    mb: 1.5, 
-                    color: 'primary.main',
-                    background: 'linear-gradient(45deg, #1976d2, #42a5f5)',
-                    backgroundClip: 'text',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent'
-                  }}>
+                  <Box
+                    sx={{
+                      fontSize: "1.3rem",
+                      fontWeight: "bold",
+                      mb: 1.5,
+                      color: "primary.main",
+                      background: "linear-gradient(45deg, #1976d2, #42a5f5)",
+                      backgroundClip: "text",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                    }}
+                  >
                     Come vuoi gestire le attività?
                   </Box>
-                  <Box sx={{ 
-                    fontSize: '0.9rem', 
-                    color: 'text.secondary',
-                    maxWidth: 450,
-                    mx: 'auto',
-                    lineHeight: 1.5
-                  }}>
-                    Scegli se creare attività personalizzate oppure utilizzare un modello predefinito
+                  <Box
+                    sx={{
+                      fontSize: "0.9rem",
+                      color: "text.secondary",
+                      maxWidth: 450,
+                      mx: "auto",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    Scegli se creare attività personalizzate oppure utilizzare
+                    un modello predefinito
                   </Box>
                 </Box>
-                
-                <Box sx={{ display: 'flex', gap: 3, justifyContent: 'center', flexWrap: 'wrap' }}>
-                  <Paper 
+
+                <Box
+                  sx={{
+                    display: "flex",
+                    gap: 3,
+                    justifyContent: "center",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <Paper
                     elevation={3}
-                    sx={{ 
-                      p: 3, 
-                      cursor: 'pointer', 
+                    sx={{
+                      p: 3,
+                      cursor: "pointer",
                       minWidth: 240,
                       maxWidth: 280,
                       borderRadius: 3,
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      color: 'white',
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                      position: 'relative',
-                      overflow: 'hidden',
-                      '&:hover': { 
-                        transform: 'translateY(-6px) scale(1.02)', 
-                        boxShadow: '0 15px 30px rgba(102, 126, 234, 0.4)',
+                      background:
+                        "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                      color: "white",
+                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      position: "relative",
+                      overflow: "hidden",
+                      "&:hover": {
+                        transform: "translateY(-6px) scale(1.02)",
+                        boxShadow: "0 15px 30px rgba(102, 126, 234, 0.4)",
                       },
-                      '&:active': {
-                        transform: 'translateY(-3px) scale(1.01)',
+                      "&:active": {
+                        transform: "translateY(-3px) scale(1.01)",
                       },
-                      '&::before': {
+                      "&::before": {
                         content: '""',
-                        position: 'absolute',
+                        position: "absolute",
                         top: 0,
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        background: 'rgba(255, 255, 255, 0.1)',
+                        background: "rgba(255, 255, 255, 0.1)",
                         opacity: 0,
-                        transition: 'opacity 0.3s',
+                        transition: "opacity 0.3s",
                       },
-                      '&:hover::before': {
+                      "&:hover::before": {
                         opacity: 1,
-                      }
+                      },
                     }}
                     onClick={chooseCustomActivities}
                   >
-                    <Box sx={{ 
-                      fontSize: '3rem', 
-                      mb: 1.5,
-                      filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.2))'
-                    }}>
+                    <Box
+                      sx={{
+                        fontSize: "3rem",
+                        mb: 1.5,
+                        filter: "drop-shadow(0 3px 6px rgba(0,0,0,0.2))",
+                      }}
+                    >
                       🎯
                     </Box>
-                    <Box sx={{ 
-                      fontSize: '1.2rem', 
-                      fontWeight: 'bold', 
-                      mb: 1.5,
-                      textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-                    }}>
+                    <Box
+                      sx={{
+                        fontSize: "1.2rem",
+                        fontWeight: "bold",
+                        mb: 1.5,
+                        textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                      }}
+                    >
                       Crea Attività
                     </Box>
-                    <Box sx={{ 
-                      fontSize: '0.85rem', 
-                      opacity: 0.9,
-                      lineHeight: 1.4,
-                      textShadow: '0 1px 2px rgba(0,0,0,0.2)'
-                    }}>
-                      Progetta attività completamente personalizzate per questa commessa
+                    <Box
+                      sx={{
+                        fontSize: "0.85rem",
+                        opacity: 0.9,
+                        lineHeight: 1.4,
+                        textShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                      }}
+                    >
+                      Progetta attività completamente personalizzate per questa
+                      commessa
                     </Box>
-                    <Box sx={{
-                      position: 'absolute',
-                      bottom: 8,
-                      right: 12,
-                      fontSize: '1.1rem',
-                      opacity: 0.7
-                    }}>
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        bottom: 8,
+                        right: 12,
+                        fontSize: "1.1rem",
+                        opacity: 0.7,
+                      }}
+                    >
                       →
                     </Box>
                   </Paper>
-                  
-                  <Paper 
+
+                  <Paper
                     elevation={3}
-                    sx={{ 
-                      p: 3, 
-                      cursor: 'pointer', 
+                    sx={{
+                      p: 3,
+                      cursor: "pointer",
                       minWidth: 240,
                       maxWidth: 280,
                       borderRadius: 3,
-                      background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                      color: 'white',
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                      position: 'relative',
-                      overflow: 'hidden',
-                      '&:hover': { 
-                        transform: 'translateY(-6px) scale(1.02)', 
-                        boxShadow: '0 15px 30px rgba(240, 147, 251, 0.4)',
+                      background:
+                        "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+                      color: "white",
+                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      position: "relative",
+                      overflow: "hidden",
+                      "&:hover": {
+                        transform: "translateY(-6px) scale(1.02)",
+                        boxShadow: "0 15px 30px rgba(240, 147, 251, 0.4)",
                       },
-                      '&:active': {
-                        transform: 'translateY(-3px) scale(1.01)',
+                      "&:active": {
+                        transform: "translateY(-3px) scale(1.01)",
                       },
-                      '&::before': {
+                      "&::before": {
                         content: '""',
-                        position: 'absolute',
+                        position: "absolute",
                         top: 0,
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        background: 'rgba(255, 255, 255, 0.1)',
+                        background: "rgba(255, 255, 255, 0.1)",
                         opacity: 0,
-                        transition: 'opacity 0.3s',
+                        transition: "opacity 0.3s",
                       },
-                      '&:hover::before': {
+                      "&:hover::before": {
                         opacity: 1,
-                      }
+                      },
                     }}
                     onClick={chooseTemplate}
                   >
-                    <Box sx={{ 
-                      fontSize: '3rem', 
-                      mb: 1.5,
-                      filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.2))'
-                    }}>
+                    <Box
+                      sx={{
+                        fontSize: "3rem",
+                        mb: 1.5,
+                        filter: "drop-shadow(0 3px 6px rgba(0,0,0,0.2))",
+                      }}
+                    >
                       📋
                     </Box>
-                    <Box sx={{ 
-                      fontSize: '1.2rem', 
-                      fontWeight: 'bold', 
-                      mb: 1.5,
-                      textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-                    }}>
+                    <Box
+                      sx={{
+                        fontSize: "1.2rem",
+                        fontWeight: "bold",
+                        mb: 1.5,
+                        textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                      }}
+                    >
                       Usa Modello
                     </Box>
-                    <Box sx={{ 
-                      fontSize: '0.85rem', 
-                      opacity: 0.9,
-                      lineHeight: 1.4,
-                      textShadow: '0 1px 2px rgba(0,0,0,0.2)'
-                    }}>
-                      Parti da un modello di attività già predefinito e risparmia tempo
+                    <Box
+                      sx={{
+                        fontSize: "0.85rem",
+                        opacity: 0.9,
+                        lineHeight: 1.4,
+                        textShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                      }}
+                    >
+                      Parti da un modello di attività già predefinito e
+                      risparmia tempo
                     </Box>
-                    <Box sx={{
-                      position: 'absolute',
-                      bottom: 8,
-                      right: 12,
-                      fontSize: '1.1rem',
-                      opacity: 0.7
-                    }}>
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        bottom: 8,
+                        right: 12,
+                        fontSize: "1.1rem",
+                        opacity: 0.7,
+                      }}
+                    >
                       →
                     </Box>
                   </Paper>
@@ -583,37 +659,39 @@ const NewOrderContent = () => {
       </Paper>
 
       {/* Controlli di navigazione compatti */}
-      <Box sx={{ 
-        display: "flex", 
-        justifyContent: "space-between", 
-        alignItems: "center",
-        maxWidth: 600,
-        mx: 'auto',
-        gap: 2,
-        mt: 3
-      }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          maxWidth: 600,
+          mx: "auto",
+          gap: 2,
+          mt: 3,
+        }}
+      >
         {/* Pulsante Indietro */}
         <Button
           variant="outlined"
           color="primary"
           onClick={goBack}
           disabled={loading || state.formStep === 1}
-          sx={{ 
+          sx={{
             minWidth: 120,
             height: 42,
             borderRadius: 3,
             borderWidth: 2,
-            fontWeight: 'bold',
-            fontSize: '0.9rem',
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            '&:hover': {
+            fontWeight: "bold",
+            fontSize: "0.9rem",
+            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            "&:hover": {
               borderWidth: 2,
-              transform: 'translateY(-2px)',
-              boxShadow: '0 6px 20px rgba(25, 118, 210, 0.25)',
+              transform: "translateY(-2px)",
+              boxShadow: "0 6px 20px rgba(25, 118, 210, 0.25)",
             },
-            '&:disabled': {
+            "&:disabled": {
               opacity: 0.4,
-            }
+            },
           }}
         >
           ← Indietro
@@ -625,28 +703,28 @@ const NewOrderContent = () => {
           color="warning"
           onClick={handleRestart}
           disabled={loading}
-          sx={{ 
+          sx={{
             minWidth: 120,
             height: 42,
             borderRadius: 3,
-            fontWeight: 'bold',
-            fontSize: '0.9rem',
-            background: 'linear-gradient(45deg, #ff9800, #f57c00)',
-            boxShadow: '0 3px 12px rgba(255, 152, 0, 0.3)',
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            '&:hover': {
-              background: 'linear-gradient(45deg, #f57c00, #ef6c00)',
-              transform: 'translateY(-2px)',
-              boxShadow: '0 6px 20px rgba(255, 152, 0, 0.4)',
+            fontWeight: "bold",
+            fontSize: "0.9rem",
+            background: "linear-gradient(45deg, #ff9800, #f57c00)",
+            boxShadow: "0 3px 12px rgba(255, 152, 0, 0.3)",
+            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            "&:hover": {
+              background: "linear-gradient(45deg, #f57c00, #ef6c00)",
+              transform: "translateY(-2px)",
+              boxShadow: "0 6px 20px rgba(255, 152, 0, 0.4)",
             },
-            '&:disabled': {
+            "&:disabled": {
               opacity: 0.5,
-            }
+            },
           }}
         >
           🔄 Ricomincia
         </Button>
-        
+
         {/* Pulsante Continua */}
         {state.formStep === 1 && (
           <Button
@@ -654,24 +732,24 @@ const NewOrderContent = () => {
             color="primary"
             onClick={() => goToStep(2)}
             disabled={!isFirstStepCompleted || loading}
-            sx={{ 
+            sx={{
               minWidth: 120,
               height: 42,
               borderRadius: 3,
-              fontWeight: 'bold',
-              fontSize: '0.9rem',
-              background: 'linear-gradient(45deg, #1976d2, #42a5f5)',
-              boxShadow: '0 3px 12px rgba(25, 118, 210, 0.3)',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              '&:hover': {
-                background: 'linear-gradient(45deg, #1565c0, #1976d2)',
-                transform: 'translateY(-2px)',
-                boxShadow: '0 6px 20px rgba(25, 118, 210, 0.4)',
+              fontWeight: "bold",
+              fontSize: "0.9rem",
+              background: "linear-gradient(45deg, #1976d2, #42a5f5)",
+              boxShadow: "0 3px 12px rgba(25, 118, 210, 0.3)",
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+              "&:hover": {
+                background: "linear-gradient(45deg, #1565c0, #1976d2)",
+                transform: "translateY(-2px)",
+                boxShadow: "0 6px 20px rgba(25, 118, 210, 0.4)",
               },
-              '&:disabled': {
+              "&:disabled": {
                 opacity: 0.5,
-                background: 'grey.400',
-              }
+                background: "grey.400",
+              },
             }}
           >
             Continua →
@@ -684,24 +762,24 @@ const NewOrderContent = () => {
             color="primary"
             onClick={() => goToStep(5)}
             disabled={!state.selectedSchema || loading}
-            sx={{ 
+            sx={{
               minWidth: 120,
               height: 42,
               borderRadius: 3,
-              fontWeight: 'bold',
-              fontSize: '0.9rem',
-              background: 'linear-gradient(45deg, #1976d2, #42a5f5)',
-              boxShadow: '0 3px 12px rgba(25, 118, 210, 0.3)',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              '&:hover': {
-                background: 'linear-gradient(45deg, #1565c0, #1976d2)',
-                transform: 'translateY(-2px)',
-                boxShadow: '0 6px 20px rgba(25, 118, 210, 0.4)',
+              fontWeight: "bold",
+              fontSize: "0.9rem",
+              background: "linear-gradient(45deg, #1976d2, #42a5f5)",
+              boxShadow: "0 3px 12px rgba(25, 118, 210, 0.3)",
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+              "&:hover": {
+                background: "linear-gradient(45deg, #1565c0, #1976d2)",
+                transform: "translateY(-2px)",
+                boxShadow: "0 6px 20px rgba(25, 118, 210, 0.4)",
               },
-              '&:disabled': {
+              "&:disabled": {
                 opacity: 0.5,
-                background: 'grey.400',
-              }
+                background: "grey.400",
+              },
             }}
           >
             Continua →
@@ -709,9 +787,9 @@ const NewOrderContent = () => {
         )}
 
         {/* Spazio vuoto per gli step dove la navigazione è gestita dalle tabelle */}
-        {(state.formStep === 2 || state.formStep === 3 || state.formStep === 5) && (
-          <Box sx={{ minWidth: 120 }} /> 
-        )}
+        {(state.formStep === 2 ||
+          state.formStep === 3 ||
+          state.formStep === 5) && <Box sx={{ minWidth: 120 }} />}
       </Box>
     </PageContainer>
   );

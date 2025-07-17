@@ -6,13 +6,10 @@ import {
   Typography,
   LinearProgress,
   Chip,
-  Badge,
-  IconButton,
   Stack,
   Divider,
   Avatar,
 } from "@mui/material";
-import ReportProblemIcon from "@mui/icons-material/ReportProblem";
 
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import { motion } from "framer-motion";
@@ -46,7 +43,7 @@ const CommessaCard = ({ order, customers }) => {
   };
 
   // Calcola la percentuale di avanzamento
-  const progress = handleProgressPercentage(order.activities);
+  // const progress = handleProgressPercentage(order.activities);
 
   // Funzione per determinare il colore del led in base al progresso
   const getLedStatus = (order) => {
@@ -124,20 +121,39 @@ const CommessaCard = ({ order, customers }) => {
             <AssignmentIcon fontSize="medium" />
           </Avatar>
           <Box flexGrow={1}>
+            <Link
+              style={{ textDecoration: "none", color: "inherit" }}
+              to={`/clienti/${order.clientId}`}
+            >
+              <Typography
+                variant="h6"
+                fontWeight="bold"
+                sx={{
+                  letterSpacing: 1,
+                  ":hover": { cursor: "pointer", textDecoration: "underline" },
+                }}
+              >
+                {customers.find((c) => c.id === order.clientId)?.customer_name}
+              </Typography>
+            </Link>
             <Typography
-              onClick={() => navigate("/" + order.id)}
-              variant="h6"
-              fontWeight="bold"
+              variant="body1"
               sx={{
-                letterSpacing: 1,
-                ":hover": { cursor: "pointer", textDecoration: "underline" },
+                fontWeight: 500,
+                opacity: 0.8,
+                mt: 0.5,
+                fontSize: "1rem",
               }}
             >
-              {order.orderName}
-              <br />
-              <span style={{ fontWeight: 500, opacity: 0.8 }}>
-                # {order.internal_id}
-              </span>
+              # {order.internal_id.split("/")[0]}
+              {order.internal_id.includes("/") && (
+                <>
+                  /
+                  <span style={{ fontWeight: "bold" }}>
+                    {order.internal_id.split("/").slice(1).join("/")}
+                  </span>
+                </>
+              )}
             </Typography>
             {/* <Typography variant="body2" sx={{ opacity: 0.85 }}>
               Gestione avanzata
@@ -179,18 +195,15 @@ const CommessaCard = ({ order, customers }) => {
             >
               <Stack
                 direction="row"
-                spacing={3}
+                spacing={2}
                 justifyContent="space-between"
                 alignItems="center"
               >
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    Cliente
+                    Nome:
                   </Typography>
-                  <Link
-                    style={{ textDecoration: "none" }}
-                    to={`/clienti/${order.clientId}`}
-                  >
+                  <Link style={{ textDecoration: "none" }} to={`/${order.id}`}>
                     <Typography
                       variant="body1"
                       fontWeight={500}
@@ -202,10 +215,7 @@ const CommessaCard = ({ order, customers }) => {
                         },
                       }}
                     >
-                      {
-                        customers.find((c) => c.id === order.clientId)
-                          ?.customer_name
-                      }
+                      {order.orderName}
                     </Typography>
                   </Link>
                 </Box>
@@ -220,6 +230,23 @@ const CommessaCard = ({ order, customers }) => {
                       month: "2-digit",
                       day: "2-digit",
                     })}
+                  </Typography>
+                </Box>
+              </Stack>
+
+              <Stack
+                direction="row"
+                spacing={2}
+                justifyContent="center"
+                alignItems="center"
+                mt={1}
+              >
+                <Box sx={{ textAlign: "center" }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Zona consegna
+                  </Typography>
+                  <Typography variant="body1" fontWeight={500} color="#4f8cff">
+                    {order.zone_consegna || "—"}
                   </Typography>
                 </Box>
               </Stack>

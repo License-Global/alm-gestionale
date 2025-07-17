@@ -32,6 +32,7 @@ export const addCustomer = async (customerData) => {
         customer_email: customerData.customer_email,
         customer_phone: customerData.customer_phone,
         customer_note: customerData.customer_note,
+        zone_consegna: customerData.zone_consegna || [],
       },
     ])
     .select();
@@ -50,6 +51,7 @@ export async function updateCustomer(id, customerData) {
       customer_email: customerData.customer_email,
       customer_phone: customerData.customer_phone,
       customer_note: customerData.customer_note,
+      zone_consegna: customerData.zone_consegna || [],
     })
     .eq("id", id);
 

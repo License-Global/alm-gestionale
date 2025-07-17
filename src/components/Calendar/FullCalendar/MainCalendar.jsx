@@ -11,8 +11,9 @@ import dayjs from "dayjs";
 import "dayjs/locale/it";
 import { supabase } from "../../../supabase/supabaseClient";
 import { Select, MenuItem, InputLabel, FormControl } from "@mui/material";
-import { useRole } from '../../../context/RoleContext';
-import { useNavigate } from 'react-router-dom';
+import { useRole } from "../../../context/RoleContext";
+import { useNavigate } from "react-router-dom";
+import CalendarDocsModal from "./CalendarDocsModal";
 
 import "./MainCalendar.css";
 
@@ -25,6 +26,7 @@ const MainCalendar = ({ orders, onActivityUpdate }) => {
   const [viewMode, setViewMode] = useState(getInitialViewMode());
   const [employeeFilter, setEmployeeFilter] = useState("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDocsModalOpen, setIsDocsModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [formData, setFormData] = useState({
     startDate: null,
@@ -38,7 +40,7 @@ const MainCalendar = ({ orders, onActivityUpdate }) => {
   });
   const { personale } = usePersonale();
   const { role } = useRole();
-  const isOperator = role && atob(role) === 'operator';
+  const isOperator = role && atob(role) === "operator";
   const navigate = useNavigate();
 
   // Funzione di validazione delle date
@@ -173,6 +175,9 @@ const MainCalendar = ({ orders, onActivityUpdate }) => {
             break;
           case "Bassa":
             eventColor = "#28a745";
+            break;
+          default:
+            eventColor = "#6f42c1";
             break;
         }
 
@@ -391,7 +396,8 @@ const MainCalendar = ({ orders, onActivityUpdate }) => {
             activities: Array.isArray(order.activities)
               ? order.activities.filter(
                   (act) =>
-                    act.responsible && (act.responsible.id || act.responsible) === employeeFilter
+                    act.responsible &&
+                    (act.responsible.id || act.responsible) === employeeFilter
                 )
               : [],
           }))
@@ -404,12 +410,25 @@ const MainCalendar = ({ orders, onActivityUpdate }) => {
     localStorage.setItem("calendarViewMode", viewMode);
   }, [viewMode]);
 
+  const handleOpenDocsModal = () => setIsDocsModalOpen(true);
+  const handleCloseDocsModal = () => setIsDocsModalOpen(false);
+
   return (
     <div className="main-calendar-container">
-      <div className="calendar-controls" style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 16 }}>
+      <div
+        className="calendar-controls"
+        style={{
+          display: "flex",
+          gap: 16,
+          alignItems: "center",
+          marginBottom: 16,
+        }}
+      >
         <div className="view-selector" style={{ minWidth: 220 }}>
           <FormControl size="small" fullWidth variant="outlined">
-            <InputLabel id="view-mode-label">Modalità visualizzazione</InputLabel>
+            <InputLabel id="view-mode-label">
+              Modalità visualizzazione
+            </InputLabel>
             <Select
               labelId="view-mode-label"
               id="view-mode"
@@ -480,7 +499,7 @@ const MainCalendar = ({ orders, onActivityUpdate }) => {
         <div className="modal-overlay" onClick={handleModalClose}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Modifica Date</h3>
+              <h3>Dettagli</h3>
               <button className="modal-close" onClick={handleModalClose}>
                 ×
               </button>
@@ -644,9 +663,21 @@ const MainCalendar = ({ orders, onActivityUpdate }) => {
               <button
                 className="btn btn-info"
                 onClick={handleGoToOrder}
-                style={{ marginRight: 'auto' }}
+                style={{ marginRight: "auto" }}
               >
                 Vai a...
+              </button>
+              <button
+                className="btn btn-secondary"
+                onClick={handleOpenDocsModal}
+                style={{
+                  marginRight: "8px",
+                  backgroundColor: "#007bff",
+                  color: "#fff",
+                  borderColor: "#007bff",
+                }}
+              >
+                📁 Documenti
               </button>
               <button
                 className="btn btn-secondary"
@@ -673,40 +704,93 @@ const MainCalendar = ({ orders, onActivityUpdate }) => {
           </div>
         </div>
       )}
+      {/* Modal Documenti */}
+      <CalendarDocsModal
+        open={isDocsModalOpen}
+        onClose={handleCloseDocsModal}
+        selectedEvent={selectedEvent}
+        orderData={
+          selectedEvent
+            ? orders.find((order) => order.id === selectedEvent.orderId)
+            : null
+        }
+      />
       {/* Se operatore, mostra solo i dettagli senza form di modifica */}
       {isModalOpen && isOperator && selectedEvent && (
         <div className="modal-overlay" onClick={handleModalClose}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Dettaglio evento</h3>
-              <button className="modal-close" onClick={handleModalClose}>×</button>
+              <button className="modal-close" onClick={handleModalClose}>
+                ×
+              </button>
             </div>
             <div className="modal-body">
               <div className="event-info">
-                <h4>{selectedEvent.type === "activity" ? "Attività" : "Ordine"}: {selectedEvent.type === "activity" ? selectedEvent.activityName : selectedEvent.orderName}</h4>
-                <p><strong>ID:</strong> {selectedEvent.internal_id}</p>
-                <p><strong>Cliente:</strong> {selectedEvent.client?.customer_name || "N/A"}</p>
+                <h4>
+                  {selectedEvent.type === "activity" ? "Attività" : "Ordine"}:{" "}
+                  {selectedEvent.type === "activity"
+                    ? selectedEvent.activityName
+                    : selectedEvent.orderName}
+                </h4>
+                <p>
+                  <strong>ID:</strong> {selectedEvent.internal_id}
+                </p>
+                <p>
+                  <strong>Cliente:</strong>{" "}
+                  {selectedEvent.client?.customer_name || "N/A"}
+                </p>
                 {selectedEvent.type === "activity" && (
                   <>
-                    <p><strong>Stato:</strong> {selectedEvent.status}</p>
-                    <p><strong>Responsabile:</strong> {getWorkerName(selectedEvent.responsible)}</p>
-                    <p><strong>Ordine:</strong> {selectedEvent.orderName}</p>
+                    <p>
+                      <strong>Stato:</strong> {selectedEvent.status}
+                    </p>
+                    <p>
+                      <strong>Responsabile:</strong>{" "}
+                      {getWorkerName(selectedEvent.responsible)}
+                    </p>
+                    <p>
+                      <strong>Ordine:</strong> {selectedEvent.orderName}
+                    </p>
                   </>
                 )}
-                <p><strong>Urgenza:</strong> {selectedEvent.urgency}</p>
-                <p><strong>Inizio:</strong> {selectedEvent.currentStart ? dayjs(selectedEvent.currentStart).format('DD/MM/YYYY HH:mm') : '-'}</p>
-                <p><strong>Fine:</strong> {selectedEvent.currentEnd ? dayjs(selectedEvent.currentEnd).format('DD/MM/YYYY HH:mm') : '-'}</p>
+                <p>
+                  <strong>Urgenza:</strong> {selectedEvent.urgency}
+                </p>
+                <p>
+                  <strong>Inizio:</strong>{" "}
+                  {selectedEvent.currentStart
+                    ? dayjs(selectedEvent.currentStart).format(
+                        "DD/MM/YYYY HH:mm"
+                      )
+                    : "-"}
+                </p>
+                <p>
+                  <strong>Fine:</strong>{" "}
+                  {selectedEvent.currentEnd
+                    ? dayjs(selectedEvent.currentEnd).format("DD/MM/YYYY HH:mm")
+                    : "-"}
+                </p>
               </div>
             </div>
             <div className="modal-footer">
               <button
                 className="btn btn-info"
                 onClick={handleGoToOrder}
-                style={{ marginRight: 'auto' }}
+                style={{ marginRight: "auto" }}
               >
                 Vai a...
               </button>
-              <button className="btn btn-secondary" onClick={handleModalClose}>Chiudi</button>
+              <button
+                className="btn btn-secondary"
+                onClick={handleOpenDocsModal}
+                style={{ marginRight: "8px" }}
+              >
+                📁 Documenti
+              </button>
+              <button className="btn btn-secondary" onClick={handleModalClose}>
+                Chiudi
+              </button>
             </div>
           </div>
         </div>
