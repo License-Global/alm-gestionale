@@ -667,18 +667,20 @@ const MainCalendar = ({ orders, onActivityUpdate }) => {
               >
                 Vai a...
               </button>
-              <button
-                className="btn btn-secondary"
-                onClick={handleOpenDocsModal}
-                style={{
-                  marginRight: "8px",
-                  backgroundColor: "#007bff",
-                  color: "#fff",
-                  borderColor: "#007bff",
-                }}
-              >
-                📁 Documenti
-              </button>
+              {viewMode === "activities" && (
+                <button
+                  className="btn btn-secondary"
+                  onClick={handleOpenDocsModal}
+                  style={{
+                    marginRight: "8px",
+                    backgroundColor: "#007bff",
+                    color: "#fff",
+                    borderColor: "#007bff",
+                  }}
+                >
+                  📁 Documenti
+                </button>
+              )}
               <button
                 className="btn btn-secondary"
                 onClick={handleModalClose}
@@ -781,13 +783,20 @@ const MainCalendar = ({ orders, onActivityUpdate }) => {
               >
                 Vai a...
               </button>
-              <button
-                className="btn btn-secondary"
-                onClick={handleOpenDocsModal}
-                style={{ marginRight: "8px" }}
-              >
-                📁 Documenti
-              </button>
+              {viewMode === "activities" && (
+                <button
+                  className="btn btn-secondary"
+                  onClick={handleOpenDocsModal}
+                  style={{
+                    marginRight: "8px",
+                    backgroundColor: "#007bff",
+                    color: "#fff",
+                    borderColor: "#007bff",
+                  }}
+                >
+                  📁 Documenti
+                </button>
+              )}
               <button className="btn btn-secondary" onClick={handleModalClose}>
                 Chiudi
               </button>
