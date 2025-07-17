@@ -21,7 +21,9 @@ const OrderPage = () => {
     if (!Array.isArray(order.activities)) return order;
     return {
       ...order,
-      activities: [...order.activities].sort((a, b) => (a.id || 0) - (b.id || 0)),
+      activities: [...order.activities].sort(
+        (a, b) => (a.id || 0) - (b.id || 0)
+      ),
     };
   }, [order]);
 
@@ -40,7 +42,7 @@ const OrderPage = () => {
         </Box>
       ) : (
         <div>
-          <MainTable order={sortedOrder} />
+          <MainTable order={sortedOrder} isSingleOrderPage={true} />
         </div>
       )}
     </div>

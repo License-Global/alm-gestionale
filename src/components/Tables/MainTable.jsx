@@ -78,8 +78,10 @@ import useSession from "../../hooks/useSession";
 import { fetchCustomers } from "../../services/customerService";
 import { sendNotification } from "../../utils/sendNotification";
 import useUser from "../../hooks/useUser";
+import { useNavigate } from "react-router-dom";
 
-const MainTable = ({ order }) => {
+const MainTable = ({ order, isSingleOrderPage }) => {
+  const navigate = useNavigate();
   const session = useSession();
   const { userId } = useUser();
   const authorizedUser = useActiveUser();
@@ -243,6 +245,10 @@ const MainTable = ({ order }) => {
       setErrorArchivio("Errore durante l'archiviazione");
     } finally {
       setLoadingArchivio(false);
+      if (isSingleOrderPage) {
+        // Se l'archiviazione ha successo e siamo nella pagina singola dell'ordine, reindirizza
+        navigate("/");
+      }
     }
   };
 
