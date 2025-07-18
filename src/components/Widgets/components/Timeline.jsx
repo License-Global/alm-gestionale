@@ -59,7 +59,10 @@ function getTimelineData(inseriteOrders, completateOrders, year) {
   const inserite = Array(12).fill(0);
   const completate = Array(12).fill(0);
 
-  inseriteOrders?.forEach((order) => {
+  // Unisci ordini attivi e archiviati per conteggio INSERITE
+  const allOrders = [...(inseriteOrders || []), ...(completateOrders || [])];
+  allOrders.forEach((order) => {
+    if (!order.created_at) return;
     const created = new Date(order.created_at);
     if (created.getFullYear() === year) {
       inserite[created.getMonth()]++;
@@ -67,8 +70,9 @@ function getTimelineData(inseriteOrders, completateOrders, year) {
   });
 
   completateOrders?.forEach((order) => {
-    // Usa la data di archiviazione come data di completamento
-    const archivedAt = order.archived_at || order.updated_at || order.created_at;
+    // Usa la data di archiviazione per determinare quando la commessa è stata completata
+    const archivedAt =
+      order.archived_at || order.updated_at || order.created_at;
     const completed = new Date(archivedAt);
     if (completed.getFullYear() === year) {
       completate[completed.getMonth()]++;
@@ -88,7 +92,9 @@ export default function Timeline({ orders = [] }) {
   const years = React.useMemo(() => {
     const inseriteYears = getAvailableYears(orders);
     const completateYears = getAvailableYears(archivedOrders);
-    return Array.from(new Set([...inseriteYears, ...completateYears])).sort((a, b) => b - a);
+    return Array.from(new Set([...inseriteYears, ...completateYears])).sort(
+      (a, b) => b - a
+    );
   }, [orders, archivedOrders]);
 
   const currentYear = new Date().getFullYear();
@@ -116,7 +122,12 @@ export default function Timeline({ orders = [] }) {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" sx={{ p: 4 }}>
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        sx={{ p: 4 }}
+      >
         <Typography variant="body2" color="text.secondary">
           Caricamento commesse archiviate...
         </Typography>

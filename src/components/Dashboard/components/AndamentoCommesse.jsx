@@ -39,8 +39,9 @@ const AndamentoCommesse = ({ orders = [] }) => {
       monthIndex: index,
     }));
 
-    // Conta le commesse inserite per mese
-    orders.forEach((order) => {
+    // Conta le commesse inserite per mese (attive + archiviate)
+    const allOrders = [...orders, ...archivedOrders];
+    allOrders.forEach((order) => {
       if (order.created_at) {
         const date = new Date(order.created_at);
         const monthIndex = date.getMonth();
@@ -73,8 +74,12 @@ const AndamentoCommesse = ({ orders = [] }) => {
           }}
         >
           <p style={{ fontWeight: "500", color: "#374151" }}>{`${label}`}</p>
-          <p style={{ color: "#87ceeb" }}>{`Commesse inserite: ${payload[0]?.value || 0}`}</p>
-          <p style={{ color: "#22c55e" }}>{`Commesse archiviate: ${payload[1]?.value || 0}`}</p>
+          <p style={{ color: "#87ceeb" }}>{`Commesse inserite: ${
+            payload[0]?.value || 0
+          }`}</p>
+          <p style={{ color: "#22c55e" }}>{`Commesse completate (archiviate): ${
+            payload[1]?.value || 0
+          }`}</p>
         </div>
       );
     }
@@ -115,7 +120,7 @@ const AndamentoCommesse = ({ orders = [] }) => {
             fontSize: "14px",
           }}
         >
-          Numero di commesse aggiunte e archiviate per mese
+          Numero di commesse aggiunte e completate per mese
         </p>
       </div>
 
@@ -151,11 +156,11 @@ const AndamentoCommesse = ({ orders = [] }) => {
             <Line
               type="monotone"
               dataKey="archived"
-              stroke="#22c55e" // archiviate verde
+              stroke="#22c55e" // completate verde
               strokeWidth={3}
               dot={{ fill: "#22c55e", strokeWidth: 2, r: 6 }}
               activeDot={{ r: 8, fill: "#22c55e" }}
-              name="Commesse archiviate"
+              name="Commesse completate (archiviate)"
             />
           </LineChart>
         </ResponsiveContainer>
@@ -171,8 +176,8 @@ const AndamentoCommesse = ({ orders = [] }) => {
           color: "#6b7280",
         }}
       >
-        <span>Totale commesse inserite: {orders.length}</span>
-        <span>Totale commesse archiviate: {archivedOrders.length}</span>
+        <span>Totale commesse: {orders.length + archivedOrders.length}</span>
+        <span>Totale commesse completate: {archivedOrders.length}</span>
         <span>Anno corrente</span>
       </div>
     </div>
